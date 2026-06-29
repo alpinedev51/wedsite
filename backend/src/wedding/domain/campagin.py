@@ -1,0 +1,1 @@
+# Campaign entity + type rules

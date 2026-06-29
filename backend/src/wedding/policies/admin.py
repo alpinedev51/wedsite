@@ -1,0 +1,1 @@
+# require authenticated admin guard

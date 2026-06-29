@@ -1,0 +1,1 @@
+# RSVP request/response DTOs
