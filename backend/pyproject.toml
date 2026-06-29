@@ -1,0 +1,32 @@
+[project]
+name = "wedding"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "abarton51", email = "abarton51@users.noreply.github.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "alembic>=1.18.5",
+    "arq>=0.28.0",
+    "asyncpg>=0.31.0",
+    "fastapi[standard]>=0.138.1",
+    "pydantic-settings>=2.14.2",
+    "sqlalchemy[asyncio]>=2.0.51",
+]
+
+[project.scripts]
+wedding = "wedding:main"
+
+[build-system]
+requires = ["uv_build>=0.8.12,<0.9.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "mypy>=2.1.0",
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+    "ruff>=0.15.20",
+]
