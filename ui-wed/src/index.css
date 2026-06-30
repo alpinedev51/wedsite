@@ -18,10 +18,25 @@
 }
 
 @layer base {
+  html {
+    @apply scroll-smooth;
+  }
   body {
     @apply bg-linen text-ink font-body antialiased;
   }
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-display text-walnut;
+  }
+  a {
+    @apply transition-colors;
+  }
   ::selection {
     @apply bg-sage/30;
+  }
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-clay;
   }
 }

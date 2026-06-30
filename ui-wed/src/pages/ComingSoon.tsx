@@ -1,9 +1,15 @@
-function ComingSoon() {
+import Container from "../components/ui/Container";
+import Section from "../components/ui/Section";
+import Eyebrow from "../components/ui/Eyebrow";
+
+function ComingSoon({ title }: { title: string }) {
   return (
-    <main className="flex min-h-[60vh] flex-col items-center justify-center gap-2 px-6 text-center">
-      <h1 className="font-heading text-3xl text-walnut">Coming soon</h1>
-      <p className="font-body text-slate">This page is still being built.</p>
-    </main>
+    <Section className="flex min-h-[60vh] flex-col items-center justify-center text-center">
+      <Container className="flex flex-col items-center gap-2">
+        <Eyebrow>Coming soon</Eyebrow>
+        <h1 className="text-4xl">{title}</h1>
+      </Container>
+    </Section>
   );
 }
 
