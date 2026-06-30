@@ -1,1 +1,27 @@
 @import "tailwindcss";
+
+@theme {
+  --color-linen: #f5f1e8;
+  --color-ink: #33302a;
+  --color-walnut: #6e5a45;
+  --color-clay: #a98d74;
+  --color-sage: #97a586;
+  --color-olive: #5e6b4f;
+  --color-dusty: #8aa0b4;
+  --color-slate: #5c7088;
+  --color-ochre: #c8a24c;
+
+  --font-script: "Pinyon Script", cursive;
+  --font-display: "Fraunces", serif;
+  --font-body: "EB Garamond", serif;
+  --font-utility: "Jost", sans-serif;
+}
+
+@layer base {
+  body {
+    @apply bg-linen text-ink font-body antialiased;
+  }
+  ::selection {
+    @apply bg-sage/30;
+  }
+}
