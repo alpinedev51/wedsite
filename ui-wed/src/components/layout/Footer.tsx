@@ -8,7 +8,7 @@ function Footer() {
         <p className="font-script text-2xl text-walnut">
           {wedding.coupleNames}
         </p>
-        <p className="font-utility text-xs uppercase tracking-widest text-slate">
+        <p className="font-utility text-xs uppercase tracking-widest text-walnut/60">
           {wedding.location.city}
         </p>
       </Container>
