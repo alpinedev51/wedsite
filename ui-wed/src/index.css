@@ -2,19 +2,46 @@
 
 @theme {
   --color-linen: #f5f1e8;
+  --color-greenlinen: #eee6d1;
+  --color-grey: #c0c0c0;
   --color-ink: #33302a;
+  --color-ink2: #2b2b2b;
   --color-walnut: #6e5a45;
+  --color-walnut2: #773f1a;
+  --color-brown: #4a2a1a;
   --color-clay: #a98d74;
+  --color-clay2: #d4a373;
+  --color-tan: #a07a55;
+  --color-terracotta: #b86a5b;
+  --color-green: #3a564b;
+  --color-darkgreen: #0c2a1e;
+  --color-medgreen: #354e39;
+  --color-odgreen: #677663;
+  --color-fadedgreen: #9ea998;
+  --color-tangreen: #a7a794;
   --color-sage: #97a586;
+  --color-sage2: #55705f;
+  --color-sage3: #bcb88a;
   --color-olive: #5e6b4f;
+  --color-olive2: #556b2f;
+  --color-olive3: #636b2f;
+  --color-lightblue: #9bbec8;
+  --color-lightblue2: #b1d7e2;
+  --color-lightblue3: #ddf2fd;
   --color-dusty: #8aa0b4;
   --color-slate: #5c7088;
+  --color-slate2: #36475c;
+  --color-slate3: #717787;
   --color-ochre: #c8a24c;
+  --color-gold: #ffce00;
+  --color-yellow: #fce300;
 
   --font-script: "Pinyon Script", cursive;
   --font-display: "Fraunces", serif;
   --font-body: "EB Garamond", serif;
   --font-utility: "Jost", sans-serif;
+
+  --tracking-label: 0.3em;
 }
 
 @layer base {

@@ -9,7 +9,7 @@ function Eyebrow({
 }) {
   return (
     <p
-      className={`font-utility text-sm uppercase tracking-[0.3em] text-olive ${className}`}
+      className={`font-utility text-sm uppercase tracking-label text-olive ${className}`}
     >
       {children}
     </p>

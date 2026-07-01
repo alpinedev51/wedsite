@@ -1,14 +1,12 @@
 interface SprigProps {
   className?: string;
-  mirrored?: boolean;
 }
 
-export function EucalyptusSprig({ className, mirrored = false }: SprigProps) {
+export function EucalyptusSprig({ className }: SprigProps) {
   return (
     <svg
       viewBox="0 0 360 200"
       className={className}
-      style={mirrored ? { transform: "scaleX(-1)" } : undefined}
       aria-hidden="true"
       xmlns="http://www.w3.org/2000/svg"
     >
