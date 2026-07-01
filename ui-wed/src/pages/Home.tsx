@@ -32,7 +32,7 @@ function Home() {
           <MountainRidge className="h-full w-full" />
         </div>
 
-        <Container className="relative flex flex-col items-center gap-6">
+        <Container className="relative flex flex-col items-center gap-4">
           <Eyebrow>We're getting married</Eyebrow>
 
           <h1 className="font-script text-6xl text-walnut sm:text-7xl">

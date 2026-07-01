@@ -9,8 +9,8 @@ import PersonCard from "../components/ui/PersonCard";
 // photos, import them the same way `coupleImg` is imported in
 // Home.tsx and add a `photoSrc: theirImg` field to that person's entry.
 const weddingParty = [
-  { name: "Jane Doe", role: "Maid of Honor" },
-  { name: "John Smith", role: "Best Man" },
+  { name: "Lexi Behn (?)", role: "Maid of Honor" },
+  { name: "TBD", role: "Best Man" },
 ];
 
 function WeddingParty() {
