@@ -1,5 +1,5 @@
 import Countdown from "../components/Countdown";
-import { EucalyptusSpring } from "../components/decor/EucalyptusSpring";
+import { EucalyptusSprig } from "../components/decor/EucalyptusSprig";
 import { RoseBloom } from "../components/decor/RoseBloom";
 import PhotoFrame from "../components/PhotoFrame";
 import Container from "../components/ui/Container";
@@ -12,12 +12,12 @@ import { formatLongDate } from "../lib/date";
 function Home() {
   return (
     <>
-      <Section className="relative overflow-hidden bg-gradient-to-b from-sage/10 via-linen to-linen text-center">
-        <div className="pointer-events-none absolute -top-2 -left-2 h-32 w-32 text-sage/70 sm:h-44 sm:w-44">
-          <EucalyptusSpring className="h-full w-full" />
+      <Section className="relative overflow-hidden bg-gradient-to-b from-ochre/10 via-linen to-sage/15 text-center">
+        <div className="pointer-events-none absolute -top-2 -left-2 w-64 h-40 text-sage/70 sm:w-60 sm:h-40">
+          <EucalyptusSprig className="h-full w-full" />
         </div>
-        <div className="pointer-events-none absolute -top-2 -right-2 h-32 w-32 -scale-x-100 text-sage/70 sm:h-44 sm:w-44">
-          <EucalyptusSpring className="h-full w-full" />
+        <div className="pointer-events-none absolute -top-2 -right-2 w-64 h-40 -scale-x-100 text-sage/70 sm:w-60 sm:h-40">
+          <EucalyptusSprig className="h-full w-full" />
         </div>
         <div className="pointer-events-none absolute -bottom-2 -left-2 h-20 w-20 text-clay/80 sm:h-28 sm:w-28">
           <RoseBloom className="h-full w-full" />
@@ -26,10 +26,10 @@ function Home() {
           <RoseBloom className="h-full w-full" />
         </div>
 
-        <Container className="relative flex flex-col items-center gap-8">
+        <Container className="relative flex flex-col items-center gap-6">
           <Eyebrow>We're getting married</Eyebrow>
 
-          <h1 className="font-script text-6xl text-walnut sm:text-7xl">
+          <h1 className="font-script text-walnut sm:text-7xl">
             {wedding.coupleNames}
           </h1>
 

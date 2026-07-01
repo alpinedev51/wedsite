@@ -8,7 +8,7 @@ function Container({
   className?: string;
 }) {
   return (
-    <div className={`mx-auto w-full max-w-5xl px-6 ${className}`}>
+    <div className={`mx-auto w-full max-w-5xl px-4 ${className}`}>
       {children}
     </div>
   );
