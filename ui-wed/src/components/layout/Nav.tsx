@@ -8,7 +8,7 @@ function Nav() {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-walnut/15 bg-linen/90 backdrop-blur">
+    <header className="sticky top-0 z-50 border-b border-walnut/18 bg-clay/5 backdrop-blur">
       <Container className="flex items-center justify-between py-4">
         <Link
           to="/"

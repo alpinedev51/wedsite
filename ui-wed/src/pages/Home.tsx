@@ -38,15 +38,14 @@ function Home() {
             {formatLongDate(wedding.date)} &middot; {wedding.location.venue},{" "}
             {wedding.location.city}
           </p>
-
-          <PhotoFrame src={coupleImg} alt="Austin & Kylie" />
-
-          <ButtonLink to="/rsvp">RSVP</ButtonLink>
         </Container>
-      </Section>
 
-      <Section className="border-t border-walnut/10 text-center">
-        <Container className="flex flex-col items-center gap-4">
+        <div className="relative my-10 sm:my-14">
+          <PhotoFrame src={coupleImg} alt="Austin & Kylie" />
+        </div>
+
+        <Container className="relative flex flex-col items-center gap-8">
+          <ButtonLink to="/rsvp">RSVP</ButtonLink>
           <Eyebrow>Counting down</Eyebrow>
           <Countdown target={wedding.date} size="sm" />
         </Container>

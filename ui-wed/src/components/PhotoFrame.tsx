@@ -9,7 +9,7 @@ function PhotoFrame({
 }) {
   return (
     <div
-      className={`relative aspect-4/5 w-full max-w-sm overflow-hidden rounded-[2rem] border-4 border-linen shadow-xl ring-1 ring-walnut/15 ${className}`}
+      className={`relative aspect-4/5 w-full overflow-hidden sm:aspect-[16/9] lg:aspect ${className}`}
     >
       {src ? (
         <img src={src} alt={alt} className="h-full w-full object-cover" />
