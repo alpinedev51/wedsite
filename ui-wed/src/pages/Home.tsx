@@ -8,6 +8,7 @@ import Eyebrow from "../components/ui/Eyebrow";
 import { ButtonLink } from "../components/ui/Button";
 import { wedding } from "../config/wedding";
 import { formatLongDate } from "../lib/date";
+import coupleImg from "../assets/couple.jpg";
 
 function Home() {
   return (
@@ -38,7 +39,7 @@ function Home() {
             {wedding.location.city}
           </p>
 
-          <PhotoFrame />
+          <PhotoFrame src={coupleImg} alt="Austin & Kylie" />
 
           <ButtonLink to="/rsvp">RSVP</ButtonLink>
         </Container>
