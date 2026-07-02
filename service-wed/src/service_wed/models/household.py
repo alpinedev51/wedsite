@@ -34,7 +34,9 @@ class Household(UUIDPrimaryKey, Timestamps, Base):
     # Find-Your-Invitation / dashboard hit.
     song_request: Mapped[str | None] = mapped_column(Text)
     message_to_couple: Mapped[str | None] = mapped_column(Text)
-    rsvp_submitted_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True))
+    rsvp_submitted_at: Mapped[dt.datetime | None] = mapped_column(
+        DateTime(timezone=True)
+    )
     rsvp_updated_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True))
 
     # Send lifecycle (save-the-date sent? rsvp requested? reminders sent?) is
@@ -45,6 +47,8 @@ class Household(UUIDPrimaryKey, Timestamps, Base):
         cascade="all, delete-orphan",
         passive_deletes=True,
     )
-    email_messages: Mapped[list[EmailMessage]] = relationship(back_populates="household")
+    email_messages: Mapped[list[EmailMessage]] = relationship(
+        back_populates="household"
+    )
 
     __table_args__ = (Index("ix_households_contact_email", "contact_email"),)

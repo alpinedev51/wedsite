@@ -9,11 +9,11 @@ from sqlalchemy import ForeignKey, Text, text
 from sqlalchemy.dialects.postgresql import CITEXT
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from service-wed.models.base import Base, Timestamps, UUIDPrimaryKey
+from service_wed.models.base import Base, Timestamps, UUIDPrimaryKey
 
 if TYPE_CHECKING:
-    from service-wed.models.household import Household
-    from service-wed.models.rsvp_response import RsvpResponse
+    from service_wed.models.household import Household
+    from service_wed.models.rsvp_response import RsvpResponse
 
 
 class Guest(UUIDPrimaryKey, Timestamps, Base):
@@ -24,7 +24,9 @@ class Guest(UUIDPrimaryKey, Timestamps, Base):
     )
     full_name: Mapped[str] = mapped_column(Text)
     email: Mapped[str | None] = mapped_column(CITEXT)
-    is_plus_one: Mapped[bool] = mapped_column(default=False, server_default=text("false"))
+    is_plus_one: Mapped[bool] = mapped_column(
+        default=False, server_default=text("false")
+    )
 
     # "Find your invitation" name search uses a plain ILIKE; at a few hundred
     # rows no pg_trgm extension or GIN index is warranted.

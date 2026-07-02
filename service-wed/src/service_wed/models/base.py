@@ -34,7 +34,13 @@ def str_enum(enum_cls: type[StrEnum], name: str) -> Enum:
     Round-trips to the Python enum but avoids native PG ENUM types: adding or
     changing a value is a plain CHECK migration, never ALTER TYPE ADD VALUE
     """
-    return Enum(enum_cls, name=name, native_enum=False, create_constraint=True, values_callable=lambda e: [member.value for member in e])
+    return Enum(
+        enum_cls,
+        name=name,
+        native_enum=False,
+        create_constraint=True,
+        values_callable=lambda e: [member.value for member in e],
+    )
 
 
 class Base(DeclarativeBase):
