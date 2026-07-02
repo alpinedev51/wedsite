@@ -18,6 +18,52 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
 
+  db:
+    image: postgres:18
+    container_name: wedding_db
+    restart: always
+    environment:
+      POSTGRES_USER: wedding_db_user
+      POSTGRES_PASSWORD: wedding_db_pw
+      POSTGRES_DB: wedding_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql
+
+  redis:
+    image: redis:8.8
+    container_name: wedding_redis
+    restart: always
+    ports:
+      - "6739:6739"
+    volumes:
+      - redis_data:/data
+
+  service-wed:
+    build:
+      context: ./service-wed
+      dockerfile: Dockerfile
+    container_name: service-wed
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://wedding_db_user:wedding_db_pw@db:5432/wedding_db
+      - REDIS_URL=redis://redis:6739/0
+    depends_on:
+      - db
+      - redis
+    labels:
+      - "traefik.enable=true"
+      # Route any traffic hitting https://localhost/api to this service-wed container
+      - "traefik.http.routers.service-wed.rule=Host(`localhost`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.service-wed.entrypoints=websecure"
+      - "traefik.http.routers.service-wed.tls=true"
+      # Route MCP traffic hitting https://localhost/mcp to this same container
+      - "traefik.http.routers.mcp.rule=Host(`localhost`) && PathPrefix(`/mcp`)"
+      - "traefik.http.routers.mcp.entrypoints=websecure"
+      - "traefik.http.routers.mcp.tls=true"
+      # Tell Traefik which internal container port to send traffic to
+      - "traefik.http.services.service-wed.loadbalancer.server.port=8000"
+
   ui-wed:
     build:
       context: ./ui-wed
@@ -27,10 +73,16 @@ services:
       - VITE_API_URL=https://localhost:8000/api
     ports:
       - "5713:5173"
+    depends_on:
+      - service-wed
     labels:
       - "traefik.enable=true"
       # Route all other root traffic to the ui-wed react container
-      - "traefik.http.routers.ui-wed.rule=Host(`192.168.50.9`) && PathPrefix(`/`)"
+      - "traefik.http.routers.ui-wed.rule=Host(`192.168.50.X`) && PathPrefix(`/`)"
       - "traefik.http.routers.ui-wed.entrypoints=websecure"
       - "traefik.http.routers.ui-wed.tls=true"
       - "traefik.http.services.ui-wed.loadbalancer.server.port=5173"
+
+volumes:
+  postgres_data:
+  redis_data:

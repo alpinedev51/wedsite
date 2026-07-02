@@ -5,7 +5,7 @@ from __future__ import annotations
 import datetime as dt
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, Index, SmallInteger, Text, text
+from sqlalchemy import DateTime, SmallInteger, Text, text
 from sqlalchemy.dialects.postgresql import CITEXT
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -20,7 +20,7 @@ class Household(UUIDPrimaryKey, Timestamps, Base):
     __tablename__ = "households"
 
     display_name: Mapped[str] = mapped_column(Text)
-    contact_email: Mapped[str | None] = mapped_column(CITEXT)
+    contact_email: Mapped[str | None] = mapped_column(CITEXT, index=True)
 
     # invite_token: long, unguessable, embedded raw in the magic link.
     invite_token: Mapped[str] = mapped_column(Text, unique=True)
@@ -48,7 +48,7 @@ class Household(UUIDPrimaryKey, Timestamps, Base):
         passive_deletes=True,
     )
     email_messages: Mapped[list[EmailMessage]] = relationship(
-        back_populates="household"
+        back_populates="household",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
     )
-
-    __table_args__ = (Index("ix_households_contact_email", "contact_email"),)

@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from service_wed.models.campaign import Campaign
     from service_wed.models.household import Household
     from service_wed.models.email_event import EmailEvent
+    from service_wed.models.guest import Guest
 
 
 class EmailMessage(UUIDPrimaryKey, Timestamps, Base):
@@ -26,7 +27,7 @@ class EmailMessage(UUIDPrimaryKey, Timestamps, Base):
     household_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("households.id", ondelete="RESTRICT")
     )
-    guest_id: Mapped[uuid.UUID] = mapped_column(
+    guest_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("guests.id", ondelete="SET NULL")
     )
 
@@ -53,13 +54,11 @@ class EmailMessage(UUIDPrimaryKey, Timestamps, Base):
     campaign: Mapped[Campaign | None] = relationship(back_populates="email_messages")
     household: Mapped[Household] = relationship(
         back_populates="email_messages",
-        cascade="all, delete-orphan",
-        passive_deletes=True,
     )
     events: Mapped[list[EmailEvent]] = relationship(
         back_populates="message", cascade="all, delete-orphan", passive_deletes=True
     )
-
+    guest: Mapped[Guest | None] = relationship()
     __table_args__ = (
         Index(
             "uq_email_messages_campaign_household",
@@ -68,5 +67,4 @@ class EmailMessage(UUIDPrimaryKey, Timestamps, Base):
             unique=True,
             postgresql_where=text("campaign_id IS NOT NULL"),
         ),
-        Index("ix_email_messages_household_id", "household_id"),
     )

@@ -1,4 +1,4 @@
-# Multi-stage production-grade Dockerfile for Net-Sentinel FastAPI backend
+# Multi-stage production-grade Dockerfile for service-wed FastAPI backend
 FROM python:3.14-slim AS builder
 
 # Install uv for extremely fast and reliable dependency caching/installation
@@ -32,7 +32,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 	&& rm -rf /var/lib/apt/lists/*
 
 # Run as a non-root user for security hardening
-RUN groupadd -r sentinel && useradd -r -g sentinel sentinel
+RUN groupadd -r wed && useradd -r -g wed wed
 
 WORKDIR /app
 
@@ -43,7 +43,7 @@ COPY alembic /app/alembic
 COPY alembic.ini /app/alembic.ini
 
 # Fix file ownership
-RUN chown -R sentinel:sentinel /app
+RUN chown -R wed:wed /app
 
 # Configure environmental path and flags
 ENV PATH="/app/.venv/bin:$PATH" \
@@ -53,7 +53,7 @@ ENV PATH="/app/.venv/bin:$PATH" \
 
 EXPOSE 8000
 
-USER sentinel
+USER wed
 
-# Command launches Uvicorn server pointing to the net_sentinel module
-CMD ["uvicorn", "net_sentinel.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Command launches Uvicorn server pointing to the service-wed module
+CMD ["uvicorn", "service_wed.main:app", "--host", "0.0.0.0", "--port", "8000"]

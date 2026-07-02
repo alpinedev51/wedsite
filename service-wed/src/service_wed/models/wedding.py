@@ -26,7 +26,9 @@ class Wedding(Timestamps, Base):
     rsvp_opens_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True))
     rsvp_deadline: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True))
 
-    reminder_cap: Mapped[int] = mapped_column(SmallInteger, default=2, server_default=text("2"))
+    reminder_cap: Mapped[int] = mapped_column(
+        SmallInteger, default=2, server_default=text("2")
+    )
     reminder_interval_days: Mapped[int] = mapped_column(
         SmallInteger, default=7, server_default=text("7")
     )
