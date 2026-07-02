@@ -1,0 +1,88 @@
+services:
+  traefik:
+    image: traefik:v3.7
+    container_name: wedding_proxy
+    restart: unless-stopped
+    command:
+      - "--api.insecure=true" # enables local dashbaord at http://localhost:8080
+      - "--providers.docker=true" # tells traefik to listen to docker daemon
+      - "--providers.docker.exposedbydefault=false" # secure default: don't expose containers unless labeled
+      - "--entrypoints.web.address=:80" # define port 80 entrypoint
+      - "--entrypoints.websecure.address=:443" # define port 443 entrypoint
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+    ports:
+      - "8081:80"
+      - "8443:443"
+      - "8082:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+  db:
+    image: postgres:18
+    container_name: wedding_db
+    restart: always
+    environment:
+      POSTGRES_USER: wedding_db_user
+      POSTGRES_PASSWORD: wedding_db_pw
+      POSTGRES_DB: wedding_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql
+
+  redis:
+    image: redis:8.8
+    container_name: wedding_redis
+    restart: always
+    ports:
+      - "6739:6739"
+    volumes:
+      - redis_data:/data
+
+  service-wed:
+    build:
+      context: ./service-wed
+      dockerfile: Dockerfile
+    container_name: service-wed
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://wedding_db_user:wedding_db_pw@db:5432/wedding_db
+      - REDIS_URL=redis://redis:6739/0
+    depends_on:
+      - db
+      - redis
+    labels:
+      - "traefik.enable=true"
+      # Route any traffic hitting https://localhost/api to this backend container
+      - "traefik.http.routers.service-wed.rule=Host(`localhost`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.service-wed.entrypoints=websecure"
+      - "traefik.http.routers.service-wed.tls=true"
+      # Route MCP traffic hitting https://localhost/mcp to this same container
+      - "traefik.http.routers.mcp.rule=Host(`localhost`) && PathPrefix(`/mcp`)"
+      - "traefik.http.routers.mcp.entrypoints=websecure"
+      - "traefik.http.routers.mcp.tls=true"
+      # Tell Traefik which internal container port to send traffic to
+      - "traefik.http.services.backend.loadbalancer.server.port=8000"
+
+  ui-wed:
+    build:
+      context: ./ui-wed
+      dockerfile: Dockerfile
+    container_name: ui-wed
+    environment:
+      - VITE_API_URL=https://localhost:8000/api
+    ports:
+      - "5713:5173"
+    # depends_on:
+    #  - backend
+    labels:
+      - "traefik.enable=true"
+      # Route all other root traffic to the ui-wed react container
+      - "traefik.http.routers.ui-wed.rule=Host(`192.168.50.X`) && PathPrefix(`/`)"
+      - "traefik.http.routers.ui-wed.entrypoints=websecure"
+      - "traefik.http.routers.ui-wed.tls=true"
+      - "traefik.http.services.ui-wed.loadbalancer.server.port=5173"
+
+volumes:
+  postgres_data:
+  redis_data:
