@@ -12,9 +12,9 @@ services:
       - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
       - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
     ports:
-      - "80:80"
-      - "443:443"
-      - "8080:8080"
+      - "8081:80"
+      - "8443:443"
+      - "8082:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
 
@@ -68,15 +68,17 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: net_sentinel_ui
+    container_name: ui-wed
     environment:
-      - VITE_API_URL=https://localhost/api
-    depends_on:
-      - backend
+      - VITE_API_URL=https://localhost:8000/api
+    ports:
+      - "5713:5173"
+    # depends_on:
+    #  - backend
     labels:
       - "traefik.enable=true"
       # Route all other root traffic to the frontend react container
-      - "traefik.http.routers.frontend.rule=Host(`localhost`) && PathPrefix(`/`)"
+      - "traefik.http.routers.frontend.rule=Host(`192.168.50.X`) && PathPrefix(`/`)"
       - "traefik.http.routers.frontend.entrypoints=websecure"
       - "traefik.http.routers.frontend.tls=true"
       - "traefik.http.services.frontend.loadbalancer.server.port=5173"
