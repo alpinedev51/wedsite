@@ -10,7 +10,7 @@ class RsvpStatus(StrEnum):
     WAITING = "waiting"
 
 
-class CampaignTypes(StrEnum):
+class CampaignType(StrEnum):
     SAVE_THE_DATE = "save_the_date"
     RSVP_INVITE = "rsvp_invite"
     REMINDER = "reminder"
