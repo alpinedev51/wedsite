@@ -9,6 +9,7 @@ from sqlalchemy import ForeignKey, Text, text
 from sqlalchemy.dialects.postgresql import CITEXT
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from service_wed.domain.value_objects import RsvpStatus
 from service_wed.models.base import Base, Timestamps, UUIDPrimaryKey
 
 if TYPE_CHECKING:
@@ -38,3 +39,11 @@ class Guest(UUIDPrimaryKey, Timestamps, Base):
         passive_deletes=True,
         uselist=False,
     )
+
+    @property
+    def rsvp_status(self) -> RsvpStatus | None:
+        return self.rsvp_response.status if self.rsvp_response else None
+
+    @property
+    def meal_choice(self) -> str | None:
+        return self.rsvp_response.meal_choice if self.rsvp_response else None

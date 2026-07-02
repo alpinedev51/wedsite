@@ -34,6 +34,7 @@ class Household(UUIDPrimaryKey, Timestamps, Base):
     # Find-Your-Invitation / dashboard hit.
     song_request: Mapped[str | None] = mapped_column(Text)
     message_to_couple: Mapped[str | None] = mapped_column(Text)
+
     rsvp_submitted_at: Mapped[dt.datetime | None] = mapped_column(
         DateTime(timezone=True)
     )

@@ -18,6 +18,6 @@ class EmailEventRepository(Protocol):
         provider_event_id: str,
         occurred_at: dt.datetime,
         payload: dict[str, Any] | None = None,
-    ) -> EmailEvent:
+    ) -> EmailEvent | None:
         """Record an asynchronous webhook event from the email provider (e.g., delivered, bounced)."""
         ...

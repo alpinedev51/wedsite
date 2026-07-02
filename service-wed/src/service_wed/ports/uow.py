@@ -4,10 +4,12 @@ from typing import Protocol
 from service_wed.ports.repositories.email_message import EmailMessageRepository
 from service_wed.ports.repositories.email_event import EmailEventRepository
 from service_wed.ports.repositories.admin import AdminUserRepository
+from service_wed.ports.repositories.guest import GuestRepository
 from service_wed.ports.repositories.session import AdminSessionRepository
 from service_wed.ports.repositories.campaign import CampaignRepository
 from service_wed.ports.repositories.household import HouseholdRepository
 from service_wed.ports.repositories.rsvp import RsvpRepository
+
 
 class UnitOfWorkPort(Protocol):
     email_message_repo: EmailMessageRepository
@@ -17,6 +19,7 @@ class UnitOfWorkPort(Protocol):
     household_repo: HouseholdRepository
     rsvp_repo: RsvpRepository
     campaign_repo: CampaignRepository
+    guest_repo: GuestRepository
 
     async def __aenter__(self) -> "UnitOfWorkPort": ...
 
