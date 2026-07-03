@@ -30,5 +30,5 @@ class CampaignRepository(Protocol):
     async def update_status(
         self, campaign_id: uuid.UUID, status: CampaignStatus
     ) -> Campaign:
-        """Transition a campaign (e.g., DRAFT -> SCHEDULED -> SENDING -> COMPLETED)."""
+        """Transition a campaign (e.g., DRAFT -> SCHEDULED -> SENDING -> SENT)."""
         ...

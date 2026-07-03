@@ -50,6 +50,4 @@ class Household(UUIDPrimaryKey, Timestamps, Base):
     )
     email_messages: Mapped[list[EmailMessage]] = relationship(
         back_populates="household",
-        cascade="all, delete-orphan",
-        passive_deletes=True,
     )

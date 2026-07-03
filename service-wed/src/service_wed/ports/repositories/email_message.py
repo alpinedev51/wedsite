@@ -14,8 +14,10 @@ class EmailMessageRepository(Protocol):
         """Bulk insert email messages (fan-out from a scheduled campaign)."""
         ...
 
-    async def get_pending(self, limit: int = 100) -> list[EmailMessage]:
-        """Fetch a batch of scheduled emails that are ready to be sent."""
+    async def claim_due(self, limit: int = 100) -> list[EmailMessage]:
+        """Atomically claim up to `limit` due messages: select FOR UPDATE SKIP
+        LOCKED, flip status scheduled->sending, return the claimed rows.
+        """
         ...
 
     async def update_status(

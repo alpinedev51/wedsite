@@ -9,10 +9,17 @@ class SQLAlchemyGuestRepository(GuestRepository):
         self.session = session
 
     async def create(
-        self, household_id: uuid.UUID, full_name: str, is_plus_one: bool
+        self,
+        household_id: uuid.UUID,
+        full_name: str,
+        email: str | None,
+        is_plus_one: bool,
     ) -> Guest:
         guest = Guest(
-            household_id=household_id, full_name=full_name, is_plus_one=is_plus_one
+            household_id=household_id,
+            full_name=full_name,
+            email=email,
+            is_plus_one=is_plus_one,
         )
         self.session.add(guest)
         await self.session.flush()

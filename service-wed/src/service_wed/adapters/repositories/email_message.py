@@ -19,18 +19,40 @@ class SQLAlchemyEmailMessageRepository(EmailMessageRepository):
         self.session.add_all(messages)
         await self.session.flush()
 
-    async def get_pending(self, limit: int = 100) -> list[EmailMessage]:
-        stmt = (
-            select(EmailMessage)
+    async def claim_due(self, limit: int = 100) -> list[EmailMessage]:
+        """WITH claimed AS (
+               SELECT id FROM email_messages
+               WHERE status = 'scheduled' AND scheduled_for <= now()
+               ORDER BY scheduled_for LIMIT :limit
+               FOR UPDATE SKIP LOCKED
+           )
+           UPDATE email_messages SET status = 'sending'
+           WHERE id IN (SELECT id FROM claimed)
+           RETURNING *;
+
+        One statement -> no gap between selecting due rows and locking them
+        for a concurrent claim to race into.
+        """
+        claimed_ids = (
+            select(EmailMessage.id)
             .where(
                 EmailMessage.status == EmailStatus.SCHEDULED,
                 EmailMessage.scheduled_for <= func.now(),
             )
+            .order_by(EmailMessage.scheduled_for)
             .limit(limit)
-            # You might want to add .with_for_update(skip_locked=True) here later
-            # if you scale to multiple worker processes!
+            .with_for_update(skip_locked=True)
+            .cte("claimed")
         )
-        result = await self.session.execute(stmt)
+        stmt = (
+            update(EmailMessage)
+            .where(EmailMessage.id.in_(select(claimed_ids.c.id)))
+            .values(status=EmailStatus.SENDING)
+            .returning(EmailMessage)
+        )
+        result = await self.session.execute(
+            stmt, execution_options={"populate_existing": True}
+        )
         return list(result.scalars().all())
 
     async def update_status(

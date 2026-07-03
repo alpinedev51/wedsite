@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 import uuid
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import DateTime, ForeignKey, Index, SmallInteger, Text, text
 from sqlalchemy.dialects.postgresql import CITEXT
@@ -35,6 +35,8 @@ class EmailMessage(UUIDPrimaryKey, Timestamps, Base):
     recipient: Mapped[str] = mapped_column(CITEXT)
     subject: Mapped[str] = mapped_column(Text)
     template_key: Mapped[str] = mapped_column(Text)
+
+    context: Mapped[dict[str, Any] | None] = mapped_column()  # -> JSONB via type map
 
     status: Mapped[EmailStatus] = mapped_column(
         str_enum(EmailStatus, "email_status"),
