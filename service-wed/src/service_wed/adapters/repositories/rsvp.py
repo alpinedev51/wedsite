@@ -1,5 +1,6 @@
 import uuid
 
+from sqlalchemy import func
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -33,6 +34,12 @@ class SQLAlchemyRsvpRepository(RsvpRepository):
                 meal_choice=stmt.excluded.meal_choice,
                 dietary_notes=stmt.excluded.dietary_notes,
                 responded_at=stmt.excluded.responded_at,
+                # BUGFIX: Timestamps.updated_at's onupdate=func.now() is a
+                # client-side column default; it is not guaranteed to be
+                # merged into an INSERT ... ON CONFLICT DO UPDATE's SET
+                # clause the way it would for a plain UPDATE, so it must be
+                # listed explicitly or edits wouldn't bump updated_at.
+                updated_at=func.now(),
             ),
         ).returning(RsvpResponse)
 

@@ -3,24 +3,34 @@ import datetime as dt
 import hashlib
 import secrets
 
+from service_wed.ports.password_hasher import PasswordHasherPort
 from service_wed.ports.uow import UnitOfWorkPort
 from service_wed.schemas.auth import AdminLoginRequest, AdminSessionResponse
 
-
-# Note: In a real app, use passlib or argon2-cffi for verify_password
-def verify_password(plain: str, hashed: str) -> bool:
-    return plain == hashed
+# BUGFIX: verify_password() did a plaintext `plain == hashed` comparison, so
+# either passwords were stored unhashed or every login against a real hash
+# would fail. Password verification is now delegated to a PasswordHasherPort
+# (see adapters/security/hasher.py) injected into AuthService.
+#
+# def verify_password(plain: str, hashed: str) -> bool:
+#     return plain == hashed
 
 
 class AuthService:
-    def __init__(self, uow: UnitOfWorkPort) -> None:
+    def __init__(
+        self, uow: UnitOfWorkPort, password_hasher: PasswordHasherPort
+    ) -> None:
         self.uow = uow
+        self.password_hasher = password_hasher
 
     async def login(self, request: AdminLoginRequest) -> AdminSessionResponse:
         async with self.uow:
             admin = await self.uow.admin_user_repo.get_by_email(request.email)
 
-            if not admin or not verify_password(request.password, admin.password_hash):
+            # BUGFIX: was `not verify_password(request.password, admin.password_hash)`
+            if not admin or not self.password_hasher.verify(
+                request.password, admin.password_hash
+            ):
                 # Always raise generic errors for auth to prevent email enumeration
                 raise ValueError("Invalid email or password")
 

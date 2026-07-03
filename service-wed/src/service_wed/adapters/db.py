@@ -4,8 +4,11 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from service_wed.config.settings import settings
 
+# BUGFIX: "echo": True was hardcoded, so every environment (including prod)
+# logged full SQL statements, including bound parameter values. Now driven by
+# settings.debug (see config/settings.py), off by default.
 engine_kwargs: dict[str, Any] = {
-    "echo": True,
+    "echo": settings.debug,
     "pool_size": 5,
     "max_overflow": 10,
 }

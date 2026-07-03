@@ -19,5 +19,10 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("REDIS_DSN", "REDIS_URL"),
     )
 
+    # BUGFIX: adapters/db.py hardcoded echo=True, so every environment logged
+    # full SQL (including bound values) unconditionally. Added so it can be
+    # driven from the environment instead.
+    debug: bool = Field(default=False, validation_alias=AliasChoices("DEBUG"))
+
 
 settings = Settings()
