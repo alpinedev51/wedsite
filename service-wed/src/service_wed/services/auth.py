@@ -27,11 +27,9 @@ class AuthService:
         async with self.uow:
             admin = await self.uow.admin_user_repo.get_by_email(request.email)
 
-            # BUGFIX: was `not verify_password(request.password, admin.password_hash)`
             if not admin or not self.password_hasher.verify(
                 request.password, admin.password_hash
             ):
-                # Always raise generic errors for auth to prevent email enumeration
                 raise ValueError("Invalid email or password")
 
             # 1. Generate a raw, cryptographically secure token
