@@ -18,9 +18,6 @@ class RsvpService:
             if not household:
                 raise ValueError("Invalid invitation token.")
 
-            # BUGFIX: nothing enforced the RSVP window described in this
-            # file's own module comment ("within edit window") — there was
-            # no WeddingRepository to read rsvp_opens_at/rsvp_deadline from.
             now = dt.datetime.now(dt.timezone.utc)
             wedding = await self.uow.wedding_repo.get()
             if wedding:
@@ -47,12 +44,6 @@ class RsvpService:
                 )
 
             # Update the Household-level denormalized fields
-            #
-            # BUGFIX: rsvp_submitted_at was unconditionally overwritten with
-            # now() on every call, so editing an RSVP erased the original
-            # submission time and rsvp_updated_at (meant to track edits) was
-            # never touched at all.
-            # household.rsvp_submitted_at = dt.datetime.now(dt.timezone.utc)
             household.message_to_couple = request.message_to_couple
             household.song_request = request.song_request
             if household.rsvp_submitted_at is None:

@@ -15,7 +15,7 @@ class InvitationService:
                 raise ValueError("Invalid or expired invitation token.")
 
             # Pydantic's model_validate automatically reads the ORM object and
-            # the @property accessors we added for rsvp_status/meal_choice!
+            # the @property accessors we added for rsvp_status/meal_choice
             return InvitationResponse.model_validate(household)
 
     async def recover_magic_link(

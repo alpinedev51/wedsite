@@ -12,9 +12,6 @@ from service_wed.adapters.repositories.email_message import (
 )
 from service_wed.adapters.repositories.household import SQLAlchemyHouseholdRepository
 from service_wed.adapters.repositories.rsvp import SQLAlchemyRsvpRepository
-
-# BUGFIX: pairs with the new WeddingRepository port; nothing previously
-# instantiated a wedding repo on the UoW.
 from service_wed.adapters.repositories.wedding import SQLAlchemyWeddingRepository
 
 

@@ -29,42 +29,6 @@ class GuestListService:
         Expects a CSV with headers:
         HouseholdName, ContactEmail, GuestName, IsPlusOne
         """
-        # BUGFIX (multiple issues in the original loop):
-        #   1. Rows with a blank ContactEmail all matched the same
-        #      get_by_email(""), silently merging unrelated households.
-        #   2. A missing/malformed column raised a raw KeyError/AttributeError
-        #      mid-loop with no indication of which CSV row was bad.
-        #   3. Re-running the same CSV created duplicate Guest rows.
-        # Rows are validated and normalized in a first pass (no DB writes) so
-        # a bad row is rejected with a row number before anything is written,
-        # and duplicate guests within a household are skipped on re-import.
-        #
-        # text_data = file_bytes.decode("utf-8")
-        # reader = csv.DictReader(io.StringIO(text_data))
-        #
-        # async with self.uow:
-        #     for row in reader:
-        #         household = await self.uow.household_repo.get_by_email(
-        #             row["ContactEmail"]
-        #         )
-        #
-        #         if not household:
-        #             household = await self.uow.household_repo.create(
-        #                 display_name=row["HouseholdName"],
-        #                 contact_email=row["ContactEmail"],
-        #                 invite_token=secrets.token_urlsafe(16),
-        #             )
-        #
-        #         await self.uow.guest_repo.create(
-        #             household_id=household.id,
-        #             full_name=row["GuestName"],
-        #             is_plus_one=row["IsPlusOne"].lower() == "true",
-        #         )
-        #
-        #     await self.uow.commit()
-        #     return SuccessResponse(
-        #         success=True, message="Guest list imported successfully."
-        #     )
         text_data = file_bytes.decode("utf-8")
         reader = csv.DictReader(io.StringIO(text_data))
 

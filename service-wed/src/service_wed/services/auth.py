@@ -7,14 +7,6 @@ from service_wed.ports.password_hasher import PasswordHasherPort
 from service_wed.ports.uow import UnitOfWorkPort
 from service_wed.schemas.auth import AdminLoginRequest, AdminSessionResponse
 
-# BUGFIX: verify_password() did a plaintext `plain == hashed` comparison, so
-# either passwords were stored unhashed or every login against a real hash
-# would fail. Password verification is now delegated to a PasswordHasherPort
-# (see adapters/security/hasher.py) injected into AuthService.
-#
-# def verify_password(plain: str, hashed: str) -> bool:
-#     return plain == hashed
-
 
 class AuthService:
     def __init__(

@@ -9,10 +9,6 @@ from service_wed.ports.repositories.session import AdminSessionRepository
 from service_wed.ports.repositories.campaign import CampaignRepository
 from service_wed.ports.repositories.household import HouseholdRepository
 from service_wed.ports.repositories.rsvp import RsvpRepository
-
-# BUGFIX: no WeddingRepository existed anywhere, so nothing could read
-# rsvp_opens_at/rsvp_deadline to enforce the RSVP window (services/rsvp.py
-# accepted submissions unconditionally). Added and registered on the UoW.
 from service_wed.ports.repositories.wedding import WeddingRepository
 
 
