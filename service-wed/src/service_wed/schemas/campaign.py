@@ -19,3 +19,9 @@ class CampaignAdminView(CampaignCreateRequest):
     created_by: uuid.UUID | None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+# Added for controllers/v1/campaigns.py's reschedule endpoint: the only
+# field CampaignService.schedule() needs from the request body.
+class CampaignRescheduleRequest(BaseModel):
+    scheduled_for: dt.datetime

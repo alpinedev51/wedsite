@@ -94,22 +94,30 @@ class SQLAlchemyEmailMessageRepository(EmailMessageRepository):
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
+    async def get_by_id(self, message_id: uuid.UUID) -> EmailMessage | None:
+        result = await self.session.execute(
+            select(EmailMessage).where(EmailMessage.id == message_id)
+        )
+        return result.scalar_one_or_none()
+
     async def get_reminder_stats(
         self, household_ids: list[uuid.UUID]
     ) -> dict[uuid.UUID, ReminderStats]:
         if not household_ids:
             return {}
 
-        stmt = select(
-            EmailMessage.household_id,
-            func.count(EmailMessage.id),
-            func.max(EmailMessage.scheduled_for)
+        stmt = (
+            select(
+                EmailMessage.household_id,
+                func.count(EmailMessage.id),
+                func.max(EmailMessage.scheduled_for),
+            )
             .where(
                 EmailMessage.household_id.in_(household_ids),
                 EmailMessage.email_type == EmailType.REMINDER,
                 EmailMessage.status != EmailStatus.CANCELED,
             )
-            .group_by(EmailMessage.household_id),
+            .group_by(EmailMessage.household_id)
         )
         result = await self.session.execute(stmt)
         return {

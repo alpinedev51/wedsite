@@ -39,3 +39,17 @@ class AuthService:
 
             # 4. Return the RAW token to the user (this is their only time seeing it)
             return AdminSessionResponse(token=raw_token, expires_at=expires_at)
+
+    # Added so controllers/v1/auth.py's logout endpoint has something to call
+    # -- previously only login() existed, so there was no way to revoke a
+    # session server-side.
+    async def logout(self, raw_token: str) -> None:
+        """Revoke the session identified by the raw cookie value. Silently
+        no-ops if the token doesn't match a session -- logging out of a
+        session that's already gone isn't an error from the caller's POV."""
+        token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
+        async with self.uow:
+            session = await self.uow.admin_session_repo.get_by_token_hash(token_hash)
+            if session is not None:
+                await self.uow.admin_session_repo.revoke(session.id)
+                await self.uow.commit()

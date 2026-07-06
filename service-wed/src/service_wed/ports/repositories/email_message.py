@@ -43,6 +43,13 @@ class EmailMessageRepository(Protocol):
         """Look up the message a webhook event refers to."""
         ...
 
+    # Added for tasks/send.py: the arq job body only receives message_id
+    # (arq serializes job args to Redis, so it can't hold a live ORM object
+    # across the enqueue), so it needs a way to load the row back.
+    async def get_by_id(self, message_id: uuid.UUID) -> EmailMessage | None:
+        """Fetch a single email message by id."""
+        ...
+
     async def get_reminder_stats(
         self, household_ids: list[uuid.UUID]
     ) -> dict[uuid.UUID, ReminderStats]:

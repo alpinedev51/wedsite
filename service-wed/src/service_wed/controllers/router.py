@@ -1,6 +1,7 @@
 # top-level API router
 from fastapi import APIRouter
 
-api_router = APIRouter(prefix="/api/v1")
+from service_wed.controllers.v1.router import router as v1_router
 
-# api_router.include_router(<>, prefix="/<>", tags=["<>"])
+api_router = APIRouter(prefix="/api/v1")
+api_router.include_router(v1_router)

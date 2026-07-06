@@ -1,5 +1,5 @@
 # Multi-stage production-grade Dockerfile for service-wed FastAPI backend
-FROM python:3.14-slim AS builder
+FROM python:3.12-slim AS builder
 
 # Install uv for extremely fast and reliable dependency caching/installation
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
@@ -23,10 +23,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 	uv sync --frozen --no-dev
 
 
-FROM python:3.14-slim AS runner
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-	&& rm -rf /var/lib/apt/lists/*
+FROM python:3.12-slim AS runner
 
 # Run as a non-root user for security hardening
 RUN groupadd -r wed && useradd -r -g wed wed
