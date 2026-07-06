@@ -29,6 +29,30 @@ def _ensure_future(scheduled_for: dt.datetime, now: dt.datetime) -> None:
         raise ValueError("scheduled_for must be in the future.")
 
 
+def build_email_message(
+    household: Household, campaign: campaign.Campaign
+) -> EmailMessage | None:
+    if not household.contact_email:
+        return None
+
+    return EmailMessage(
+        campaign_id=campaign.id,
+        household_id=household.id,
+        guest_id=None,
+        email_type=EmailType(campaign.type.value),
+        recipient=household.contact_email,
+        subject=campaign.subject,
+        template_key=campaign.template_key,
+        context={
+            "household_name": household.display_name,
+            "invite_token": household.invite_token,
+        },
+        status=EmailStatus.SCHEDULED,
+        scheduled_for=campaign.scheduled_for,
+        idempotency_key=f"{campaign.id}:{household.id}",
+    )
+
+
 class CampaignService:
     def __init__(self, uow: UnitOfWorkPort) -> None:
         self.uow = uow
@@ -81,43 +105,30 @@ class CampaignService:
                 raise ValueError(
                     f"Campaign {campaign_id} is already {campaign.status}; only DRAFT campaigns can be fanned out."
                 )
+            messages = await self._build_email_messages(campaign)
+            if not messages:
+                raise ValueError(
+                    f"Campaign {campaign_id} has no eligible recipients; nothing to fan out."
+                )
+
+            await self.uow.email_message_repo.create_batch(messages)
+            campaign = await self.uow.campaign_repo.update_status(
+                campaign_id, CampaignStatus.SCHEDULED
+            )
+
+            await self.uow.commit()
+            return CampaignAdminView.model_validate(campaign)
 
     async def _build_email_messages(
         self, campaign: campaign.Campaign
     ) -> list[EmailMessage]:
-        """Pick a target household for campaign.type and build one."""
+        """Pick the target household list for campaign.type and build one."""
         if campaign.type == CampaignType.REMINDER:
             households = await self.uow.household_repo.list_non_responding()
         else:
             households = await self.uow.household_repo.list_all()
-
-        messages: list[EmailMessage] = []
-        for household in households:
-            self._append_message_for(household, campaign, messages)
-        return messages
-
-    @staticmethod
-    def _append_message_for(
-        household: Household, campaign: campaign.Campaign, messages: list[EmailMessage]
-    ) -> None:
-        if not household.contact_email:
-            return
-
-        messages.append(
-            EmailMessage(
-                campaign_id=campaign.id,
-                household_id=household.id,
-                guest_id=None,
-                email_type=EmailType(campaign.type.value),
-                recipient=household.contact_email,
-                subject=campaign.subject,
-                template_key=campaign.template_key,
-                context={
-                    "household_name": household.display_name,
-                    "invite_token": household.invite_token,
-                },
-                status=EmailStatus.SCHEDULED,
-                scheduled_for=campaign.scheduled_for,
-                idempotency_key=f"{campaign.id}:{household.id}",
-            )
-        )
+        return [
+            message
+            for household in households
+            if (message := build_email_message(household, campaign)) is not None
+        ]

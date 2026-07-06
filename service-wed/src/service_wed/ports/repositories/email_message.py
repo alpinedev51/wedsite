@@ -1,10 +1,16 @@
+import datetime as dt
 import uuid
-from typing import Protocol
+from typing import Protocol, NamedTuple
 
 from service_wed.domain.value_objects import (
     EmailStatus,
 )
 from service_wed.models.email_message import EmailMessage
+
+
+class ReminderStats(NamedTuple):
+    reminder_count: int
+    last_scheduled_for: dt.datetime | None
 
 
 class EmailMessageRepository(Protocol):
@@ -29,4 +35,16 @@ class EmailMessageRepository(Protocol):
         increment_attempts: bool = False,
     ) -> None:
         """Update message state after a send attempt."""
+        ...
+
+    async def get_by_provider_message_id(
+        self, provider_message_id: str
+    ) -> EmailMessage | None:
+        """Look up the message a webhook event refers to."""
+        ...
+
+    async def get_reminder_stats(
+        self, household_ids: list[uuid.UUID]
+    ) -> dict[uuid.UUID, ReminderStats]:
+        """For each of the given households, how many REMINDER messages already exist and when the most recent one was scheduled."""
         ...

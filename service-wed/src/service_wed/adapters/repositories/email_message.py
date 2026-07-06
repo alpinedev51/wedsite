@@ -4,10 +4,11 @@ from typing import Any
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from service_wed.domain.value_objects import EmailStatus
+from service_wed.domain.value_objects import EmailStatus, EmailType
 from service_wed.models.email_message import EmailMessage
 from service_wed.ports.repositories.email_message import (
     EmailMessageRepository,
+    ReminderStats,
 )
 
 
@@ -83,3 +84,37 @@ class SQLAlchemyEmailMessageRepository(EmailMessageRepository):
             stmt = stmt.values(attempts=EmailMessage.attempts + 1)
 
         await self.session.execute(stmt)
+
+    async def get_by_provider_message_id(
+        self, provider_message_id: str
+    ) -> EmailMessage | None:
+        stmt = select(EmailMessage).where(
+            EmailMessage.provider_message_id == provider_message_id
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def get_reminder_stats(
+        self, household_ids: list[uuid.UUID]
+    ) -> dict[uuid.UUID, ReminderStats]:
+        if not household_ids:
+            return {}
+
+        stmt = select(
+            EmailMessage.household_id,
+            func.count(EmailMessage.id),
+            func.max(EmailMessage.scheduled_for)
+            .where(
+                EmailMessage.household_id.in_(household_ids),
+                EmailMessage.email_type == EmailType.REMINDER,
+                EmailMessage.status != EmailStatus.CANCELED,
+            )
+            .group_by(EmailMessage.household_id),
+        )
+        result = await self.session.execute(stmt)
+        return {
+            household_id: ReminderStats(
+                reminder_count=reminder_count, last_scheduled_for=last_scheduled_for
+            )
+            for household_id, reminder_count, last_scheduled_for in result.all()
+        }
