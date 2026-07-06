@@ -25,10 +25,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 FROM python:3.14-slim AS runner
 
-# Install system dependencies (nmap for port scanning, ping for sweeps)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-	nmap \
-	iputils-ping \
 	&& rm -rf /var/lib/apt/lists/*
 
 # Run as a non-root user for security hardening
@@ -55,5 +52,4 @@ EXPOSE 8000
 
 USER wed
 
-# Command launches Uvicorn server pointing to the service-wed module
 CMD ["uvicorn", "service_wed.main:app", "--host", "0.0.0.0", "--port", "8000"]

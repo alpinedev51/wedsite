@@ -8,10 +8,6 @@ from service_wed.ports.uow import UnitOfWorkPort
 from service_wed.schemas.common import SuccessResponse
 
 
-# BUGFIX: cleaned rows were plain dict[str, str | bool | None], so every
-# value read back out (regardless of key) had the full union type, which is
-# why the type checker rejected passing e.g. cleaned["guest_name"] as a str.
-# A dataclass gives each field its own concrete type.
 @dataclass
 class _CleanedGuestRow:
     household_name: str
@@ -34,7 +30,7 @@ class GuestListService:
 
         required_columns = {"HouseholdName", "ContactEmail", "GuestName", "IsPlusOne"}
         cleaned_rows: list[_CleanedGuestRow] = []
-        for line_number, row in enumerate(reader, start=2):  # header is line 1
+        for line_number, row in enumerate(reader, start=2):
             missing = required_columns - row.keys()
             if missing:
                 raise ValueError(
@@ -81,6 +77,7 @@ class GuestListService:
                 )
                 if not already_added:
                     await self.uow.guest_repo.create(
+                        email=household.contact_email,
                         household_id=household.id,
                         full_name=cleaned.guest_name,
                         is_plus_one=cleaned.is_plus_one,
