@@ -15,3 +15,11 @@ class HouseholdRepository(Protocol):
     async def get_by_email(self, email: str) -> Household | None:
         """Fetch household by contact email. Useful for magic link recovery."""
         ...
+
+    async def list_all(self) -> list[Household]:
+        """Fetch every household. Used to fan out a send to everyone."""
+        ...
+
+    async def list_non_responding(self) -> list[Household]:
+        """Fetch households that have at least one guest without an RSVP."""
+        ...

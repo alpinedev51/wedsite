@@ -3,6 +3,8 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from service_wed.models.household import Household
+from service_wed.models.guest import Guest
+from service_wed.models.rsvp_response import RsvpResponse
 from service_wed.ports.repositories.household import HouseholdRepository
 
 
@@ -39,3 +41,19 @@ class SQLAlchemyHouseholdRepository(HouseholdRepository):
         )
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
+
+    async def list_all(self) -> list[Household]:
+        stmt = select(Household)
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def list_non_responding(self) -> list[Household]:
+        stmt = (
+            select(Household)
+            .join(Household.guests)
+            .join(Guest.rsvp_response, isouter=True)
+            .where(RsvpResponse.id.is_(None))
+            .distinct()
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
