@@ -57,6 +57,11 @@ services:
       # API same-origin (see ui-wed's src/config/env.ts), so the admin_session
       # cookie's Secure flag works as-is and there's no cross-origin request
       # for CORS to allow in the first place.
+      # RESEND_WEBHOOK_SECRET verifies incoming Resend delivery-event webhooks
+      # (controllers/v1/webhooks.py) -- read from a root .env file (see
+      # .env.example) that you create on the Pi with your real values; never
+      # commit real secrets here.
+      - RESEND_WEBHOOK_SECRET=${RESEND_WEBHOOK_SECRET:-}
     depends_on:
       - db
       - redis
@@ -101,6 +106,12 @@ services:
     environment:
       - DATABASE_URL=postgresql+asyncpg://wedding_db_user:wedding_db_pw@db:5432/wedding_db
       - REDIS_URL=redis://redis:6379/0
+      # This is the process that actually calls Resend (tasks/dispatch.py's
+      # send_email job) -- without these, RESEND_API_KEY stays unset and
+      # every campaign email just prints to this container's logs via the
+      # console sender instead of actually sending, silently, forever.
+      - RESEND_API_KEY=${RESEND_API_KEY:-}
+      - RESEND_FROM_ADDRESS=${RESEND_FROM_ADDRESS:-wedding@example.com}
     depends_on:
       - db
       - redis
@@ -110,10 +121,11 @@ services:
       context: ./ui-wed
       dockerfile: Dockerfile
     container_name: ui-wed
-    environment:
-      - VITE_API_URL=https://localhost:8000/api
-    ports:
-      - "5173:5173"
+    # No environment and no published ports, deliberately: the frontend
+    # calls the API same-origin/relative (src/config/env.ts's default),
+    # baked in at build time, and Traefik is the only intended entry point
+    # -- nginx (this image's runner stage) listens on 80 internally, not
+    # 5173, so a host port mapping here has nothing meaningful behind it.
     depends_on:
       - service-wed
     labels:
