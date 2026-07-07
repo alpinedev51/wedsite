@@ -103,6 +103,13 @@ services:
       # .env.example) that you create on the Pi with your real values; never
       # commit real secrets here.
       - RESEND_WEBHOOK_SECRET=${RESEND_WEBHOOK_SECRET:-}
+      # Embedded as the {{ rsvp_url }} link in every campaign email (see
+      # services/campaigns.py's build_email_message) -- required, not
+      # defaulted, because a wrong value here means real guests get a
+      # broken/unreachable RSVP link and there's no good default to fall
+      # back to (it has to match wherever ui-wed is actually reachable:
+      # your current LAN IP, or https://wed.austinkylieb.com later).
+      - PUBLIC_SITE_URL=${PUBLIC_SITE_URL:?Set PUBLIC_SITE_URL in .env to wherever ui-wed is actually reachable, e.g. https://192.168.50.9 or https://wed.austinkylieb.com}
       # Consumed by container_bootstrap.py above -- same variables
       # service-wed/scripts/bootstrap.sh reads, just from this root .env
       # instead. Leave ADMIN_EMAIL/ADMIN_PASSWORD/WEDDING_DATE/RSVP_DEADLINE
@@ -170,6 +177,10 @@ services:
       # console sender instead of actually sending, silently, forever.
       - RESEND_API_KEY=${RESEND_API_KEY:-}
       - RESEND_FROM_ADDRESS=${RESEND_FROM_ADDRESS:-wedding@example.com}
+      # Also needed here, not just service-wed: tasks/reminders.py's
+      # evaluate_reminders cron runs in THIS process and calls the same
+      # build_email_message() that embeds {{ rsvp_url }}.
+      - PUBLIC_SITE_URL=${PUBLIC_SITE_URL:?Set PUBLIC_SITE_URL in .env}
     depends_on:
       db:
         condition: service_healthy

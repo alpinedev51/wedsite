@@ -1,0 +1,83 @@
+<!--
+  Shared layout for every campaign email. Deliberately plain, table-based
+  HTML with inline styles rather than a <link>/@import to the site's actual
+  Google Fonts (Fraunces/EB Garamond/Jost) -- most email clients (Gmail
+  notably) strip external font/stylesheet requests from email bodies, so
+  those would just silently fail. Georgia is a widely-supported serif that
+  approximates the same warm, elegant feel safely. Colors are solid hex
+  (no alpha channel) throughout for the same reason -- 8-digit alpha hex
+  isn't reliably supported in Outlook desktop's rendering engine.
+
+  Each specific template extends this and only fills in the "content" block
+  below (and optionally "title" / "footer").
+-->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% block title %}Austin &amp; Kylie{% endblock %}</title>
+    <style>
+      @media only screen and (max-width: 480px) {
+        .container {
+          width: 100% !important;
+        }
+        .content-padding {
+          padding: 24px !important;
+        }
+      }
+    </style>
+  </head>
+  <body
+    style="margin: 0; padding: 0; background-color: #f5f1e8; font-family: Georgia, 'Times New Roman', serif; color: #33302a;"
+  >
+    <table
+      role="presentation"
+      width="100%"
+      cellpadding="0"
+      cellspacing="0"
+      style="background-color: #f5f1e8;"
+    >
+      <tr>
+        <td align="center" style="padding: 32px 16px;">
+          <table
+            role="presentation"
+            class="container"
+            width="600"
+            cellpadding="0"
+            cellspacing="0"
+            style="width: 600px; max-width: 100%; background-color: #ffffff; border: 1px solid #e5dccc; border-radius: 12px;"
+          >
+            <tr>
+              <td
+                align="center"
+                style="padding: 32px 24px 16px; border-bottom: 1px solid #e5dccc;"
+              >
+                <p
+                  style="margin: 0; font-size: 14px; letter-spacing: 2px; text-transform: uppercase; color: #97a586;"
+                >
+                  Austin &amp; Kylie
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td class="content-padding" style="padding: 32px 40px;">
+                {% block content %}{% endblock %}
+              </td>
+            </tr>
+            <tr>
+              <td
+                align="center"
+                style="padding: 24px; border-top: 1px solid #e5dccc;"
+              >
+                <p style="margin: 0; font-size: 12px; color: #8a7a68;">
+                  {% block footer %}With love, Austin &amp; Kylie{% endblock %}
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

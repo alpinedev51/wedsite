@@ -1,0 +1,27 @@
+{#
+  Not sent by anything yet -- EmailType.RSVP_CONFIRMATION exists, but no
+  service constructs/enqueues one after a guest submits (see service-wed's
+  README "Known limitations"). Content is ready for whenever that trigger
+  gets built.
+#}
+{% extends "base.html" %}
+{% block title %}RSVP Received{% endblock %}
+{% block content %}
+<h1 style="margin: 0 0 16px; font-size: 28px; color: #6e5a45; font-weight: normal;">
+  RSVP Received
+</h1>
+<p style="margin: 0 0 16px; font-size: 16px; line-height: 1.6;">
+  Dear {{ household_name }},
+</p>
+<p style="margin: 0 0 24px; font-size: 16px; line-height: 1.6;">
+  Thank you -- we've received your RSVP! You can update your response at
+  any time before the deadline using the link below.
+</p>
+<p style="margin: 0; text-align: center;">
+  <a
+    href="{{ rsvp_url }}"
+    style="display: inline-block; padding: 14px 32px; background-color: #6e5a45; color: #f5f1e8; text-decoration: none; border-radius: 999px; font-size: 14px; letter-spacing: 1px; text-transform: uppercase;"
+    >View or Edit RSVP</a
+  >
+</p>
+{% endblock %}

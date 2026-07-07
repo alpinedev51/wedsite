@@ -27,7 +27,11 @@ export const router = createBrowserRouter([
       { path: "travel", element: <Travel /> },
       { path: "photos", element: <Photos /> },
       { path: "registry", element: <Registry /> },
-      { path: "rsvp", element: <RsvpPage /> },
+      // Magic links are per-household (invite_token lives on Household, not
+      // Guest), embedded as a path param -- /rsvp with no token has nothing
+      // to load, so it sends the guest to look their invitation up instead.
+      { path: "rsvp", element: <Navigate to="/find-invitation" replace /> },
+      { path: "rsvp/:token", element: <RsvpPage /> },
       { path: "find-invitation", element: <FindInvitationPage /> },
       { path: "*", element: <NotFound /> },
     ],

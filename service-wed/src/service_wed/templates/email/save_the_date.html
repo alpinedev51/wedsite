@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Save the Date{% endblock %}
+{% block content %}
+<h1 style="margin: 0 0 16px; font-size: 28px; color: #6e5a45; font-weight: normal;">
+  Save the Date!
+</h1>
+<p style="margin: 0 0 16px; font-size: 16px; line-height: 1.6;">
+  Dear {{ household_name }},
+</p>
+<p style="margin: 0 0 16px; font-size: 16px; line-height: 1.6;">
+  We're getting married and we want you there! Please save the date:
+</p>
+{% if wedding_date %}
+<p style="margin: 0 0 24px; font-size: 22px; color: #a98d74; text-align: center;">
+  {{ wedding_date }}
+</p>
+{% endif %}
+{% if venue_name %}
+<p style="margin: 0 0 24px; font-size: 16px; line-height: 1.6; text-align: center;">
+  {{ venue_name }}{% if venue_address %}<br />{{ venue_address }}{% endif %}
+</p>
+{% endif %}
+<p style="margin: 0; font-size: 16px; line-height: 1.6;">
+  A formal invitation with RSVP details will follow. We can't wait to
+  celebrate with you!
+</p>
+{% endblock %}

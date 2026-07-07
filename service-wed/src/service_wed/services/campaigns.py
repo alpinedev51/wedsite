@@ -10,6 +10,7 @@ import datetime as dt
 import uuid
 
 
+from service_wed.config.settings import settings
 from service_wed.domain.errors import ConflictError, NotFoundError, ValidationError
 from service_wed.domain.value_objects import (
     CampaignStatus,
@@ -21,6 +22,7 @@ from service_wed.lib.templates import template_exists
 from service_wed.models import campaign
 from service_wed.models.email_message import EmailMessage
 from service_wed.models.household import Household
+from service_wed.models.wedding import Wedding
 from service_wed.ports.uow import UnitOfWorkPort
 from service_wed.schemas.campaign import (
     CampaignCreateRequest,
@@ -36,8 +38,39 @@ def _ensure_future(scheduled_for: dt.datetime, now: dt.datetime) -> None:
         raise ValidationError("scheduled_for must be in the future.")
 
 
+def build_household_email_context(
+    household: Household, wedding: Wedding | None = None
+) -> dict[str, object]:
+    """The context every household-facing email shares, regardless of
+    campaign vs. one-off transactional (see services/rsvp.py's RSVP
+    confirmation, which has no Campaign at all to hang this off of). This is
+    the ONE place an RSVP link gets built -- templates reference
+    {{ rsvp_url }} rather than reassembling PUBLIC_SITE_URL + invite_token
+    themselves, so there's a single source of truth for that URL's shape
+    (must match ui-wed's router.tsx `/rsvp/:token` route)."""
+    context: dict[str, object] = {
+        "household_name": household.display_name,
+        "invite_token": household.invite_token,
+        "rsvp_url": f"{settings.public_site_url}/rsvp/{household.invite_token}",
+    }
+    # `wedding` is optional (an email can in principle be built before the
+    # wedding config exists) -- a template's {{ wedding_date }} etc. then
+    # just renders nothing rather than the send failing outright. JSONB has
+    # no native datetime support (see models/base.py's plain
+    # dict[str, Any] -> JSONB mapping, no custom encoder), so these go in
+    # pre-formatted, not as raw datetime objects.
+    if wedding is not None:
+        context.update(
+            wedding_date=wedding.wedding_date.strftime("%B %-d, %Y"),
+            rsvp_deadline=wedding.rsvp_deadline.strftime("%B %-d, %Y"),
+            venue_name=wedding.venue_name,
+            venue_address=wedding.venue_address,
+        )
+    return context
+
+
 def build_email_message(
-    household: Household, campaign: campaign.Campaign
+    household: Household, campaign: campaign.Campaign, wedding: Wedding | None = None
 ) -> EmailMessage | None:
     if not household.contact_email:
         return None
@@ -50,10 +83,7 @@ def build_email_message(
         recipient=household.contact_email,
         subject=campaign.subject,
         template_key=campaign.template_key,
-        context={
-            "household_name": household.display_name,
-            "invite_token": household.invite_token,
-        },
+        context=build_household_email_context(household, wedding),
         status=EmailStatus.SCHEDULED,
         scheduled_for=campaign.scheduled_for,
         idempotency_key=f"{campaign.id}:{household.id}",
@@ -169,6 +199,7 @@ class CampaignService:
         self, campaign: campaign.Campaign
     ) -> list[EmailMessage]:
         """Pick the target household list for campaign.type and build one."""
+        wedding = await self.uow.wedding_repo.get()
         if campaign.type == CampaignType.REMINDER:
             households = await self.uow.household_repo.list_non_responding()
         else:
@@ -176,5 +207,6 @@ class CampaignService:
         return [
             message
             for household in households
-            if (message := build_email_message(household, campaign)) is not None
+            if (message := build_email_message(household, campaign, wedding))
+            is not None
         ]

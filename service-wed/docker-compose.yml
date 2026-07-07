@@ -39,6 +39,10 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - DEBUG=${DEBUG:-false}
       - CORS_ALLOW_ORIGINS=${CORS_ALLOW_ORIGINS:-http://localhost:3000,http://localhost:5173}
+      # Base URL used to build the {{ rsvp_url }} embedded in campaign
+      # emails (services/campaigns.py's build_email_message) -- defaults to
+      # Vite's dev port since that's what a local frontend runs on.
+      - PUBLIC_SITE_URL=${PUBLIC_SITE_URL:-http://localhost:5173}
     ports:
       - "8000:8000"
     depends_on:
@@ -61,6 +65,10 @@ services:
     environment:
       - DATABASE_URL=postgresql+asyncpg://wedding_db_user:wedding_db_pw@db:5432/wedding_db
       - REDIS_URL=redis://redis:6379/0
+      # Also needed here, not just service-wed: tasks/reminders.py's
+      # evaluate_reminders cron runs in THIS process and calls the same
+      # build_email_message() that embeds {{ rsvp_url }}.
+      - PUBLIC_SITE_URL=${PUBLIC_SITE_URL:-http://localhost:5173}
     depends_on:
       - db
       - redis

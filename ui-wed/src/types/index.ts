@@ -6,3 +6,10 @@ export interface Page<T> {
   limit: number;
   offset: number;
 }
+
+// Mirrors schemas/common.py::SuccessResponse -- the generic {success,
+// message} shape returned by auth (login/logout) and rsvp (submit) alike.
+export interface SuccessResponse {
+  success: boolean;
+  message?: string | null;
+}

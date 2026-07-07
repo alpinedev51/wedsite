@@ -38,6 +38,16 @@ class Settings(BaseSettings):
         default="admin_session", validation_alias=AliasChoices("SESSION_COOKIE_NAME")
     )
 
+    # Base URL of the deployed frontend -- used only to build a full RSVP
+    # link (f"{public_site_url}/rsvp/{token}") inside email templates
+    # (services/campaigns.py's build_email_message). Not read by anything
+    # else; unrelated to CORS_ALLOW_ORIGINS above (that's about which
+    # origins may call this API, this is just a string interpolated into
+    # outgoing email HTML).
+    public_site_url: str = Field(
+        default="http://localhost:5173", validation_alias=AliasChoices("PUBLIC_SITE_URL")
+    )
+
     # Comma-separated, not a JSON list: pydantic-settings would otherwise
     # require env/​.env values for a `list[str]` field to be JSON-encoded
     # (e.g. '["http://a"]'), which is an awkward thing to hand-write in a

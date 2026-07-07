@@ -54,7 +54,8 @@ class ReminderService:
             messages = [
                 message
                 for household in eligible
-                if (message := build_email_message(household, campaign)) is not None
+                if (message := build_email_message(household, campaign, wedding))
+                is not None
             ]
             if not messages:
                 await self.uow.commit()

@@ -404,8 +404,11 @@ curl -s -X PUT "http://localhost:8000/api/v1/rsvp/<invite_token>" \
 
 `status` is one of `attending`, `declined`, `waiting`. Submitting again with
 the same guest IDs **edits** the existing response (upsert, not append) —
-guests can change their mind up until `rsvp_deadline`. Rejections you'll see
-here:
+guests can change their mind up until `rsvp_deadline`. A successful submit
+also queues an `rsvp_confirmation` email to the household's contact email
+(if one is on file) — same delivery pipeline as campaigns, so it goes out
+on the worker's next `dispatch_due_emails` tick, not synchronously inline.
+Rejections you'll see here:
 
 | Condition | Status | Error code |
 |---|---|---|
@@ -774,9 +777,6 @@ Worth knowing before you rely on these:
   which emails are registered) but the actual "send a new link" logic is a
   stub — no email goes out. There's also no `magic_link_recovery.html`
   template yet.
-- **No automatic RSVP confirmation email.** `EmailType.RSVP_CONFIRMATION`
-  and a `rsvp_confirmation.html` template exist, but nothing constructs or
-  sends one after a guest submits their RSVP.
 - **Campaign status doesn't track past `scheduled`.** `CampaignStatus` has
   `SENDING`/`SENT`/`CANCELED` members, but nothing in the codebase ever
   assigns them — a fanned-out campaign shows `scheduled` forever, even

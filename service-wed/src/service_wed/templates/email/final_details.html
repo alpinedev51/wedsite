@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Final Details{% endblock %}
+{% block content %}
+<h1 style="margin: 0 0 16px; font-size: 28px; color: #6e5a45; font-weight: normal;">
+  Final Details
+</h1>
+<p style="margin: 0 0 16px; font-size: 16px; line-height: 1.6;">
+  Dear {{ household_name }},
+</p>
+<p style="margin: 0 0 24px; font-size: 16px; line-height: 1.6;">
+  Our big day is almost here! Here's everything you need to know:
+</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 24px;">
+  {% if wedding_date %}
+  <tr>
+    <td style="padding: 8px 0; font-size: 14px; color: #8a7a68; width: 120px; vertical-align: top;">
+      Date
+    </td>
+    <td style="padding: 8px 0; font-size: 16px;">{{ wedding_date }}</td>
+  </tr>
+  {% endif %} {% if venue_name %}
+  <tr>
+    <td style="padding: 8px 0; font-size: 14px; color: #8a7a68; vertical-align: top;">
+      Venue
+    </td>
+    <td style="padding: 8px 0; font-size: 16px;">{{ venue_name }}</td>
+  </tr>
+  {% endif %} {% if venue_address %}
+  <tr>
+    <td style="padding: 8px 0; font-size: 14px; color: #8a7a68; vertical-align: top;">
+      Address
+    </td>
+    <td style="padding: 8px 0; font-size: 16px;">{{ venue_address }}</td>
+  </tr>
+  {% endif %}
+</table>
+<p style="margin: 0; font-size: 16px; line-height: 1.6;">
+  We can't wait to celebrate with you!
+</p>
+{% endblock %}
