@@ -23,7 +23,7 @@ function LoginPage() {
     try {
       await login({ email, password });
       markAuthenticated();
-      navigate("/admin/guests", { replace: true });
+      navigate("/admin/admin_dashboard", { replace: true });
     } catch (err) {
       if (err instanceof ApiError) {
         if (err.status === 429) {

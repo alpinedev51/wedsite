@@ -13,7 +13,7 @@ import FindInvitationPage from "./features/invitation/FindInvitationPage";
 import { AuthProvider } from "./features/auth/AuthContext";
 import RequireAdmin from "./features/auth/RequireAdmin";
 import LoginPage from "./features/auth/LoginPage";
-import GuestListPage from "./features/admin-guests/GuestListPage";
+import AdminPage from "./features/admin/AdminPage";
 
 export const router = createBrowserRouter([
   {
@@ -51,8 +51,8 @@ export const router = createBrowserRouter([
       {
         element: <RequireAdmin />,
         children: [
-          { index: true, element: <Navigate to="guests" replace /> },
-          { path: "guests", element: <GuestListPage /> },
+          { index: true, element: <Navigate to="admin_dashboard" replace /> },
+          { path: "admin_dashboard", element: <AdminPage /> },
         ],
       },
     ],

@@ -27,11 +27,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
-    // There's no dedicated "am I logged in" endpoint, and the session cookie
-    // is httponly (unreadable from JS) -- so probe a cheap admin-only route.
-    // A 401 means no/invalid session; anything else (200, or a business
-    // error like "wedding not created yet") means require_admin let it
-    // through, so the session is valid.
     apiFetch("/admin/wedding")
       .then(() => {
         if (!cancelled) setStatus("authenticated");
@@ -49,7 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // Called directly by LoginPage/GuestListPage after a successful
+  // Called directly by LoginPage/AdminPage after a successful
   // login/logout request, so the UI updates immediately instead of waiting
   // on another round-trip to re-probe /admin/wedding.
   const markAuthenticated = useCallback(() => setStatus("authenticated"), []);

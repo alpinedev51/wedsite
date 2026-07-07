@@ -8,22 +8,17 @@ import { useAuth } from "../auth/AuthContext";
 import { logout as logoutRequest } from "../auth/auth.api";
 import CampaignsSection from "../campaigns/CampaignsSection";
 import WeddingSettingsSection from "../wedding-settings/WeddingSettingsSection";
-import GuestListSection from "./GuestListSection";
+import GuestListSection from "../guests/GuestListSection";
 
 type Tab = "guests" | "campaigns" | "wedding";
 
 const TABS: { key: Tab; label: string }[] = [
   { key: "guests", label: "Guest List" },
   { key: "campaigns", label: "Campaigns" },
-  { key: "wedding", label: "Wedding Schedule" },
+  { key: "wedding", label: "Schedule" },
 ];
 
-// The couple's one admin console: guest list/CSV, email campaigns, and the
-// wedding schedule all live behind this single route, switched by an
-// in-page tab rather than separate routes -- there's exactly one admin, so
-// a shared nav shell (à la a multi-route AdminLayout) buys nothing here
-// that this simpler tab switcher doesn't already cover.
-function GuestListPage() {
+function AdminPage() {
   const [tab, setTab] = useState<Tab>("guests");
   const { markAnonymous } = useAuth();
   const navigate = useNavigate();
@@ -72,4 +67,4 @@ function GuestListPage() {
   );
 }
 
-export default GuestListPage;
+export default AdminPage;
