@@ -16,7 +16,7 @@ function LoginPage() {
   const { markAuthenticated } = useAuth();
   const navigate = useNavigate();
 
-  async function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
     setSubmitting(true);
@@ -25,7 +25,17 @@ function LoginPage() {
       markAuthenticated();
       navigate("/admin/guests", { replace: true });
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Something went wrong.");
+      if (err instanceof ApiError) {
+        if (err.status === 429) {
+          setError("Too many login attempts.");
+        } else if (err.status === 401) {
+          setError("Invalid email or password.");
+        } else {
+          setError(err.message || "An unexpected error occurred.");
+        }
+      } else {
+        setError("Something went wrong.");
+      }
     } finally {
       setSubmitting(false);
     }
