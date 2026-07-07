@@ -4,7 +4,7 @@ services:
     container_name: wedding_proxy
     restart: unless-stopped
     command:
-      # FYI before going public: this exposes the Traefik dashboard on :8080
+      # this exposes the Traefik dashboard on :8080
       # with no auth at all -- fine on a home LAN, but revisit (remove this
       # flag, or add dashboard auth) once wed.austinkylieb.com is internet-
       # facing, or anyone can reach your routing config.
