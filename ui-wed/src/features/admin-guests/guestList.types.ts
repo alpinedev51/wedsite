@@ -1,6 +1,9 @@
 // Mirrors service-wed's domain/value_objects.py::RsvpStatus and
-// schemas/household.py + schemas/common.py::Page -- keep these in sync if
-// those backend types change shape.
+// schemas/household.py -- keep these in sync if those backend types change
+// shape. Page<T> lives in src/types (shared with campaigns.types.ts) and is
+// just re-exported here so existing imports of it from this file still work.
+export type { Page } from "../../types";
+
 export type RsvpStatus = "attending" | "declined" | "waiting";
 
 export interface GuestAdminView {
@@ -18,13 +21,6 @@ export interface HouseholdAdminView {
   contact_email: string | null;
   invite_token: string;
   guests: GuestAdminView[];
-}
-
-export interface Page<T> {
-  items: T[];
-  total: number;
-  limit: number;
-  offset: number;
 }
 
 export interface GuestImportResponse {

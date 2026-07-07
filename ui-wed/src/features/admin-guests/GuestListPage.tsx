@@ -1,129 +1,32 @@
-import {
-  useCallback,
-  useEffect,
-  useState,
-  type ChangeEvent,
-  type FormEvent,
-} from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Container from "../../components/ui/Container";
 import Section from "../../components/ui/Section";
 import Eyebrow from "../../components/ui/Eyebrow";
 import { Button } from "../../components/ui/Button";
-import { ApiError } from "../../lib/api";
 import { useAuth } from "../auth/AuthContext";
 import { logout as logoutRequest } from "../auth/auth.api";
-import {
-  downloadGuestListCsv,
-  importGuestListCsv,
-  listHouseholds,
-} from "./guestList.api";
-import type {
-  GuestImportResponse,
-  HouseholdAdminView,
-} from "./guestList.types";
+import CampaignsSection from "../campaigns/CampaignsSection";
+import WeddingSettingsSection from "../wedding-settings/WeddingSettingsSection";
+import GuestListSection from "./GuestListSection";
 
-function errorMessage(err: unknown): string {
-  return err instanceof ApiError ? err.message : "Something went wrong.";
-}
+type Tab = "guests" | "campaigns" | "wedding";
 
-// The admin's one-stop guest-list screen: download the current CSV, edit
-// it externally, re-upload it, and see the resulting household/guest table
-// without leaving the page. Three independent async operations (initial
-// load, upload, download) each get their own loading/error state so one
-// failing doesn't block or hide the others.
+const TABS: { key: Tab; label: string }[] = [
+  { key: "guests", label: "Guest List" },
+  { key: "campaigns", label: "Campaigns" },
+  { key: "wedding", label: "Wedding Schedule" },
+];
+
+// The couple's one admin console: guest list/CSV, email campaigns, and the
+// wedding schedule all live behind this single route, switched by an
+// in-page tab rather than separate routes -- there's exactly one admin, so
+// a shared nav shell (à la a multi-route AdminLayout) buys nothing here
+// that this simpler tab switcher doesn't already cover.
 function GuestListPage() {
-  const [households, setHouseholds] = useState<HouseholdAdminView[]>([]);
-  const [total, setTotal] = useState(0);
-  const [listLoading, setListLoading] = useState(true);
-  const [listError, setListError] = useState<string | null>(null);
-
-  const [file, setFile] = useState<File | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [uploadResult, setUploadResult] = useState<GuestImportResponse | null>(
-    null,
-  );
-  const [uploadError, setUploadError] = useState<string | null>(null);
-
-  const [downloading, setDownloading] = useState(false);
-  const [downloadError, setDownloadError] = useState<string | null>(null);
-
+  const [tab, setTab] = useState<Tab>("guests");
   const { markAnonymous } = useAuth();
   const navigate = useNavigate();
-
-  // Used for the post-upload refresh (called from a click handler, so a
-  // synchronous setState at the top is fine there).
-  const refreshHouseholds = useCallback(async () => {
-    setListLoading(true);
-    setListError(null);
-    try {
-      const page = await listHouseholds();
-      setHouseholds(page.items);
-      setTotal(page.total);
-    } catch (err) {
-      setListError(errorMessage(err));
-    } finally {
-      setListLoading(false);
-    }
-  }, []);
-
-  // Initial load: kept separate from refreshHouseholds and written as a
-  // deferred .then()/.catch() chain (no setState call synchronous with the
-  // effect body) to satisfy react-hooks/set-state-in-effect.
-  useEffect(() => {
-    let cancelled = false;
-    listHouseholds()
-      .then((page) => {
-        if (cancelled) return;
-        setHouseholds(page.items);
-        setTotal(page.total);
-      })
-      .catch((err: unknown) => {
-        if (!cancelled) setListError(errorMessage(err));
-      })
-      .finally(() => {
-        if (!cancelled) setListLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
-    setFile(e.target.files?.[0] ?? null);
-    setUploadResult(null);
-    setUploadError(null);
-  }
-
-  async function handleUpload(e: FormEvent) {
-    e.preventDefault();
-    if (!file) return;
-    setUploading(true);
-    setUploadResult(null);
-    setUploadError(null);
-    try {
-      const result = await importGuestListCsv(file);
-      setUploadResult(result);
-      setFile(null);
-      await refreshHouseholds();
-    } catch (err) {
-      setUploadError(errorMessage(err));
-    } finally {
-      setUploading(false);
-    }
-  }
-
-  async function handleDownload() {
-    setDownloading(true);
-    setDownloadError(null);
-    try {
-      await downloadGuestListCsv();
-    } catch (err) {
-      setDownloadError(errorMessage(err));
-    } finally {
-      setDownloading(false);
-    }
-  }
 
   async function handleLogout() {
     await logoutRequest().catch(() => {});
@@ -133,107 +36,37 @@ function GuestListPage() {
 
   return (
     <Section>
-      <Container className="flex flex-col gap-10">
+      <Container className="flex flex-col gap-8">
         <div className="flex items-center justify-between">
           <div>
             <Eyebrow>Admin</Eyebrow>
-            <h1 className="text-3xl">Guest List</h1>
+            <h1 className="text-3xl">Admin</h1>
           </div>
           <Button variant="secondary" onClick={handleLogout}>
             Log Out
           </Button>
         </div>
 
-        <div className="flex flex-col gap-4 rounded-2xl border border-walnut/12 bg-linen/60 p-6">
-          <h2 className="text-xl">Download current guest list</h2>
-          <p className="text-sm text-ink/70">
-            Pulls a CSV snapshot of every household, guest, and RSVP status
-            &mdash; edit it and re-upload below to make changes.
-          </p>
-          <Button
-            variant="secondary"
-            onClick={handleDownload}
-            disabled={downloading}
-            className="w-fit"
-          >
-            {downloading ? "Preparing…" : "Download CSV"}
-          </Button>
-          {downloadError && (
-            <p className="text-sm text-terracotta">{downloadError}</p>
-          )}
+        <div className="flex gap-2 border-b border-walnut/20">
+          {TABS.map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => setTab(t.key)}
+              className={`border-b-2 px-1 pb-3 font-utility text-sm uppercase tracking-wider transition-colors ${
+                tab === t.key
+                  ? "border-clay text-clay"
+                  : "border-transparent text-ink/60 hover:text-ink"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
         </div>
 
-        <form
-          onSubmit={handleUpload}
-          className="flex flex-col gap-4 rounded-2xl border border-walnut/12 bg-linen/60 p-6"
-        >
-          <h2 className="text-xl">Upload guest list</h2>
-          <p className="text-sm text-ink/70">
-            Headers must be exactly:{" "}
-            <code>HouseholdName, ContactEmail, GuestName, IsPlusOne</code>.
-            Re-uploading is safe &mdash; guests are matched and updated by name
-            within a household, not duplicated.
-          </p>
-          <input
-            type="file"
-            accept=".csv,text/csv"
-            onChange={handleFileChange}
-            className="text-sm"
-          />
-          <Button type="submit" disabled={!file || uploading} className="w-fit">
-            {uploading ? "Uploading…" : "Upload CSV"}
-          </Button>
-          {uploadError && (
-            <p className="text-sm text-terracotta">{uploadError}</p>
-          )}
-          {uploadResult && (
-            <div className="text-sm">
-              <p className="text-olive2">{uploadResult.message}</p>
-              {uploadResult.warnings.length > 0 && (
-                <ul className="mt-2 list-disc pl-5 text-terracotta">
-                  {uploadResult.warnings.map((warning) => (
-                    <li key={warning}>{warning}</li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          )}
-        </form>
-
-        <div className="flex flex-col gap-4">
-          <h2 className="text-xl">Current households ({total})</h2>
-          {listLoading && <p className="text-sm text-ink/70">Loading…</p>}
-          {listError && <p className="text-sm text-terracotta">{listError}</p>}
-          {!listLoading && !listError && (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr className="border-b border-walnut/20 font-utility uppercase tracking-wider text-ink/60">
-                    <th className="py-2 pr-4">Household</th>
-                    <th className="py-2 pr-4">Contact Email</th>
-                    <th className="py-2 pr-4">Guests</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {households.map((household) => (
-                    <tr
-                      key={household.id}
-                      className="border-b border-walnut/10"
-                    >
-                      <td className="py-2 pr-4">{household.display_name}</td>
-                      <td className="py-2 pr-4">
-                        {household.contact_email ?? "—"}
-                      </td>
-                      <td className="py-2 pr-4">
-                        {household.guests.map((g) => g.full_name).join(", ")}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+        {tab === "guests" && <GuestListSection />}
+        {tab === "campaigns" && <CampaignsSection />}
+        {tab === "wedding" && <WeddingSettingsSection />}
       </Container>
     </Section>
   );

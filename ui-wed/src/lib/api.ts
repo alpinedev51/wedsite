@@ -84,3 +84,10 @@ export async function apiDownload(path: string): Promise<Blob> {
 
   return res.blob();
 }
+
+/** Shared by every admin page's catch block -- an ApiError's `message` is
+ * already display-ready (see extractErrorInfo above); anything else (a
+ * network failure, a thrown non-ApiError) falls back to a generic string. */
+export function errorMessage(err: unknown): string {
+  return err instanceof ApiError ? err.message : "Something went wrong.";
+}
