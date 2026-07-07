@@ -47,3 +47,7 @@ class Guest(UUIDPrimaryKey, Timestamps, Base):
     @property
     def meal_choice(self) -> str | None:
         return self.rsvp_response.meal_choice if self.rsvp_response else None
+
+    @property
+    def dietary_notes(self) -> str | None:
+        return self.rsvp_response.dietary_notes if self.rsvp_response else None

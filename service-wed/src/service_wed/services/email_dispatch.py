@@ -1,4 +1,16 @@
-"""Use case: claim due email_messages and send them. Orchestrates the UoW and
+"""RECOMMENDED DELETE: this module is fully superseded by services/delivery.py
+(DeliveryService.claim_and_enqueue() + send_one()), which splits "claim due
+messages" and "send one message" into two separately-queued steps so a slow
+provider call only blocks its own arq job instead of this function's whole
+batch. Nothing imports this module -- worker.py wires up
+tasks/dispatch.py:dispatch_due_emails instead, which is a *different*
+function that happens to share this one's name. That name collision is a
+real hazard: it's easy to mistake this dead function for the live one (it
+already caused confusion once this session). Keeping this file around
+serves no purpose other than that risk.
+
+Original docstring, for context on what this used to do:
+Use case: claim due email_messages and send them. Orchestrates the UoW and
 the EmailSenderPort — belongs here, not in the repository adapter.
 """
 

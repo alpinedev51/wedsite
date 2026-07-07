@@ -12,6 +12,11 @@ dependencies = [
     "arq>=0.28.0",
     "asyncpg>=0.31.0",
     "fastapi[standard]>=0.138.1",
+    # lib/templates.py imports jinja2 directly (email template rendering) --
+    # it was only ever present transitively via fastapi[standard]'s extras,
+    # which is fragile: a future dependency bump or switching to bare
+    # `fastapi` would silently break email sending.
+    "jinja2>=3.1",
     "pydantic-settings>=2.14.2",
     "resend>=2.32.2",
     "sqlalchemy[asyncio]>=2.0.51",

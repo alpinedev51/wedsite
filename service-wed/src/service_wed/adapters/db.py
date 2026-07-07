@@ -20,6 +20,13 @@ async_session_maker = async_sessionmaker(
 )
 
 
+# RECOMMENDED DELETE: this per-request-session dependency is dead -- nothing
+# imports it. It predates the UnitOfWork/AppContainer pattern (bootstrap.py,
+# dependencies.py): every route now gets its DB access through
+# container.new_uow(), which wraps async_session_maker itself and manages
+# the session's lifecycle (see adapters/uow.py), not through a bare FastAPI
+# Depends(get_db_session). Keeping this around suggests there are two ways
+# to get a session in this codebase; there's really only one.
 async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
     """
     Dependency to yield an async database session.

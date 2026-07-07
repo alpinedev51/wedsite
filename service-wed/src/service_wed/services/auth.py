@@ -3,6 +3,7 @@ import datetime as dt
 import hashlib
 import secrets
 
+from service_wed.domain.errors import InvalidCredentialsError
 from service_wed.ports.password_hasher import PasswordHasherPort
 from service_wed.ports.uow import UnitOfWorkPort
 from service_wed.schemas.auth import AdminLoginRequest, AdminSessionResponse
@@ -22,7 +23,10 @@ class AuthService:
             if not admin or not self.password_hasher.verify(
                 request.password, admin.password_hash
             ):
-                raise ValueError("Invalid email or password")
+                # 401, not 404/400: deliberately identical whether the email
+                # doesn't exist or the password is wrong, so the response
+                # can't be used to enumerate admin emails.
+                raise InvalidCredentialsError("Invalid email or password.")
 
             # 1. Generate a raw, cryptographically secure token
             raw_token = secrets.token_urlsafe(32)

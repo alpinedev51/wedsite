@@ -33,12 +33,15 @@ class SQLAlchemyRsvpRepository(RsvpRepository):
                 status=stmt.excluded.status,
                 meal_choice=stmt.excluded.meal_choice,
                 dietary_notes=stmt.excluded.dietary_notes,
-                responded_at=stmt.excluded.responded_at,
                 # BUGFIX: Timestamps.updated_at's onupdate=func.now() is a
                 # client-side column default; it is not guaranteed to be
                 # merged into an INSERT ... ON CONFLICT DO UPDATE's SET
                 # clause the way it would for a plain UPDATE, so it must be
                 # listed explicitly or edits wouldn't bump updated_at.
+                # (This used to also set a `responded_at` column here, kept
+                # in sync the same way -- it was redundant with created_at/
+                # updated_at, which already capture "first submitted" and
+                # "last changed"; see models/rsvp_response.py.)
                 updated_at=func.now(),
             ),
         ).returning(RsvpResponse)

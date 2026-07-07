@@ -4,7 +4,7 @@ authenticated admin session (see policies/admin.py)."""
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 
 from service_wed.dependencies import get_campaign_service
 from service_wed.models.admin_user import AdminUser
@@ -14,6 +14,7 @@ from service_wed.schemas.campaign import (
     CampaignCreateRequest,
     CampaignRescheduleRequest,
 )
+from service_wed.schemas.common import Page
 from service_wed.services.campaigns import CampaignService
 
 # Router-level dependency: blanket-protects every route below with one
@@ -22,6 +23,26 @@ from service_wed.services.campaigns import CampaignService
 # needs the AdminUser object itself (create_campaign, below) can still
 # declare its own Depends(require_admin) param without running it twice.
 router = APIRouter(tags=["campaigns"], dependencies=[Depends(require_admin)])
+
+
+@router.get("")
+async def list_campaigns(
+    campaign_service: Annotated[CampaignService, Depends(get_campaign_service)],
+    limit: Annotated[int, Query(ge=1, le=200)] = 50,
+    offset: Annotated[int, Query(ge=0)] = 0,
+) -> Page[CampaignAdminView]:
+    """Admin campaign list, newest-scheduled first. Backs the frontend's
+    "campaigns" table view."""
+    return await campaign_service.list_campaigns(limit=limit, offset=offset)
+
+
+@router.get("/{campaign_id}")
+async def get_campaign(
+    campaign_id: uuid.UUID,
+    campaign_service: Annotated[CampaignService, Depends(get_campaign_service)],
+) -> CampaignAdminView:
+    """Single campaign detail, for a campaign detail/edit page."""
+    return await campaign_service.get(campaign_id)
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)

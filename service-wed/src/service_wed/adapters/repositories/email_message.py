@@ -126,3 +126,8 @@ class SQLAlchemyEmailMessageRepository(EmailMessageRepository):
             )
             for household_id, reminder_count, last_scheduled_for in result.all()
         }
+
+    async def count_by_status(self) -> dict[EmailStatus, int]:
+        stmt = select(EmailMessage.status, func.count()).group_by(EmailMessage.status)
+        result = await self.session.execute(stmt)
+        return {status: count for status, count in result.all()}

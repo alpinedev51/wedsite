@@ -6,7 +6,9 @@ Run locally with: uvicorn service_wed.main:app --reload
 """
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
+from service_wed.config.settings import settings
 from service_wed.controllers.router import api_router
 from service_wed.exceptions import register_exception_handlers
 from service_wed.hooks.lifespan import lifespan
@@ -14,8 +16,25 @@ from service_wed.middleware.request_context import RequestContextMiddleware
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(title="Wedding Website API", lifespan=lifespan)
+    app = FastAPI(
+        title="Wedding Website API",
+        version="0.1.0",
+        description="Backend for the wedding website: guest RSVPs, admin campaigns, and email delivery.",
+        lifespan=lifespan,
+    )
 
+    # Explicit origin allow-list (not "*"): the admin session lives in an
+    # httponly cookie, so the frontend must send credentials on cross-origin
+    # requests -- browsers reject allow_credentials=True paired with a
+    # wildcard origin outright, and even if they didn't, a wildcard plus
+    # credentials would let any site ride a logged-in admin's session.
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.cors_allow_origins_list,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
     app.add_middleware(RequestContextMiddleware)
 
     register_exception_handlers(app)

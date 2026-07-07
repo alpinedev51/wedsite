@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, Request, Response, status
 
 from service_wed.config.settings import settings
 from service_wed.dependencies import get_auth_service
+from service_wed.middleware.rate_limit import rate_limit
 from service_wed.models.admin_user import AdminUser
 from service_wed.policies.admin import require_admin
 from service_wed.schemas.auth import AdminLoginRequest
@@ -16,8 +17,15 @@ from service_wed.services.auth import AuthService
 
 router = APIRouter(tags=["auth"])
 
+# 10 attempts per 5 minutes per IP: generous enough for a real admin who
+# fat-fingers a password a couple times, tight enough to make credential
+# stuffing impractical against a single admin account.
+_login_rate_limit = rate_limit("login", limit=10, window_seconds=300)
 
-@router.post("/login", status_code=status.HTTP_200_OK)
+
+@router.post(
+    "/login", status_code=status.HTTP_200_OK, dependencies=[Depends(_login_rate_limit)]
+)
 async def login(
     request: AdminLoginRequest,
     response: Response,

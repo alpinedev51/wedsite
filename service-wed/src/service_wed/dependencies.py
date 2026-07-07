@@ -21,11 +21,14 @@ from fastapi import Depends, Request
 from service_wed.bootstrap import AppContainer
 from service_wed.services.auth import AuthService
 from service_wed.services.campaigns import CampaignService
+from service_wed.services.dashboard import DashboardService
 from service_wed.services.delivery import DeliveryService
+from service_wed.services.exports import ExportService
 from service_wed.services.guest_list import GuestListService
 from service_wed.services.invitation_lookup import InvitationService
 from service_wed.services.reminders import ReminderService
 from service_wed.services.rsvp import RsvpService
+from service_wed.services.wedding import WeddingService
 
 
 def get_container(request: Request) -> AppContainer:
@@ -74,3 +77,21 @@ def get_reminder_service(
     container: Annotated[AppContainer, Depends(get_container)],
 ) -> ReminderService:
     return container.new_reminder_service()
+
+
+def get_dashboard_service(
+    container: Annotated[AppContainer, Depends(get_container)],
+) -> DashboardService:
+    return container.new_dashboard_service()
+
+
+def get_export_service(
+    container: Annotated[AppContainer, Depends(get_container)],
+) -> ExportService:
+    return container.new_export_service()
+
+
+def get_wedding_service(
+    container: Annotated[AppContainer, Depends(get_container)],
+) -> WeddingService:
+    return container.new_wedding_service()

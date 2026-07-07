@@ -35,6 +35,26 @@ services:
       - db
       - redis
 
+  # Runs the arq cron jobs (tasks/dispatch.py's per-minute dispatch_due_emails,
+  # tasks/reminders.py's daily evaluate_reminders) and the send_email job they
+  # enqueue. Without this, campaigns/reminders build EmailMessage rows that
+  # stay "scheduled" forever -- nothing else ever claims and sends them
+  # (confirmed by testing: the API alone left two campaign emails sitting
+  # unsent until this worker ran). Same image as service-wed, just a
+  # different process/command against the same DB and Redis.
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: service-wed-worker
+    command: ["arq", "service_wed.worker.WorkerSettings"]
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://wedding_db_user:wedding_db_pw@db:5432/wedding_db
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+
 volumes:
   postgres_data:
   redis_data:

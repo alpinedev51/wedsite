@@ -1,4 +1,5 @@
 # status lookup; magic-link recovery to on-file email
+from service_wed.domain.errors import NotFoundError
 from service_wed.ports.uow import UnitOfWorkPort
 from service_wed.schemas.invitation import InvitationResponse, MagicLinkRecoveryRequest
 from service_wed.schemas.common import SuccessResponse
@@ -12,7 +13,7 @@ class InvitationService:
         async with self.uow:
             household = await self.uow.household_repo.get_by_invite_token(token)
             if not household:
-                raise ValueError("Invalid or expired invitation token.")
+                raise NotFoundError("Invalid or expired invitation token.")
 
             # Pydantic's model_validate automatically reads the ORM object and
             # the @property accessors we added for rsvp_status/meal_choice

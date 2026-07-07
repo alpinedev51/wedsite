@@ -38,5 +38,30 @@ class Settings(BaseSettings):
         default="admin_session", validation_alias=AliasChoices("SESSION_COOKIE_NAME")
     )
 
+    # Comma-separated, not a JSON list: pydantic-settings would otherwise
+    # require env/​.env values for a `list[str]` field to be JSON-encoded
+    # (e.g. '["http://a"]'), which is an awkward thing to hand-write in a
+    # .env file. Parsed into a real list by cors_allow_origins_list below.
+    cors_allow_origins: str = Field(
+        default="http://localhost:3000,http://localhost:5173",
+        validation_alias=AliasChoices("CORS_ALLOW_ORIGINS"),
+    )
+
+    # Signing secret for Resend's webhook callbacks (Svix scheme: see
+    # controllers/v1/webhooks.py). None in local dev without a live Resend
+    # account -- signature verification is skipped (with a warning) when
+    # unset, and enforced once this is configured.
+    resend_webhook_secret: str | None = Field(
+        default=None, validation_alias=AliasChoices("RESEND_WEBHOOK_SECRET")
+    )
+
+    @property
+    def cors_allow_origins_list(self) -> list[str]:
+        return [
+            origin.strip()
+            for origin in self.cors_allow_origins.split(",")
+            if origin.strip()
+        ]
+
 
 settings = Settings()

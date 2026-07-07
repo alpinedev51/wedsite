@@ -2,6 +2,7 @@ import datetime as dt
 import uuid
 from typing import Any
 
+from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -40,3 +41,10 @@ class SQLAlchemyEmailEventRepository(EmailEventRepository):
 
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
+
+    async def count_by_type(self) -> dict[EmailEventType, int]:
+        stmt = select(EmailEvent.email_event_type, func.count()).group_by(
+            EmailEvent.email_event_type
+        )
+        result = await self.session.execute(stmt)
+        return {event_type: count for event_type, count in result.all()}

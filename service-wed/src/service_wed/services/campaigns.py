@@ -10,6 +10,7 @@ import datetime as dt
 import uuid
 
 
+from service_wed.domain.errors import ConflictError, NotFoundError, ValidationError
 from service_wed.domain.value_objects import (
     CampaignStatus,
     CampaignType,
@@ -22,11 +23,12 @@ from service_wed.models.email_message import EmailMessage
 from service_wed.models.household import Household
 from service_wed.ports.uow import UnitOfWorkPort
 from service_wed.schemas.campaign import CampaignCreateRequest, CampaignAdminView
+from service_wed.schemas.common import Page
 
 
 def _ensure_future(scheduled_for: dt.datetime, now: dt.datetime) -> None:
     if scheduled_for <= now:
-        raise ValueError("scheduled_for must be in the future.")
+        raise ValidationError("scheduled_for must be in the future.")
 
 
 def build_email_message(
@@ -62,7 +64,7 @@ class CampaignService:
     ) -> CampaignAdminView:
         """Create a campaign draft. Does not touch email_messages at all."""
         if not template_exists(request.template_key):
-            raise ValueError(f"Unknown email template: {request.template_key}")
+            raise ValidationError(f"Unknown email template: {request.template_key}")
 
         now = dt.datetime.now(dt.timezone.utc)
         _ensure_future(request.scheduled_for, now=now)
@@ -78,14 +80,39 @@ class CampaignService:
             await self.uow.commit()
             return CampaignAdminView.model_validate(campaign)
 
+    async def list_campaigns(
+        self, limit: int = 50, offset: int = 0
+    ) -> Page[CampaignAdminView]:
+        """Admin campaign list. Paginated: nothing here caps how many
+        campaigns can accumulate over time, and the frontend list view
+        shouldn't have to fetch them all to render one page."""
+        async with self.uow:
+            campaigns, total = await self.uow.campaign_repo.list_all(
+                limit=limit, offset=offset
+            )
+            return Page(
+                items=[CampaignAdminView.model_validate(c) for c in campaigns],
+                total=total,
+                limit=limit,
+                offset=offset,
+            )
+
+    async def get(self, campaign_id: uuid.UUID) -> CampaignAdminView:
+        """Admin campaign detail view."""
+        async with self.uow:
+            campaign = await self.uow.campaign_repo.get_by_id(campaign_id)
+            if campaign is None:
+                raise NotFoundError(f"Campaign {campaign_id} does not exist.")
+            return CampaignAdminView.model_validate(campaign)
+
     async def schedule(self, campaign_id: uuid.UUID, scheduled_for: dt.datetime):
         """Change a DRAFT campaign's planned send time."""
         async with self.uow:
             campaign = await self.uow.campaign_repo.get_by_id(campaign_id)
             if campaign is None:
-                raise ValueError(f"Campaign {campaign_id} does not exist.")
+                raise NotFoundError(f"Campaign {campaign_id} does not exist.")
             if campaign.status != CampaignStatus.DRAFT:
-                raise ValueError(
+                raise ConflictError(
                     f"Campaign {campaign_id} is {campaign.status}; only DRAFT campaigns can be rescheduled."
                 )
             now = dt.datetime.now(dt.timezone.utc)
@@ -100,14 +127,14 @@ class CampaignService:
         async with self.uow:
             campaign = await self.uow.campaign_repo.get_by_id(campaign_id)
             if campaign is None:
-                raise ValueError(f"Campaign {campaign_id} does not exist.")
+                raise NotFoundError(f"Campaign {campaign_id} does not exist.")
             if campaign.status != CampaignStatus.DRAFT:
-                raise ValueError(
+                raise ConflictError(
                     f"Campaign {campaign_id} is already {campaign.status}; only DRAFT campaigns can be fanned out."
                 )
             messages = await self._build_email_messages(campaign)
             if not messages:
-                raise ValueError(
+                raise ConflictError(
                     f"Campaign {campaign_id} has no eligible recipients; nothing to fan out."
                 )
 

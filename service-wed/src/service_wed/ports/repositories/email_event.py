@@ -21,3 +21,9 @@ class EmailEventRepository(Protocol):
     ) -> EmailEvent | None:
         """Record an asynchronous webhook event from the email provider (e.g., delivered, bounced)."""
         ...
+
+    async def count_by_type(self) -> dict[EmailEventType, int]:
+        """Count every recorded event grouped by type. The dashboard only
+        reads bounced/complained back out of this, but returning the full
+        breakdown keeps the port useful beyond that one caller."""
+        ...

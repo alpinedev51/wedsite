@@ -1,5 +1,7 @@
 import uuid
 from typing import Protocol
+
+from service_wed.domain.value_objects import RsvpStatus
 from service_wed.models.guest import Guest
 
 
@@ -12,4 +14,10 @@ class GuestRepository(Protocol):
         is_plus_one: bool,
     ) -> Guest:
         """Add a guest to an existing household."""
+        ...
+
+    async def count_by_rsvp_status(self) -> dict[RsvpStatus | None, int]:
+        """Count every guest, grouped by RSVP status. A `None` key means the
+        guest has no RsvpResponse row yet (their household hasn't submitted
+        for them). Backs the admin dashboard's RSVP breakdown."""
         ...

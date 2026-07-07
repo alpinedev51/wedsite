@@ -27,6 +27,13 @@ class CampaignRepository(Protocol):
         """Fetch a single campaign."""
         ...
 
+    async def list_all(
+        self, limit: int, offset: int
+    ) -> tuple[list[Campaign], int]:
+        """Fetch one page of campaigns (newest-scheduled first) plus the
+        total row count, for the admin campaign list view."""
+        ...
+
     async def update_status(
         self, campaign_id: uuid.UUID, status: CampaignStatus
     ) -> Campaign:

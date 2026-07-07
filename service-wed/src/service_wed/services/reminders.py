@@ -1,5 +1,6 @@
 import datetime as dt
 
+from service_wed.domain.errors import NotFoundError
 from service_wed.domain.value_objects import CampaignStatus, CampaignType
 from service_wed.ports.repositories.email_message import ReminderStats
 from service_wed.ports.uow import UnitOfWorkPort
@@ -18,7 +19,7 @@ class ReminderService:
         async with self.uow:
             wedding = await self.uow.wedding_repo.get()
             if wedding is None:
-                raise ValueError("Wedding configuration has not been set up.")
+                raise NotFoundError("Wedding configuration has not been set up.")
             non_responding = await self.uow.household_repo.list_non_responding()
             if not non_responding:
                 return None

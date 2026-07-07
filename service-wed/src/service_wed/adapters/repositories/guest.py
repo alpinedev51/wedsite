@@ -1,6 +1,11 @@
 import uuid
+
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from service_wed.domain.value_objects import RsvpStatus
 from service_wed.models.guest import Guest
+from service_wed.models.rsvp_response import RsvpResponse
 from service_wed.ports.repositories.guest import GuestRepository
 
 
@@ -24,3 +29,15 @@ class SQLAlchemyGuestRepository(GuestRepository):
         self.session.add(guest)
         await self.session.flush()
         return guest
+
+    async def count_by_rsvp_status(self) -> dict[RsvpStatus | None, int]:
+        # LEFT JOIN so guests with no RsvpResponse row still get counted --
+        # grouping over a nullable joined column puts them under a None key.
+        stmt = (
+            select(RsvpResponse.status, func.count(Guest.id))
+            .select_from(Guest)
+            .join(Guest.rsvp_response, isouter=True)
+            .group_by(RsvpResponse.status)
+        )
+        result = await self.session.execute(stmt)
+        return {status: count for status, count in result.all()}

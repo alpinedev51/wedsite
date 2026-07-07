@@ -43,11 +43,14 @@ from service_wed.ports.queue import QueuePort
 from service_wed.ports.uow import UnitOfWorkPort
 from service_wed.services.auth import AuthService
 from service_wed.services.campaigns import CampaignService
+from service_wed.services.dashboard import DashboardService
 from service_wed.services.delivery import DeliveryService
+from service_wed.services.exports import ExportService
 from service_wed.services.guest_list import GuestListService
 from service_wed.services.invitation_lookup import InvitationService
 from service_wed.services.reminders import ReminderService
 from service_wed.services.rsvp import RsvpService
+from service_wed.services.wedding import WeddingService
 
 
 def build_email_sender() -> EmailSenderPort:
@@ -102,6 +105,15 @@ class AppContainer:
 
     def new_reminder_service(self) -> ReminderService:
         return ReminderService(self.new_uow())
+
+    def new_dashboard_service(self) -> DashboardService:
+        return DashboardService(self.new_uow())
+
+    def new_export_service(self) -> ExportService:
+        return ExportService(self.new_uow())
+
+    def new_wedding_service(self) -> WeddingService:
+        return WeddingService(self.new_uow())
 
     async def close(self) -> None:
         """Release the process-wide connections. Call once on shutdown."""
