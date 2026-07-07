@@ -36,7 +36,7 @@ services:
     container_name: wedding_redis
     restart: always
     ports:
-      - "6739:6739"
+      - "6379:6379"
     volumes:
       - redis_data:/data
 
@@ -72,7 +72,7 @@ services:
     environment:
       - VITE_API_URL=https://localhost:8000/api
     ports:
-      - "5713:5173"
+      - "5173:5173"
     depends_on:
       - service-wed
     labels:
