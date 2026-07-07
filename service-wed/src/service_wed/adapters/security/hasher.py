@@ -1,7 +1,3 @@
-# BUGFIX: this adapter was an empty stub, so services/auth.py compared
-# passwords with a plaintext `plain == hashed` check instead of hashing them.
-# Implemented with stdlib hashlib.scrypt (salted, memory-hard KDF) so no new
-# third-party dependency (e.g. argon2-cffi) is required to close the gap.
 """Scrypt-based password hasher.
 
 Stored format: "scrypt$<n>$<r>$<p>$<salt_hex>$<hash_hex>" so the cost

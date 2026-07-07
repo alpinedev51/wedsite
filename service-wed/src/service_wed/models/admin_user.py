@@ -18,11 +18,6 @@ class AdminUser(UUIDPrimaryKey, Timestamps, Base):
     __tablename__ = "admin_users"
 
     email: Mapped[str] = mapped_column(CITEXT, unique=True)
-    # Stored format is adapters/security/hasher.py's ScryptPasswordHasher
-    # output ("scrypt$n$r$p$salt$hash"), not argon2 -- this comment used to
-    # say argon2 from an earlier design that changed before hasher.py was
-    # written (scrypt needs no extra dependency; argon2 would need
-    # argon2-cffi).
     password_hash: Mapped[str] = mapped_column(Text)
 
     sessions: Mapped[list[AdminSession]] = relationship(

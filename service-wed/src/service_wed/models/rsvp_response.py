@@ -16,13 +16,6 @@ if TYPE_CHECKING:
 class RsvpResponse(UUIDPrimaryKey, Timestamps, Base):
     __tablename__ = "rsvp_responses"
 
-    # RECOMMENDED (done): this used to also have a `responded_at` column,
-    # server-defaulted to now() and re-bumped to now() on every
-    # ON CONFLICT DO UPDATE (see adapters/repositories/rsvp.py's upsert_response).
-    # It was fully redundant with what Timestamps already gives every model:
-    # created_at is "first submitted," updated_at is "last changed" -- the
-    # same two facts responded_at was trying to capture in one column.
-    # Dropped in migration <see alembic/versions/>.
     guest_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("guests.id", ondelete="CASCADE"), unique=True
     )
