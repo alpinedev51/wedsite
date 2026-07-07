@@ -109,6 +109,20 @@ testing a deployed instance instead of local Docker, swap in your real
 domain/HTTPS — and see the [cookie note](#cookie-based-auth) about `DEBUG`
 before you do.
 
+> **Shortcut:** steps 1–6 below (start the stack, migrate, seed the admin
+> account, log in, create the wedding, upload a blank guest list) are all
+> scripted in [`scripts/bootstrap.sh`](scripts/bootstrap.sh). Set
+> `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `WEDDING_DATE`, and `RSVP_DEADLINE` (plus
+> any of the optional wedding fields you want) in `.env`, then run:
+> ```bash
+> ./scripts/bootstrap.sh
+> ```
+> It's idempotent, so re-running it is safe. **If you use it, skip straight
+> to [step 7](#7-review-the-guest-list)** — everything through step 6 is
+> already done. Read steps 1–6 anyway if you want to understand what the
+> script is doing or need to do any of it manually (e.g. against a
+> deployed instance without shell access to run the script).
+
 ### 1. Start the stack
 
 ```bash
