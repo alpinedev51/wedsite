@@ -26,9 +26,19 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: service-wed
+    # DEBUG/CORS_ALLOW_ORIGINS are read from the host's .env (root of
+    # service-wed/) via docker-compose's ${VAR:-default} substitution, not
+    # from inside the container -- see README's "Configuration" section.
+    # Defaults here preserve prior behavior (DEBUG off) unless you set
+    # DEBUG=true in .env, which the frontend needs locally: with DEBUG
+    # false the admin_session cookie is Secure-only and a browser won't
+    # send it back over plain http://localhost:5173 (see README's
+    # "Integrating with a React + Vite + Node.js frontend" section).
     environment:
       - DATABASE_URL=postgresql+asyncpg://wedding_db_user:wedding_db_pw@db:5432/wedding_db
       - REDIS_URL=redis://redis:6379/0
+      - DEBUG=${DEBUG:-false}
+      - CORS_ALLOW_ORIGINS=${CORS_ALLOW_ORIGINS:-http://localhost:3000,http://localhost:5173}
     ports:
       - "8000:8000"
     depends_on:
