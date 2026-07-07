@@ -16,9 +16,14 @@ services:
       - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
       - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
     ports:
-      - "80:80"
-      - "443:443"
-      - "8080:8080"
+      # Host-side ports only -- these are the ones you've actually had to
+      # move before (Pi-hole/Nextcloud conflicts), so they're the ports
+      # worth making configurable. The container-internal side (right of
+      # each colon) matches --entrypoints.*.address above and never needs
+      # to change.
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+      - "${TRAEFIK_DASHBOARD_PORT:-8080}:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
 
@@ -27,20 +32,36 @@ services:
     container_name: wedding_db
     restart: always
     environment:
-      POSTGRES_USER: wedding_db_user
-      POSTGRES_PASSWORD: wedding_db_pw
-      POSTGRES_DB: wedding_db
+      POSTGRES_USER: ${POSTGRES_USER:-wedding_db_user}
+      # No fallback default for the password, deliberately -- ${VAR:?...}
+      # makes `docker compose up` fail loudly instead of silently falling
+      # back to the old hardcoded "wedding_db_pw", which has appeared in
+      # plaintext throughout this project's history/testing and should be
+      # treated as burned. Pick a real one in .env before deploying for real.
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env -- see .env.example. Do not reuse wedding_db_pw.}
+      POSTGRES_DB: ${POSTGRES_DB:-wedding_db}
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql
+    # service-wed now runs `alembic upgrade head` immediately on container
+    # start (see its command below) -- plain `depends_on: [db]` only waits
+    # for this container to *start*, not for Postgres to actually be ready
+    # to accept connections, so a fresh `docker compose up` could hit
+    # alembic before Postgres finishes initializing. This healthcheck plus
+    # service-wed/worker's `condition: service_healthy` below closes that race.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-wedding_db_user} -d ${POSTGRES_DB:-wedding_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   redis:
     image: redis:8.8
     container_name: wedding_redis
     restart: always
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT:-6379}:6379"
     volumes:
       - redis_data:/data
 
@@ -49,8 +70,28 @@ services:
       context: ./service-wed
       dockerfile: Dockerfile
     container_name: service-wed
+    restart: on-failure
+    # 1. Migrations: always safe to re-run -- already-applied ones are
+    #    skipped, so this is a no-op on every restart after the first.
+    # 2. container_bootstrap: seeds the admin account / wedding config ONLY
+    #    if they don't already exist (see that script's module docstring for
+    #    why this must never blindly re-apply ADMIN_PASSWORD/WEDDING_DATE on
+    #    every restart -- it would silently overwrite a rotated password or
+    #    a wedding date edited since through the admin UI). A no-op after
+    #    first boot, same as the migration step.
+    # 3. `exec uvicorn ...`: replaces this shell with uvicorn as PID 1, so
+    #    `docker stop`/compose's SIGTERM reaches uvicorn directly instead of
+    #    an intermediate shell process swallowing it.
+    command: >
+      sh -c "alembic upgrade head &&
+      python -m service_wed.scripts.container_bootstrap &&
+      exec uvicorn service_wed.main:app --host 0.0.0.0 --port 8000"
     environment:
-      - DATABASE_URL=postgresql+asyncpg://wedding_db_user:wedding_db_pw@db:5432/wedding_db
+      # Built from the exact same POSTGRES_USER/PASSWORD/DB vars as the db
+      # service above, not a separate copy -- change one place in .env and
+      # both sides update together, so there's no way for this connection
+      # string to drift out of sync with what Postgres actually has.
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-wedding_db_user}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@db:5432/${POSTGRES_DB:-wedding_db}
       - REDIS_URL=redis://redis:6379/0
       # No DEBUG/CORS_ALLOW_ORIGINS here (unlike service-wed/docker-compose.yml's
       # local-dev setup): Traefik terminates real HTTPS and the SPA calls the
@@ -62,9 +103,24 @@ services:
       # .env.example) that you create on the Pi with your real values; never
       # commit real secrets here.
       - RESEND_WEBHOOK_SECRET=${RESEND_WEBHOOK_SECRET:-}
+      # Consumed by container_bootstrap.py above -- same variables
+      # service-wed/scripts/bootstrap.sh reads, just from this root .env
+      # instead. Leave ADMIN_EMAIL/ADMIN_PASSWORD/WEDDING_DATE/RSVP_DEADLINE
+      # unset to skip seeding entirely (e.g. if you'd rather do it by hand).
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-}
+      - WEDDING_DATE=${WEDDING_DATE:-}
+      - RSVP_DEADLINE=${RSVP_DEADLINE:-}
+      - RSVP_OPENS_AT=${RSVP_OPENS_AT:-}
+      - VENUE_NAME=${VENUE_NAME:-}
+      - VENUE_ADDRESS=${VENUE_ADDRESS:-}
+      - REMINDER_CAP=${REMINDER_CAP:-2}
+      - REMINDER_INTERVAL_DAYS=${REMINDER_INTERVAL_DAYS:-7}
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
     labels:
       - "traefik.enable=true"
       # No Host() matcher, deliberately: this box is reached by a LAN IP for
@@ -102,9 +158,11 @@ services:
       context: ./service-wed
       dockerfile: Dockerfile
     container_name: service-wed-worker
+    restart: on-failure
     command: ["arq", "service_wed.worker.WorkerSettings"]
     environment:
-      - DATABASE_URL=postgresql+asyncpg://wedding_db_user:wedding_db_pw@db:5432/wedding_db
+      # Same shared POSTGRES_* vars as service-wed and the db service above.
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-wedding_db_user}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@db:5432/${POSTGRES_DB:-wedding_db}
       - REDIS_URL=redis://redis:6379/0
       # This is the process that actually calls Resend (tasks/dispatch.py's
       # send_email job) -- without these, RESEND_API_KEY stays unset and
@@ -113,8 +171,10 @@ services:
       - RESEND_API_KEY=${RESEND_API_KEY:-}
       - RESEND_FROM_ADDRESS=${RESEND_FROM_ADDRESS:-wedding@example.com}
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
 
   ui-wed:
     build:
