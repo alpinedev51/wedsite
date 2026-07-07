@@ -1,0 +1,11 @@
+node_modules
+dist
+.git
+
+# .env.local sets an absolute VITE_API_BASE_URL for local `npm run dev`
+# against a cross-origin backend -- Vite bakes VITE_* vars in at build time,
+# so if this leaked into the Docker build context it would get baked into
+# the production bundle, overriding the same-origin default the production
+# deployment relies on (see src/config/env.ts).
+.env.local
+.env.*.local

@@ -4,6 +4,10 @@ services:
     container_name: wedding_proxy
     restart: unless-stopped
     command:
+      # FYI before going public: this exposes the Traefik dashboard on :8080
+      # with no auth at all -- fine on a home LAN, but revisit (remove this
+      # flag, or add dashboard auth) once wed.austinkylieb.com is internet-
+      # facing, or anyone can reach your routing config.
       - "--api.insecure=true" # enables local dashbaord at http://localhost:8080
       - "--providers.docker=true" # tells traefik to listen to docker daemon
       - "--providers.docker.exposedbydefault=false" # secure default: don't expose containers unless labeled
@@ -47,22 +51,59 @@ services:
     container_name: service-wed
     environment:
       - DATABASE_URL=postgresql+asyncpg://wedding_db_user:wedding_db_pw@db:5432/wedding_db
-      - REDIS_URL=redis://redis:6739/0
+      - REDIS_URL=redis://redis:6379/0
+      # No DEBUG/CORS_ALLOW_ORIGINS here (unlike service-wed/docker-compose.yml's
+      # local-dev setup): Traefik terminates real HTTPS and the SPA calls the
+      # API same-origin (see ui-wed's src/config/env.ts), so the admin_session
+      # cookie's Secure flag works as-is and there's no cross-origin request
+      # for CORS to allow in the first place.
     depends_on:
       - db
       - redis
     labels:
       - "traefik.enable=true"
-      # Route any traffic hitting https://localhost/api to this service-wed container
-      - "traefik.http.routers.service-wed.rule=Host(`localhost`) && PathPrefix(`/api`)"
+      # No Host() matcher, deliberately: this box is reached by a LAN IP for
+      # now and a real domain (wed.austinkylieb.com) later, and PathPrefix
+      # alone is enough to disambiguate from ui-wed's catch-all below since
+      # Traefik prioritizes routers by rule specificity -- so this keeps
+      # working unchanged when the hostname changes. Add
+      # "&& Host(`wed.austinkylieb.com`)" back here once that's live if you
+      # want to also reject traffic that isn't on the expected domain.
+      - "traefik.http.routers.service-wed.rule=PathPrefix(`/api`)"
       - "traefik.http.routers.service-wed.entrypoints=websecure"
       - "traefik.http.routers.service-wed.tls=true"
-      # Route MCP traffic hitting https://localhost/mcp to this same container
-      - "traefik.http.routers.mcp.rule=Host(`localhost`) && PathPrefix(`/mcp`)"
-      - "traefik.http.routers.mcp.entrypoints=websecure"
-      - "traefik.http.routers.mcp.tls=true"
       # Tell Traefik which internal container port to send traffic to
       - "traefik.http.services.service-wed.loadbalancer.server.port=8000"
+      # FLAGGING, not removing: there's no /mcp route anywhere in
+      # service-wed's current controllers (only health/auth/wedding/
+      # invitations/rsvp/households/campaigns/dashboard/exports/webhooks) --
+      # this looks like it was carried over from a template and may be dead
+      # config. Left in (updated to match the Host()-less pattern above)
+      # rather than deleted outright in case it's for something planned;
+      # worth confirming and removing if not.
+      - "traefik.http.routers.mcp.rule=PathPrefix(`/mcp`)"
+      - "traefik.http.routers.mcp.entrypoints=websecure"
+      - "traefik.http.routers.mcp.tls=true"
+
+  # Runs the arq cron jobs (tasks/dispatch.py's per-minute dispatch_due_emails,
+  # tasks/reminders.py's daily evaluate_reminders) and the send_email job they
+  # enqueue. Without this, campaigns/reminders build EmailMessage rows that
+  # stay "scheduled" forever -- nothing else ever claims and sends them. This
+  # was missing from this file entirely (present only in
+  # service-wed/docker-compose.yml's dev-only stack) -- same image as
+  # service-wed, just a different process/command against the same DB/Redis.
+  worker:
+    build:
+      context: ./service-wed
+      dockerfile: Dockerfile
+    container_name: service-wed-worker
+    command: ["arq", "service_wed.worker.WorkerSettings"]
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://wedding_db_user:wedding_db_pw@db:5432/wedding_db
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
 
   ui-wed:
     build:
@@ -77,11 +118,15 @@ services:
       - service-wed
     labels:
       - "traefik.enable=true"
-      # Route all other root traffic to the ui-wed react container
-      - "traefik.http.routers.ui-wed.rule=Host(`192.168.50.X`) && PathPrefix(`/`)"
+      # Catch-all: PathPrefix(`/`) matches everything service-wed's more
+      # specific `/api` rule above doesn't. Same no-Host()-matcher reasoning
+      # as service-wed's router -- see the comment there.
+      - "traefik.http.routers.ui-wed.rule=PathPrefix(`/`)"
       - "traefik.http.routers.ui-wed.entrypoints=websecure"
       - "traefik.http.routers.ui-wed.tls=true"
-      - "traefik.http.services.ui-wed.loadbalancer.server.port=5173"
+      # nginx (this image's runner stage) listens on 80, not Vite's 5173 --
+      # there's no Vite dev server running in this container anymore.
+      - "traefik.http.services.ui-wed.loadbalancer.server.port=80"
 
 volumes:
   postgres_data:
