@@ -22,8 +22,13 @@ from service_wed.models import campaign
 from service_wed.models.email_message import EmailMessage
 from service_wed.models.household import Household
 from service_wed.ports.uow import UnitOfWorkPort
-from service_wed.schemas.campaign import CampaignCreateRequest, CampaignAdminView
+from service_wed.schemas.campaign import (
+    CampaignCreateRequest,
+    CampaignAdminView,
+    CampaignDetailView,
+)
 from service_wed.schemas.common import Page
+from service_wed.schemas.dashboard import DeliveryStatsResponse
 
 
 def _ensure_future(scheduled_for: dt.datetime, now: dt.datetime) -> None:
@@ -97,13 +102,27 @@ class CampaignService:
                 offset=offset,
             )
 
-    async def get(self, campaign_id: uuid.UUID) -> CampaignAdminView:
-        """Admin campaign detail view."""
+    async def get(self, campaign_id: uuid.UUID) -> CampaignDetailView:
+        """Admin campaign detail view. Unlike list_campaigns()'s plain
+        CampaignAdminView, this also computes a live delivery breakdown
+        scoped to just this campaign's fanned-out messages -- see
+        CampaignDetailView's docstring for why that's the honest answer to
+        "did this send go out," not campaign.status itself."""
         async with self.uow:
             campaign = await self.uow.campaign_repo.get_by_id(campaign_id)
             if campaign is None:
                 raise NotFoundError(f"Campaign {campaign_id} does not exist.")
-            return CampaignAdminView.model_validate(campaign)
+            status_counts = await self.uow.email_message_repo.count_by_status(
+                campaign_id=campaign_id
+            )
+            event_counts = await self.uow.email_event_repo.count_by_type(
+                campaign_id=campaign_id
+            )
+            delivery = DeliveryStatsResponse.from_counts(status_counts, event_counts)
+            return CampaignDetailView(
+                **CampaignAdminView.model_validate(campaign).model_dump(),
+                delivery=delivery,
+            )
 
     async def schedule(self, campaign_id: uuid.UUID, scheduled_for: dt.datetime):
         """Change a DRAFT campaign's planned send time."""

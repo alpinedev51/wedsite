@@ -7,19 +7,21 @@ import { Button } from "../../components/ui/Button";
 import { useAuth } from "../auth/AuthContext";
 import { logout as logoutRequest } from "../auth/auth.api";
 import CampaignsSection from "../campaigns/CampaignsSection";
+import DashboardSection from "../dashboard/DashboardSection";
 import WeddingSettingsSection from "../wedding-settings/WeddingSettingsSection";
 import GuestListSection from "../guests/GuestListSection";
 
-type Tab = "guests" | "campaigns" | "wedding";
+type Tab = "dashboard" | "guests" | "campaigns" | "wedding";
 
 const TABS: { key: Tab; label: string }[] = [
+  { key: "dashboard", label: "Dashboard" },
   { key: "guests", label: "Guest List" },
   { key: "campaigns", label: "Campaigns" },
   { key: "wedding", label: "Schedule" },
 ];
 
 function AdminPage() {
-  const [tab, setTab] = useState<Tab>("guests");
+  const [tab, setTab] = useState<Tab>("dashboard");
   const { markAnonymous } = useAuth();
   const navigate = useNavigate();
 
@@ -59,6 +61,7 @@ function AdminPage() {
           ))}
         </div>
 
+        {tab === "dashboard" && <DashboardSection />}
         {tab === "guests" && <GuestListSection />}
         {tab === "campaigns" && <CampaignsSection />}
         {tab === "wedding" && <WeddingSettingsSection />}

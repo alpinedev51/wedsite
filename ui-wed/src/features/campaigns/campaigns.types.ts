@@ -1,6 +1,8 @@
 // Mirrors service-wed's domain/value_objects.py::CampaignType/CampaignStatus
 // and schemas/campaign.py -- keep these in sync if those backend types
 // change shape.
+import type { DeliveryStatsResponse } from "../dashboard/dashboard.types";
+
 export type { Page } from "../../types";
 
 // "reminder" is deliberately omitted from the values the create form
@@ -23,6 +25,18 @@ export interface CampaignAdminView {
   scheduled_for: string;
   status: CampaignStatus;
   created_by: string | null;
+}
+
+// Detail-only, mirroring service-wed's CampaignDetailView -- adds a live
+// per-campaign delivery breakdown that's only computed on the single-
+// campaign GET (not the list, which stays on plain CampaignAdminView so a
+// page of campaigns doesn't cost one grouped-count query per row). This is
+// the real answer to "did this campaign's emails go out" -- see
+// CampaignDetail.tsx, which renders it in place of campaign.status once a
+// campaign is no longer a draft (status never progresses past "scheduled"
+// on the backend, by design -- see the backend docstring this mirrors).
+export interface CampaignDetailView extends CampaignAdminView {
+  delivery: DeliveryStatsResponse;
 }
 
 export interface CampaignCreateRequest {

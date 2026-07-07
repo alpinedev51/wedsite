@@ -127,7 +127,14 @@ class SQLAlchemyEmailMessageRepository(EmailMessageRepository):
             for household_id, reminder_count, last_scheduled_for in result.all()
         }
 
-    async def count_by_status(self) -> dict[EmailStatus, int]:
+    async def count_by_status(
+        self, campaign_id: uuid.UUID | None = None
+    ) -> dict[EmailStatus, int]:
         stmt = select(EmailMessage.status, func.count()).group_by(EmailMessage.status)
+        # Optional filter: the global dashboard calls this with no campaign_id
+        # (every message ever sent); a campaign's own detail view passes its
+        # id to scope the same grouped count to just its fanned-out messages.
+        if campaign_id is not None:
+            stmt = stmt.where(EmailMessage.campaign_id == campaign_id)
         result = await self.session.execute(stmt)
         return {status: count for status, count in result.all()}

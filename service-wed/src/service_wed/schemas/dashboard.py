@@ -1,6 +1,8 @@
 # dashboard summary DTOs
 from pydantic import BaseModel
 
+from service_wed.domain.value_objects import EmailEventType, EmailStatus
+
 
 class DashboardStatsResponse(BaseModel):
     """RSVP-side summary: the admin dashboard's headline numbers."""
@@ -33,6 +35,26 @@ class DeliveryStatsResponse(BaseModel):
     canceled: int
     bounced: int
     complained: int
+
+    @classmethod
+    def from_counts(
+        cls,
+        status_counts: dict[EmailStatus, int],
+        event_counts: dict[EmailEventType, int],
+    ) -> "DeliveryStatsResponse":
+        """Shared by DashboardService (unscoped counts, every message ever
+        sent) and CampaignService's detail view (counts scoped to one
+        campaign via count_by_status/count_by_type's campaign_id filter) --
+        both just hand this the dict a grouped-count query returns."""
+        return cls(
+            scheduled=status_counts.get(EmailStatus.SCHEDULED, 0),
+            sending=status_counts.get(EmailStatus.SENDING, 0),
+            sent=status_counts.get(EmailStatus.SENT, 0),
+            failed=status_counts.get(EmailStatus.FAILED, 0),
+            canceled=status_counts.get(EmailStatus.CANCELED, 0),
+            bounced=event_counts.get(EmailEventType.BOUNCED, 0),
+            complained=event_counts.get(EmailEventType.COMPLAINED, 0),
+        )
 
 
 class DashboardResponse(BaseModel):

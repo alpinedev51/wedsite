@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import datetime as dt
 
-from service_wed.domain.value_objects import EmailEventType, EmailStatus, RsvpStatus
+from service_wed.domain.value_objects import RsvpStatus
 from service_wed.ports.uow import UnitOfWorkPort
 from service_wed.schemas.dashboard import (
     DashboardResponse,
@@ -56,13 +56,7 @@ class DashboardService:
             households_pending=households_total - households_responded,
             days_until_wedding=days_until_wedding,
         )
-        delivery = DeliveryStatsResponse(
-            scheduled=email_status_counts.get(EmailStatus.SCHEDULED, 0),
-            sending=email_status_counts.get(EmailStatus.SENDING, 0),
-            sent=email_status_counts.get(EmailStatus.SENT, 0),
-            failed=email_status_counts.get(EmailStatus.FAILED, 0),
-            canceled=email_status_counts.get(EmailStatus.CANCELED, 0),
-            bounced=event_type_counts.get(EmailEventType.BOUNCED, 0),
-            complained=event_type_counts.get(EmailEventType.COMPLAINED, 0),
+        delivery = DeliveryStatsResponse.from_counts(
+            email_status_counts, event_type_counts
         )
         return DashboardResponse(rsvp=rsvp, delivery=delivery)

@@ -22,8 +22,14 @@ class EmailEventRepository(Protocol):
         """Record an asynchronous webhook event from the email provider (e.g., delivered, bounced)."""
         ...
 
-    async def count_by_type(self) -> dict[EmailEventType, int]:
-        """Count every recorded event grouped by type. The dashboard only
-        reads bounced/complained back out of this, but returning the full
-        breakdown keeps the port useful beyond that one caller."""
+    async def count_by_type(
+        self, campaign_id: uuid.UUID | None = None
+    ) -> dict[EmailEventType, int]:
+        """Count recorded events grouped by type. The dashboard only reads
+        bounced/complained back out of this, but returning the full
+        breakdown keeps the port useful beyond that one caller. Pass
+        `campaign_id` to scope to events for just one campaign's messages
+        (used by the campaign detail view's own delivery breakdown) --
+        events don't carry campaign_id directly, so the adapter joins
+        through email_messages to filter."""
         ...

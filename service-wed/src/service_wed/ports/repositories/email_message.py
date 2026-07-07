@@ -56,7 +56,11 @@ class EmailMessageRepository(Protocol):
         """For each of the given households, how many REMINDER messages already exist and when the most recent one was scheduled."""
         ...
 
-    async def count_by_status(self) -> dict[EmailStatus, int]:
-        """Count every email_message grouped by status -- backs the admin
-        dashboard's delivery breakdown."""
+    async def count_by_status(
+        self, campaign_id: uuid.UUID | None = None
+    ) -> dict[EmailStatus, int]:
+        """Count email_messages grouped by status -- backs the admin
+        dashboard's delivery breakdown. Pass `campaign_id` to scope the count
+        to one campaign's fanned-out messages instead of every message ever
+        sent (used by the campaign detail view's own delivery breakdown)."""
         ...

@@ -2,12 +2,13 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Button } from "../../components/ui/Button";
 import { errorMessage } from "../../lib/api";
 import { fromDatetimeLocalInput, toDatetimeLocalInput } from "../../lib/date";
+import DeliveryStatsGrid from "../dashboard/DeliveryStatsGrid";
 import {
   fanOutCampaign,
   getCampaign,
   rescheduleCampaign,
 } from "./campaigns.api";
-import type { CampaignAdminView } from "./campaigns.types";
+import type { CampaignDetailView } from "./campaigns.types";
 
 const TYPE_LABELS: Record<string, string> = {
   save_the_date: "Save the Date",
@@ -26,7 +27,7 @@ function CampaignDetail({
   onClose: () => void;
   onUpdated: () => void;
 }) {
-  const [campaign, setCampaign] = useState<CampaignAdminView | null>(null);
+  const [campaign, setCampaign] = useState<CampaignDetailView | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -61,10 +62,13 @@ function CampaignDetail({
     setRescheduling(true);
     setRescheduleError(null);
     try {
-      const updated = await rescheduleCampaign(campaignId, {
+      await rescheduleCampaign(campaignId, {
         scheduled_for: fromDatetimeLocalInput(rescheduleValue),
       });
-      setCampaign(updated);
+      // Re-fetch rather than using the mutation's own response: that
+      // returns the plain CampaignAdminView (no delivery breakdown), and
+      // this component's state needs the richer CampaignDetailView.
+      setCampaign(await getCampaign(campaignId));
       onUpdated();
     } catch (err) {
       setRescheduleError(errorMessage(err));
@@ -86,8 +90,11 @@ function CampaignDetail({
     setFanningOut(true);
     setFanOutError(null);
     try {
-      const updated = await fanOutCampaign(campaignId);
-      setCampaign(updated);
+      await fanOutCampaign(campaignId);
+      // Re-fetch for the same reason as handleReschedule above -- this
+      // also picks up the fresh (all-"scheduled") delivery breakdown that
+      // exists the instant fan-out builds the EmailMessage rows.
+      setCampaign(await getCampaign(campaignId));
       onUpdated();
     } catch (err) {
       setFanOutError(errorMessage(err));
@@ -162,12 +169,16 @@ function CampaignDetail({
               )}
             </form>
           ) : (
-            <p className="border-t border-walnut/15 pt-4 text-sm text-ink/70">
-              This status won't progress past "scheduled" here even after it
-              actually sends -- service-wed never assigns sending/sent to a
-              campaign row. Check delivery counts on the Dashboard (once built)
-              or the exported guest CSV for real send state.
-            </p>
+            // Once fanned out, campaign.status itself just stays
+            // "scheduled" forever (see campaigns.types.ts's
+            // CampaignDetailView comment) -- this live, per-campaign
+            // breakdown is the real answer to "did this send go out."
+            <div className="flex flex-col gap-3 border-t border-walnut/15 pt-4">
+              <p className="text-sm text-ink/70">
+                Delivery breakdown for this campaign's emails:
+              </p>
+              <DeliveryStatsGrid delivery={campaign.delivery} />
+            </div>
           )}
         </>
       )}

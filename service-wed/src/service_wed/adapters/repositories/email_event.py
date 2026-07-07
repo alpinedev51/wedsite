@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from service_wed.domain.value_objects import EmailEventType
 from service_wed.models.email_event import EmailEvent
+from service_wed.models.email_message import EmailMessage
 from service_wed.ports.repositories.email_event import (
     EmailEventRepository,
 )
@@ -42,9 +43,17 @@ class SQLAlchemyEmailEventRepository(EmailEventRepository):
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def count_by_type(self) -> dict[EmailEventType, int]:
+    async def count_by_type(
+        self, campaign_id: uuid.UUID | None = None
+    ) -> dict[EmailEventType, int]:
         stmt = select(EmailEvent.email_event_type, func.count()).group_by(
             EmailEvent.email_event_type
         )
+        # EmailEvent only has email_message_id, not campaign_id -- join
+        # through EmailMessage to scope the count to one campaign's events.
+        if campaign_id is not None:
+            stmt = stmt.join(
+                EmailMessage, EmailEvent.email_message_id == EmailMessage.id
+            ).where(EmailMessage.campaign_id == campaign_id)
         result = await self.session.execute(stmt)
         return {event_type: count for event_type, count in result.all()}

@@ -2,6 +2,7 @@ import { apiFetch } from "../../lib/api";
 import type {
   CampaignAdminView,
   CampaignCreateRequest,
+  CampaignDetailView,
   CampaignRescheduleRequest,
   Page,
 } from "./campaigns.types";
@@ -13,7 +14,10 @@ export function listCampaigns(
   return apiFetch(`/admin/campaigns?limit=${limit}&offset=${offset}`);
 }
 
-export function getCampaign(id: string): Promise<CampaignAdminView> {
+// Returns the richer CampaignDetailView (includes the live delivery
+// breakdown) -- listCampaigns() above stays on plain CampaignAdminView,
+// see campaigns.types.ts's CampaignDetailView comment for why.
+export function getCampaign(id: string): Promise<CampaignDetailView> {
   return apiFetch(`/admin/campaigns/${id}`);
 }
 

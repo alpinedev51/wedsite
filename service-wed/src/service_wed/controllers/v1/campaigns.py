@@ -12,6 +12,7 @@ from service_wed.policies.admin import require_admin
 from service_wed.schemas.campaign import (
     CampaignAdminView,
     CampaignCreateRequest,
+    CampaignDetailView,
     CampaignRescheduleRequest,
 )
 from service_wed.schemas.common import Page
@@ -40,8 +41,11 @@ async def list_campaigns(
 async def get_campaign(
     campaign_id: uuid.UUID,
     campaign_service: Annotated[CampaignService, Depends(get_campaign_service)],
-) -> CampaignAdminView:
-    """Single campaign detail, for a campaign detail/edit page."""
+) -> CampaignDetailView:
+    """Single campaign detail, for a campaign detail/edit page. Includes a
+    live per-campaign delivery breakdown (see CampaignDetailView) -- the
+    list endpoint above stays on the plain CampaignAdminView since that
+    breakdown isn't cheap to compute for every row on a page."""
     return await campaign_service.get(campaign_id)
 
 
