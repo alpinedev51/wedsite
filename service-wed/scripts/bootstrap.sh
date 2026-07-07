@@ -80,7 +80,9 @@ REMINDER_CAP="${REMINDER_CAP:-2}"
 REMINDER_INTERVAL_DAYS="${REMINDER_INTERVAL_DAYS:-7}"
 
 COOKIE_JAR="$(mktemp)"
-BLANK_CSV="$(mktemp --suffix=.csv)"
+# Works on both macOS and Linux to ensure a .csv extension
+BLANK_CSV="${COOKIE_JAR}_guestlist.csv"
+touch "$BLANK_CSV"
 trap 'rm -f "$COOKIE_JAR" "$BLANK_CSV"' EXIT
 
 # api_call METHOD PATH [JSON_BODY] -- prints the response body to stdout,
