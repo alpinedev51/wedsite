@@ -11,6 +11,9 @@ from service_wed.ports.repositories.session import (
 
 
 class SQLAlchemyAdminSessionRepository(AdminSessionRepository):
+    """CRUD for AdminSession rows -- see ports/repositories/session.py for
+    the contract this fulfills."""
+
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
 

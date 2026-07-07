@@ -8,8 +8,22 @@ from service_wed.ports.password_hasher import PasswordHasherPort
 from service_wed.ports.uow import UnitOfWorkPort
 from service_wed.schemas.auth import AdminLoginRequest, AdminSessionResponse
 
+# A syntactically-valid scrypt hash of an unguessable value, used only to
+# give login() something to hash against when the email doesn't match any
+# admin -- so a bad email pays the same scrypt cost as a bad password
+# instead of returning near-instantly. See login()'s comment below.
+_DUMMY_HASH = (
+    "scrypt$16384$8$1"
+    "$00000000000000000000000000000000"
+    "$0000000000000000000000000000000000000000000000000000000000000000"
+)
+
 
 class AuthService:
+    """Login/logout for the single admin account: verifies credentials and
+    creates/revokes AdminSession rows. See policies/admin.py:require_admin
+    for how a session is validated on subsequent requests."""
+
     def __init__(
         self, uow: UnitOfWorkPort, password_hasher: PasswordHasherPort
     ) -> None:
@@ -20,10 +34,16 @@ class AuthService:
         async with self.uow:
             admin = await self.uow.admin_user_repo.get_by_email(request.email)
 
-            if not admin or not self.password_hasher.verify(
-                request.password, admin.password_hash
-            ):
-                # 401, not 404/400: deliberately identical whether the email
+            # Always call verify(), even for a nonexistent email, against a
+            # dummy hash -- otherwise `not admin or ...` short-circuits and
+            # skips the (deliberately slow) scrypt computation, making a bad
+            # email respond measurably faster than a bad password and
+            # letting response timing enumerate which emails are registered.
+            password_hash = admin.password_hash if admin else _DUMMY_HASH
+            password_ok = self.password_hasher.verify(request.password, password_hash)
+
+            if not admin or not password_ok:
+                # 401, not 404/400: identical response body whether the email
                 # doesn't exist or the password is wrong, so the response
                 # can't be used to enumerate admin emails.
                 raise InvalidCredentialsError("Invalid email or password.")

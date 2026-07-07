@@ -24,6 +24,7 @@ _KEY_LEN = 32
 
 class ScryptPasswordHasher(PasswordHasherPort):
     def hash(self, plain: str) -> str:
+        """Salt + scrypt-hash a plaintext password for storage."""
         salt = secrets.token_bytes(16)
         derived = hashlib.scrypt(
             plain.encode("utf-8"), salt=salt, n=_N, r=_R, p=_P, dklen=_KEY_LEN
@@ -31,6 +32,8 @@ class ScryptPasswordHasher(PasswordHasherPort):
         return f"scrypt${_N}${_R}${_P}${salt.hex()}${derived.hex()}"
 
     def verify(self, plain: str, hashed: str) -> bool:
+        """Re-derive with the stored salt/params and compare in constant time.
+        Any malformed `hashed` value (wrong format, bad hex) fails closed."""
         try:
             algo, n, r, p, salt_hex, hash_hex = hashed.split("$")
             if algo != "scrypt":

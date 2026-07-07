@@ -31,6 +31,7 @@ async def login(
     response: Response,
     auth_service: Annotated[AuthService, Depends(get_auth_service)],
 ) -> SuccessResponse:
+    """Verify email+password, create a session row, set the session cookie."""
     result = await auth_service.login(request)
 
     # The raw token goes in an httponly cookie only, never in the JSON body --
@@ -55,6 +56,9 @@ async def logout(
     auth_service: Annotated[AuthService, Depends(get_auth_service)],
     _admin: Annotated[AdminUser, Depends(require_admin)],
 ) -> SuccessResponse:
+    """Revoke the current session server-side and clear the cookie. Requires
+    an already-valid session (require_admin), so there's nothing to revoke
+    for an unauthenticated caller."""
     raw_token = request.cookies.get(settings.session_cookie_name)
     if raw_token is not None:
         await auth_service.logout(raw_token)
