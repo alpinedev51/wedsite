@@ -14,8 +14,14 @@ class HouseholdRepository(Protocol):
         by the magic link token."""
         ...
 
-    async def get_by_email(self, email: str) -> Household | None:
-        """Fetch household by contact email. Useful for magic link recovery."""
+    async def list_by_email(self, email: str) -> list[Household]:
+        """Fetch every household sharing this contact email. contact_email
+        has no uniqueness constraint (models/household.py) -- it's
+        legitimate for two separate households to share one inbox (e.g. a
+        parent managing RSVPs for two different branches of a family), so
+        callers can't assume at most one match. Magic-link recovery
+        disambiguates by name across whatever this returns (see
+        _matches_full_name in services/invitation_lookup.py)."""
         ...
 
     async def get_by_display_name(self, display_name: str) -> Household | None:

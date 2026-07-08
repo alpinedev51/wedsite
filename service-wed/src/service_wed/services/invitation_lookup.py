@@ -45,32 +45,41 @@ class InvitationService:
         self, request: MagicLinkRecoveryRequest
     ) -> SuccessResponse:
         async with self.uow:
-            household = await self.uow.household_repo.get_by_email(request.email)
-
-            if (
+            # contact_email isn't unique across households (see
+            # list_by_email's docstring) -- e.g. two households under one
+            # family's shared inbox -- so this has to check every household
+            # that email matches, not assume there's at most one.
+            candidates = await self.uow.household_repo.list_by_email(request.email)
+            matches = [
                 household
-                and household.contact_email
+                for household in candidates
+                if household.contact_email
                 and _matches_full_name(household, request.full_name)
-            ):
+            ]
+
+            if matches:
                 now = dt.datetime.now(dt.timezone.utc)
                 wedding = await self.uow.wedding_repo.get()
-                message = EmailMessage(
-                    campaign_id=None,
-                    household_id=household.id,
-                    guest_id=None,
-                    email_type=EmailType.MAGIC_LINK_RECOVERY,
-                    recipient=household.contact_email,
-                    subject=_MAGIC_LINK_RECOVERY_SUBJECT,
-                    template_key="magic_link_recovery",
-                    context=build_household_email_context(household, wedding),
-                    status=EmailStatus.SCHEDULED,
-                    scheduled_for=now,
-                    # A fresh key every request, deliberately -- same
-                    # reasoning as RsvpService's confirmation email, a
-                    # household can request its link resent more than once.
-                    idempotency_key=f"magic_link_recovery:{household.id}:{uuid.uuid4()}",
-                )
-                await self.uow.email_message_repo.create_batch([message])
+                messages = [
+                    EmailMessage(
+                        campaign_id=None,
+                        household_id=household.id,
+                        guest_id=None,
+                        email_type=EmailType.MAGIC_LINK_RECOVERY,
+                        recipient=household.contact_email,
+                        subject=_MAGIC_LINK_RECOVERY_SUBJECT,
+                        template_key="magic_link_recovery",
+                        context=build_household_email_context(household, wedding),
+                        status=EmailStatus.SCHEDULED,
+                        scheduled_for=now,
+                        # A fresh key every request, deliberately -- same
+                        # reasoning as RsvpService's confirmation email, a
+                        # household can request its link resent more than once.
+                        idempotency_key=f"magic_link_recovery:{household.id}:{uuid.uuid4()}",
+                    )
+                    for household in matches
+                ]
+                await self.uow.email_message_repo.create_batch(messages)
 
             await self.uow.commit()
 

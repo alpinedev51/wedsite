@@ -46,14 +46,14 @@ class SQLAlchemyHouseholdRepository(HouseholdRepository):
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def get_by_email(self, email: str) -> Household | None:
+    async def list_by_email(self, email: str) -> list[Household]:
         stmt = (
             select(Household)
             .where(Household.contact_email == email)
             .options(_WITH_GUESTS_AND_RSVPS)
         )
         result = await self.session.execute(stmt)
-        return result.scalar_one_or_none()
+        return list(result.scalars().all())
 
     async def get_by_display_name(self, display_name: str) -> Household | None:
         stmt = (
