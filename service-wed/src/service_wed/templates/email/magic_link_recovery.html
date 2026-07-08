@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Your RSVP Link{% endblock %}
+{% block content %}
+<h1 style="margin: 0 0 16px; font-size: 28px; color: #6e5a45; font-weight: normal;">
+  Here's Your RSVP Link
+</h1>
+<p style="margin: 0 0 16px; font-size: 16px; line-height: 1.6;">
+  Dear {{ household_name }},
+</p>
+<p style="margin: 0 0 24px; font-size: 16px; line-height: 1.6;">
+  As requested, here's the link to view or submit your RSVP.
+</p>
+<p style="margin: 0 0 24px; text-align: center;">
+  <a
+    href="{{ rsvp_url }}"
+    style="display: inline-block; padding: 14px 32px; background-color: #6e5a45; color: #f5f1e8; text-decoration: none; border-radius: 999px; font-size: 14px; letter-spacing: 1px; text-transform: uppercase;"
+    >View My RSVP</a
+  >
+</p>
+{% if rsvp_deadline %}
+<p style="margin: 0 0 16px; font-size: 14px; color: #8a7a68; text-align: center;">
+  Please respond by {{ rsvp_deadline }}.
+</p>
+{% endif %}
+<p style="margin: 0; font-size: 13px; color: #8a7a68;">
+  If the button above doesn't work, copy and paste this link into your
+  browser:<br />
+  <a href="{{ rsvp_url }}" style="color: #a98d74;">{{ rsvp_url }}</a>
+</p>
+<p style="margin: 24px 0 0; font-size: 13px; color: #8a7a68;">
+  Didn't request this? You can safely ignore this email.
+</p>
+{% endblock %}

@@ -419,9 +419,10 @@ Rejections you'll see here:
 
 If a guest loses their link, `POST /invitations/recover` accepts a
 name+email and always returns the same generic success message regardless
-of whether it matched anything (prevents email enumeration) — see
-[Known limitations](#known-limitations), the actual recovery email isn't
-wired up to send yet.
+of whether it matched anything (prevents email enumeration). If the email
+matches a household AND the name matches that household's display name or
+one of its guests, a `magic_link_recovery` email queues with the link;
+otherwise nothing is sent, but the response is identical either way.
 
 ### 11. Reminders (automatic)
 
@@ -772,11 +773,6 @@ running.
 
 Worth knowing before you rely on these:
 
-- **Magic-link recovery doesn't send an email yet.** `POST
-  /invitations/recover` always returns success (by design, to avoid leaking
-  which emails are registered) but the actual "send a new link" logic is a
-  stub — no email goes out. There's also no `magic_link_recovery.html`
-  template yet.
 - **Campaign status doesn't track past `scheduled`.** `CampaignStatus` has
   `SENDING`/`SENT`/`CANCELED` members, but nothing in the codebase ever
   assigns them — a fanned-out campaign shows `scheduled` forever, even
