@@ -133,13 +133,29 @@ class GuestListService:
                         contact_email=cleaned.contact_email,
                         invite_token=secrets.token_urlsafe(16),
                     )
-                elif cleaned.contact_email and not household.contact_email:
-                    # Backfill: an earlier row for this household had no
-                    # email, but this one does -- adopt it as the
-                    # household's. SQLAlchemy picks this up as an ordinary
-                    # dirty-attribute update on commit, no explicit repo
-                    # call needed (same pattern as services/rsvp.py).
+                elif (
+                    cleaned.contact_email
+                    and cleaned.contact_email != household.contact_email
+                ):
+                    # BUGFIX: this used to only fire `and not
+                    # household.contact_email` -- i.e. it would backfill a
+                    # previously-blank email, but silently ignore a
+                    # corrected one on re-upload, contradicting the
+                    # "re-uploading is safe, guests are matched and
+                    # updated" promise shown right on the upload form.
+                    # SQLAlchemy picks up both assignments below as an
+                    # ordinary dirty-attribute update on commit, no
+                    # explicit repo call needed (same pattern as
+                    # services/rsvp.py).
                     household.contact_email = cleaned.contact_email
+                    # Every existing guest's own .email mirrors the
+                    # household's (see Guest.email's field comment) --
+                    # without this, only *new* guests created below would
+                    # pick up the corrected address; existing ones would
+                    # keep serving the stale value from GET
+                    # /admin/households and the CSV export.
+                    for guest in household.guests:
+                        guest.email = cleaned.contact_email
 
                 # BUGFIX: a household just returned by create() has never
                 # been loaded from a query -- under the async ORM, touching
