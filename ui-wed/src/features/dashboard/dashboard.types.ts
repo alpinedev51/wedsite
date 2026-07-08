@@ -22,6 +22,8 @@ export interface DeliveryStatsResponse {
   canceled: number;
   bounced: number;
   complained: number;
+  opened: number;
+  clicked: number;
 }
 
 export interface DashboardResponse {

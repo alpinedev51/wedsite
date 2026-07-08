@@ -12,7 +12,9 @@ import type { DeliveryStatsResponse } from "./dashboard.types";
 // worth the admin's attention (a bounced wedding invite is worth knowing
 // about), so those get the status accent colors -- "Scheduled"/"Sending"/
 // "Canceled" are just in-progress/inactive states, not good or bad, so they
-// stay neutral.
+// stay neutral. "Opened"/"Clicked" are engagement counts, not a health
+// signal the way a bounce is (a low open rate isn't a "failure"), so they
+// stay neutral too.
 function DeliveryStatsGrid({ delivery }: { delivery: DeliveryStatsResponse }) {
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -27,6 +29,8 @@ function DeliveryStatsGrid({ delivery }: { delivery: DeliveryStatsResponse }) {
         value={delivery.complained}
         accent="critical"
       />
+      <StatTile label="Opened" value={delivery.opened} />
+      <StatTile label="Clicked" value={delivery.clicked} />
     </div>
   );
 }

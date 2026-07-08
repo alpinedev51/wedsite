@@ -35,6 +35,11 @@ class DeliveryStatsResponse(BaseModel):
     canceled: int
     bounced: int
     complained: int
+    # Engagement signal, not a health/failure signal like bounced/complained
+    # above -- these come from the same webhook events but are purely
+    # informational (a low open rate isn't a "failure" the way a bounce is).
+    opened: int
+    clicked: int
 
     @classmethod
     def from_counts(
@@ -54,6 +59,8 @@ class DeliveryStatsResponse(BaseModel):
             canceled=status_counts.get(EmailStatus.CANCELED, 0),
             bounced=event_counts.get(EmailEventType.BOUNCED, 0),
             complained=event_counts.get(EmailEventType.COMPLAINED, 0),
+            opened=event_counts.get(EmailEventType.OPENED, 0),
+            clicked=event_counts.get(EmailEventType.CLICKED, 0),
         )
 
 
