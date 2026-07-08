@@ -29,8 +29,6 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-wedding_db_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env -- see .env.example. Do not reuse wedding_db_pw.}
       POSTGRES_DB: ${POSTGRES_DB:-wedding_db}
-    ports:
-      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql
     # service-wed now runs `alembic upgrade head` immediately on container
@@ -49,8 +47,6 @@ services:
     image: redis:8.8
     container_name: wedding_redis
     restart: always
-    ports:
-      - "${REDIS_PORT:-6379}:6379"
     volumes:
       - redis_data:/data
 

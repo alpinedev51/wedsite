@@ -91,8 +91,8 @@ ever change them.
 
 | Variable | Default | Used by | Notes |
 |---|---|---|---|
-| `DATABASE_URL` | `postgresql+asyncpg://wedding_db_user:wedding_db_pw@localhost:5432/wedding_db` | API, worker, Alembic | Must use the `asyncpg` driver |
-| `REDIS_URL` | `redis://localhost:6379` | API, worker | Shared by the arq queue *and* the rate limiter |
+| `DATABASE_URL` | `postgresql+asyncpg://wedding_db_user:wedding_db_pw@db:5432/wedding_db` | API, worker, Alembic | Must use the `asyncpg` driver |
+| `REDIS_URL` | `redis://redis:6379` | API, worker | Shared by the arq queue *and* the rate limiter |
 | `DEBUG` | `false` | API | See [cookie note](#cookie-based-auth) below — controls the admin session cookie's `Secure` flag and SQL echo logging |
 | `RESEND_API_KEY` | unset | API | If unset, emails are printed to stdout via a console sender instead of actually sent |
 | `RESEND_FROM_ADDRESS` | `wedding@example.com` | API | From-address used when `RESEND_API_KEY` is set |
@@ -149,7 +149,7 @@ curl -s http://localhost:8000/api/v1/health/ready   # {"status":"ok"} -- DB is r
 ### 2. Run migrations
 
 Run from the host (uses `.env`'s `DATABASE_URL`, which points at
-`localhost:5432` — the port Docker published):
+`db:5432` — the port Docker published):
 
 ```bash
 uv run alembic upgrade head
@@ -443,7 +443,7 @@ from arq import create_pool
 from arq.connections import RedisSettings
 
 async def main():
-    redis = await create_pool(RedisSettings.from_dsn('redis://localhost:6379/0'))
+    redis = await create_pool(RedisSettings.from_dsn('redis://redis:6379/0'))
     await redis.enqueue_job('evaluate_reminders')
     await redis.aclose()
 

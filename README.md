@@ -73,7 +73,7 @@ The API runs at `http://localhost:8000`, with interactive docs at `http://localh
 ### Environment variables
 
 ```
-DATABASE_URL=postgresql+asyncpg://user:password@localhost:5432/wedsite
+DATABASE_URL=postgresql+asyncpg://user:password@db:5432/wedsite
 SECRET_KEY=change-me
 CORS_ORIGINS=http://localhost:5173
 ```

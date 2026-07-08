@@ -10,17 +10,12 @@ class Settings(BaseSettings):
 
     database_url: PostgresDsn = Field(
         default=PostgresDsn(
-            "postgresql+asyncpg://wedding_db_user:wedding_db_pw@localhost:5432/wedding_db"
+            "postgresql+asyncpg://wedding_db_user:wedding_db_pw@db:5432/wedding_db"
         ),
         validation_alias=AliasChoices("DATABASE_URL"),
     )
-    # BUGFIX: default was "redis://localhost:6739" -- 6379 is redis's actual
-    # default port (and what .env / docker-compose.yml both use); this stale
-    # typo'd default only matters if REDIS_DSN/REDIS_URL is ever unset, but
-    # it had already propagated into docker-compose.yml as if 6739 were
-    # intentional. Fixed at the source instead of leaving it to keep spreading.
     redis_dsn: RedisDsn = Field(
-        default=RedisDsn("redis://localhost:6379"),
+        default=RedisDsn("redis://redis:6379"),
         validation_alias=AliasChoices("REDIS_DSN", "REDIS_URL"),
     )
 
