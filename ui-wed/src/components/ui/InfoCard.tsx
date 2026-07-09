@@ -38,12 +38,7 @@ function InfoCard({
 
   if (href) {
     return (
-      <a
-        href={href}
-        target="_blank"
-        rel="noreferrer"
-        className="block h-full"
-      >
+      <a href={href} target="_blank" rel="noreferrer" className="block h-full">
         {content}
       </a>
     );

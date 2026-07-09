@@ -43,30 +43,10 @@ const cards: {
     },
   ];
 
-// The top/bottom bands frost into the adjacent hero photos (negative margin
-// bleeds them over the tail end of each ScrollHero) so this section reads as
-// a soft glass panel floating between the two photos, instead of a
-// hard-edged block dropped on top of them. Each band is masked (see
-// .hub-frost-fade-top/-bottom in index.css) so the blur itself fades in/out
-// instead of snapping on at the band's edge, and sized to 12dvh -- the same
-// percentage ScrollHero's own maskFadePct uses against its h-dvh height --
-// so the band lines up with the hero's own edge-fade instead of the two
-// creating two visibly different transitions back to back. z-10 is required
-// on the bottom band since the second hero comes later in the DOM and would
-// otherwise paint over it.
-//
-// The section's own wash holds flat at sage-wash/ochre-wash for its first
-// and last ~18% (rather than immediately drifting toward linen) so it isn't
-// still visibly changing color right where the frost bands end -- otherwise
-// even a perfectly color-matched band hands off into a gradient that keeps
-// moving right after it, which reads as a seam just as much as a color
-// mismatch does. The bands use those same tokens as their solid endpoint (as
-// opposed to an approximate blend like greenlinen) so the two are pixel-
-// identical at the handoff, not just close.
 function WeddingInfoHub() {
   return (
     <Section
-      className="relative text-center"
+      className="relative pt-4! text-center sm:pt-8!"
       style={{
         backgroundImage:
           "linear-gradient(to bottom, var(--color-sage-wash) 0%, var(--color-sage-wash) 18%, var(--color-linen) 50%, var(--color-linen) 82%, var(--color-ochre-wash) 100%)",

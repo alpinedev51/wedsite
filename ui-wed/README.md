@@ -23,5 +23,3 @@ The React Compiler is not enabled on this template because of its impact on dev 
 ## Signature
 
 Hand-drawn eucalyptus sprig (SVG line art) framing the hero corners
-
-

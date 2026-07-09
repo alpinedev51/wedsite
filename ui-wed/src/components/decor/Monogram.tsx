@@ -6,7 +6,14 @@ interface MonogramProps {
 export function Monogram({ className, initials = ["A", "K"] }: MonogramProps) {
   return (
     <svg viewBox="0 0 160 160" className={className} aria-hidden="true">
-      <circle cx="80" cy="80" r="70" fill="none" stroke="currentColor" strokeWidth="1.5" />
+      <circle
+        cx="80"
+        cy="80"
+        r="70"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      />
       <circle
         cx="80"
         cy="80"
@@ -18,7 +25,12 @@ export function Monogram({ className, initials = ["A", "K"] }: MonogramProps) {
       />
 
       {/* cardinal flourish ticks */}
-      <g stroke="currentColor" strokeWidth="1" strokeLinecap="round" opacity="0.5">
+      <g
+        stroke="currentColor"
+        strokeWidth="1"
+        strokeLinecap="round"
+        opacity="0.5"
+      >
         <path d="M80 10 L80 18" />
         <path d="M80 142 L80 150" />
         <path d="M10 80 L18 80" />

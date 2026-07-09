@@ -7,9 +7,7 @@ function Nav() {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <header
-      className="sticky top-0 z-50"
-    >
+    <header className="sticky top-0 z-50">
       <Container className="relative flex items-center justify-center py-4">
         <ul className="hidden items-center gap-8 md:flex">
           {navLinks.map((link) => (
@@ -18,7 +16,8 @@ function Nav() {
                 to={link.to}
                 end={link.to === "/"}
                 className={({ isActive }) =>
-                  `font-utility text-sm uppercase tracking-wider drop-shadow-sm transition-colors ${isActive ? "text-clay" : "text-ink hover:text-clay"
+                  `font-utility text-sm uppercase tracking-wider drop-shadow-sm transition-colors ${
+                    isActive ? "text-clay" : "text-ink hover:text-clay"
                   }`
                 }
               >
@@ -51,7 +50,8 @@ function Nav() {
                   end={link.to === "/"}
                   onClick={() => setIsOpen(false)}
                   className={({ isActive }) =>
-                    `block py-2 font-utility text-sm uppercase tracking-wider ${isActive ? "text-clay" : "text-ink"
+                    `block py-2 font-utility text-sm uppercase tracking-wider ${
+                      isActive ? "text-clay" : "text-ink"
                     }`
                   }
                 >

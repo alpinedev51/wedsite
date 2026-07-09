@@ -13,9 +13,26 @@ const storyMilestones = [
     description: "Across the hall we started out as strangers.",
   },
   {
+    date: "Spring 2022",
+    title: "Guess what...",
+    description: "Austin flew out to Durango to meet the fam and we went on our first raft trip together on Ruby Horsethief.",
+  },
+  {
+    date: "Summer 2024",
+    title: "Graduation & Seattle",
+    description: "Kylie graduated and spent the summer with Austin in Seattle for his internship.",
+  },
+  {
     date: "Fall 2024",
     title: "Moving In Together",
-    description: "Returning from Seattle waiting on Austin to graduate, we move in together.",
+    description:
+      "Returning from Seattle waiting on Austin to graduate, we move in together.",
+  },
+  {
+    date: "Summer 2025",
+    title: "Moving In Together - For real!",
+    description:
+      "Austin graduated, we moved to Montana with almost zero plan, and bought a house!",
   },
   {
     date: "Spring 2026",

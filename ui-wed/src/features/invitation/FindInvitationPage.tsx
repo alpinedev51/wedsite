@@ -35,15 +35,15 @@ function FindInvitationPage() {
           <Eyebrow>RSVP</Eyebrow>
           <h1 className="text-3xl">Find Your Invitation</h1>
           <p className="mt-2 text-sm text-ink/70">
-            Enter the name and email your invitation was addressed to, and
-            we'll send your RSVP link.
+            Enter the name and email your invitation was addressed to, and we'll
+            send your RSVP link.
           </p>
         </div>
 
         {submitted ? (
           <p className="text-center text-olive2">
-            If that name and email match an invitation, a link has been sent
-            -- check your inbox in a few minutes.
+            If that name and email match an invitation, a link has been sent --
+            check your inbox in a few minutes.
           </p>
         ) : (
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">

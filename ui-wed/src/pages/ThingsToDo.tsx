@@ -10,8 +10,7 @@ const activities = [
   },
   {
     title: "Hiking San Juan National Forest",
-    description:
-      "Trails for every skill level, with fall colors in September.",
+    description: "Trails for every skill level, with fall colors in September.",
   },
   {
     title: "Downtown Durango",

@@ -36,13 +36,6 @@
   --color-gold: #ffce00;
   --color-yellow: #fce300;
 
-  /* Pre-mixed linen+sage / linen+ochre tones, computed to equal what
-     bg-sage/15 and bg-ochre/10 actually render as once composited over
-     opaque linen. WeddingInfoHub's background wash uses these (instead of
-     the translucent sage/15, ochre/10 stops directly) at its own top/bottom
-     edge, and its frost bands share the exact same tokens for their solid
-     endpoint -- so the two meet as one continuous color, not an
-     approximation of one. */
   --color-sage-wash: #e7e6d9;
   --color-ochre-wash: #f0e9d8;
 
@@ -55,41 +48,25 @@
 }
 
 @layer components {
-  /* Fades an element's top/bottom edges to transparent so it blends into
-     the page background instead of ending in a hard rectangle. --fade-pct
-     is overridable per-instance (statically or via a scroll-linked motion
-     value) without duplicating the gradient definition. */
   .hero-fade-mask {
-    --fade-pct: 12%;
+    --fade-top-pct: 12%;
+    --fade-bottom-pct: 12%;
     mask-image: linear-gradient(
       to bottom,
       transparent 0,
-      black var(--fade-pct),
-      black calc(100% - var(--fade-pct)),
+      black var(--fade-top-pct),
+      black calc(100% - var(--fade-bottom-pct)),
       transparent 100%
     );
     -webkit-mask-image: linear-gradient(
       to bottom,
       transparent 0,
-      black var(--fade-pct),
-      black calc(100% - var(--fade-pct)),
+      black var(--fade-top-pct),
+      black calc(100% - var(--fade-bottom-pct)),
       transparent 100%
     );
   }
 
-  /* One-directional version of the fade above, for the frosted bands that
-     bridge WeddingInfoHub into the hero photos above/below it. Masking the
-     band itself (rather than only fading its background-color) matters
-     because backdrop-filter has no opacity of its own -- without a mask, the
-     blur snaps fully on/off at the band's box edge no matter how transparent
-     its background color is, producing a visible seam over the photo.
-
-     The stops approximate a smoothstep (ease-in-out) curve rather than a
-     straight ramp -- a linear ramp has a constant rate of change that then
-     drops to *zero* the instant the band ends and the flat section
-     background takes over, and that sudden change in rate reads as a visible
-     edge (a Mach band) even where the colors on both sides actually match.
-     Easing both ends of the ramp removes that kink. */
   .hub-frost-fade-top {
     mask-image: linear-gradient(
       to bottom,
