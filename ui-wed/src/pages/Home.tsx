@@ -16,7 +16,6 @@ function Home() {
         src={doorsImg}
         alt={wedding.coupleNames}
         priority
-        overlayAlign="bottom"
         overlay={<HeroTagline />}
       />
       <div className="flex flex-col items-center gap-3 sm:px-12 sm:py-8">
