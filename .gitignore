@@ -2,6 +2,11 @@
 .env
 .env.*
 !.env.example
+# ui-wed/.env is the one exception: it holds only public wedding display
+# text (couple names, date, venue -- see that file's own header comment),
+# not secrets, and is committed on purpose so Vite's index.html env
+# substitution always has a real value to fall back on.
+!ui-wed/.env
 # Python
 .venv/
 __pycache__/

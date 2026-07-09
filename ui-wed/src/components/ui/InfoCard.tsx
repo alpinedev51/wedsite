@@ -1,16 +1,19 @@
 import type { ReactNode } from "react";
+import { Link } from "react-router-dom";
 
 function InfoCard({
   icon,
   title,
   description,
   href,
+  to,
   className = "",
 }: {
   icon?: ReactNode;
   title: string;
   description?: string;
   href?: string;
+  to?: string;
   className?: string;
 }) {
   const content = (
@@ -24,6 +27,14 @@ function InfoCard({
       )}
     </div>
   );
+
+  if (to) {
+    return (
+      <Link to={to} className="block h-full">
+        {content}
+      </Link>
+    );
+  }
 
   if (href) {
     return (

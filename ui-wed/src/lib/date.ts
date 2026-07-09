@@ -7,6 +7,14 @@ export function formatLongDate(date: Date): string {
   });
 }
 
+export function formatShortDate(date: Date): string {
+  return date.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
 // <input type="datetime-local"> reads/writes local time with no timezone
 // info, but the backend wants/returns UTC ISO strings. There's exactly one
 // admin (one timezone) for this app, so "local time" unambiguously means

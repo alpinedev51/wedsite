@@ -38,7 +38,11 @@ services:
     # alembic before Postgres finishes initializing. This healthcheck plus
     # service-wed/worker's `condition: service_healthy` below closes that race.
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-wedding_db_user} -d ${POSTGRES_DB:-wedding_db}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-wedding_db_user} -d ${POSTGRES_DB:-wedding_db}",
+        ]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -51,6 +55,7 @@ services:
       - redis_data:/data
 
   service-wed:
+    image: ${IMAGE_REPO:-wed-website}/service-wed:${IMAGE_TAG:-latest}
     build:
       context: ./service-wed
       dockerfile: Dockerfile
@@ -97,6 +102,7 @@ services:
       - "traefik.http.services.service-wed.loadbalancer.server.port=8000"
 
   worker:
+    image: ${IMAGE_REPO:-wed-website}/worker:${IMAGE_TAG:-latest}
     build:
       context: ./service-wed
       dockerfile: Dockerfile
@@ -116,9 +122,17 @@ services:
         condition: service_started
 
   ui-wed:
+    image: ${IMAGE_REPO:-wed-website}/ui-wed:${IMAGE_TAG:-latest}
+    restart: unless-stopped
     build:
       context: ./ui-wed
       dockerfile: Dockerfile
+      args:
+        VITE_COUPLE_NAMES: ${COUPLE_NAMES:-Austin & Kylie}
+        VITE_WEDDING_DATE: ${WEDDING_DATE:-2027-09-04T00:00:00}
+        VITE_VENUE_NAME: ${VENUE_NAME:-Behn Park}
+        VITE_VENUE_CITY: ${VENUE_CITY:-Durango, CO}
+        VITE_RSVP_DEADLINE: ${RSVP_DEADLINE:-2027-07-24T00:00:00}
     container_name: ui-wed
     depends_on:
       - service-wed
