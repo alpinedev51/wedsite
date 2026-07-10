@@ -24,3 +24,9 @@ dist-ssr
 *.sw?
 
 .env
+
+# This couple's actual Our Story content -- personal, not for the public
+# repo. src/config/milestones.example.json (committed) is the generic
+# placeholder/shape; copy it here and fill in the real story to override it
+# (see src/config/wedding.ts's getMilestones()).
+src/config/milestones.json

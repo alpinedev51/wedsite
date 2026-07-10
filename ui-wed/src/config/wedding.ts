@@ -36,33 +36,24 @@ export interface Milestone {
   description: string;
 }
 
-const defaultMilestones: Milestone[] = [
-  {
-    date: "Fall 2021",
-    title: "How We Met",
-    description: "In college",
-  },
-  {
-    date: "Summer 2022",
-    title: "First Date",
-    description: "Went to dinner",
-  },
-];
+// This couple's real Our Story content lives in ./milestones.json, which is
+// gitignored (personal, not for the public repo -- see ui-wed/.gitignore).
+// Copy milestones.example.json (committed, generic placeholder, same shape)
+// to milestones.json and fill in the real story -- same .example/real
+// pattern as .env.example/.env elsewhere in this repo. import.meta.glob
+// (not a static import) is what makes milestones.json optional -- it
+// matches whatever's actually on disk at build time instead of erroring on
+// a missing path, so a fresh clone without that file still builds fine.
+import genericMilestones from "./milestones.example.json";
+
+const overrideMilestoneFiles = import.meta.glob<{ default: Milestone[] }>(
+  "./milestones.json",
+  { eager: true },
+);
 
 function getMilestones(): Milestone[] {
-  const rawData = import.meta.env.VITE_STORY_MILESTONES;
-  let parsed = defaultMilestones;
-
-  if (rawData) {
-    try {
-      parsed = JSON.parse(rawData);
-    } catch (e) {
-      console.error(
-        "Failed to parse VITE_STORY_MILESTONES JSON. Falling back to defaults.",
-        e,
-      );
-    }
-  }
+  const override = Object.values(overrideMilestoneFiles)[0]?.default;
+  const parsed = override ?? (genericMilestones as Milestone[]);
 
   return parsed.map((m) => ({
     ...m,

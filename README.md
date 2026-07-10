@@ -133,8 +133,13 @@ somewhere else.
 
 ```bash
 docker compose up -d --build   # starts db, redis, service-wed, worker
-uv run alembic upgrade head
 ```
+
+Migrations run automatically as part of `service-wed`'s container start --
+no separate `alembic upgrade head` step needed (see
+`service-wed/README.md`'s ["2. Run migrations"](service-wed/README.md#2-run-migrations)
+for the manual/one-off-container alternative, e.g. if you're generating a
+new migration).
 
 ### 2. Seed the one admin account
 

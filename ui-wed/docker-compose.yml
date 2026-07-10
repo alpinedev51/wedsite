@@ -1,36 +1,22 @@
 services:
-  traefik:
-    image: traefik:v3.7
-    container_name: wedding_proxy
-    restart: unless-stopped
-    command:
-      - "--api.insecure=true" # enables local dashbaord at http://localhost:8080
-      - "--providers.docker=true" # tells traefik to listen to docker daemon
-      - "--providers.docker.exposedbydefault=false" # secure default: don't expose containers unless labeled
-      - "--entrypoints.web.address=:80" # define port 80 entrypoint
-      - "--entrypoints.websecure.address=:443" # define port 443 entrypoint
-      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
-      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
-    ports:
-      - "8081:80"
-      - "8443:443"
-      - "8082:8080"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-
   ui-wed:
     build:
-      context: ./ui-wed
+      context: .
       dockerfile: Dockerfile
+      args:
+        # No safe generic default -- a standalone ui-wed has no reverse
+        # proxy unifying it with a backend on the same origin (unlike the
+        # root docker-compose.yml's Traefik-fronted setup), so it must be
+        # told exactly where service-wed is reachable.
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:?Set VITE_API_BASE_URL in .env to wherever your standalone service-wed is reachable, e.g. https://api.example.com}
+        VITE_COUPLE_NAMES: ${VITE_COUPLE_NAMES:-Mister & Missus}
+        VITE_BRIDE_FNAME: ${VITE_BRIDE_FNAME:-Missus}
+        VITE_GROOM_FNAME: ${VITE_GROOM_FNAME:-Mister}
+        VITE_WEDDING_DATE: ${VITE_WEDDING_DATE:-2027-01-01T00:00:00}
+        VITE_VENUE_NAME: ${VITE_VENUE_NAME:-Pretty Venue}
+        VITE_VENUE_CITY: ${VITE_VENUE_CITY:-Small Town, USA}
+        VITE_RSVP_DEADLINE: ${VITE_RSVP_DEADLINE:-2027-02-01T00:00:00}
     container_name: ui-wed
-    environment:
-      - VITE_API_URL=https://localhost:8000/api
+    restart: unless-stopped
     ports:
-      - "5713:5173"
-    labels:
-      - "traefik.enable=true"
-      # Route all other root traffic to the ui-wed react container
-      - "traefik.http.routers.ui-wed.rule=Host(`192.168.50.X`) && PathPrefix(`/`)"
-      - "traefik.http.routers.ui-wed.entrypoints=websecure"
-      - "traefik.http.routers.ui-wed.tls=true"
-      - "traefik.http.services.ui-wed.loadbalancer.server.port=5173"
+      - "${HTTP_PORT:-8080}:80"

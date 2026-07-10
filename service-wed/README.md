@@ -76,22 +76,18 @@ concurrent arq jobs.
 
 ## Configuration
 
-Two separate places configure this app, and it's easy to conflate them:
-
-- **`docker-compose.yml`** sets the environment for the containers
-  themselves (`service-wed` and `worker`). Inside the Docker network they talk
-  to Postgres/Redis by service name (`db`, `redis`), not `localhost`.
-- **`.env`** (repo root) is read by anything you run *from the host* —
-  Alembic migrations, one-off admin-seeding scripts, etc. It points at
-  `localhost` because that's how the host sees the containers' **published**
-  ports (`5432`, `6379`, `8000`).
-
-Both need to stay in sync with `docker-compose.yml`'s `ports:` mappings if you
-ever change them.
+`.env` (this directory) feeds `docker-compose.yml`, which sets the
+environment for the containers themselves (`db`, `service-wed`, `worker`).
+Inside the Docker network they talk to Postgres/Redis by service name (`db`,
+`redis`), not `localhost` — and `db`/`redis` aren't published to the host at
+all (only `service-wed`'s API port, `8000`, is), so anything you run
+*from the host* (Alembic, one-off admin-seeding scripts) can't reach
+Postgres/Redis directly. See [step 2](#2-run-migrations)/[step
+3](#3-seed-the-admin-account) above for the one-off-container workaround.
 
 | Variable | Default | Used by | Notes |
 |---|---|---|---|
-| `DATABASE_URL` | `postgresql+asyncpg://wedding_db_user:wedding_db_pw@db:5432/wedding_db` | API, worker, Alembic | Must use the `asyncpg` driver |
+| `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` | `wedding_db_user` / *(required)* / `wedding_db` | `db`, composed into `DATABASE_URL` for API/worker | `POSTGRES_PASSWORD` has no default — `docker-compose.yml` fails loudly if unset. Don't reuse `wedding_db_pw` |
 | `REDIS_URL` | `redis://redis:6379` | API, worker | Shared by the arq queue *and* the rate limiter |
 | `DEBUG` | `false` | API | See [cookie note](#cookie-based-auth) below — controls the admin session cookie's `Secure` flag and SQL echo logging |
 | `RESEND_API_KEY` | unset | API | If unset, emails are printed to stdout via a console sender instead of actually sent |
@@ -109,19 +105,22 @@ testing a deployed instance instead of local Docker, swap in your real
 domain/HTTPS — and see the [cookie note](#cookie-based-auth) about `DEBUG`
 before you do.
 
-> **Shortcut:** steps 1–6 below (start the stack, migrate, seed the admin
-> account, log in, create the wedding, upload a blank guest list) are all
-> scripted in [`scripts/bootstrap.sh`](scripts/bootstrap.sh). Set
-> `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `WEDDING_DATE`, and `RSVP_DEADLINE` (plus
-> any of the optional wedding fields you want) in `.env`, then run:
-> ```bash
-> ./scripts/bootstrap.sh
-> ```
-> It's idempotent, so re-running it is safe. **If you use it, skip straight
-> to [step 7](#7-review-the-guest-list)** — everything through step 6 is
-> already done. Read steps 1–6 anyway if you want to understand what the
-> script is doing or need to do any of it manually (e.g. against a
-> deployed instance without shell access to run the script).
+> **Steps 2, 3, and 5 already happen automatically.** `docker-compose.yml`'s
+> `service-wed` container runs `alembic upgrade head` and then
+> `python -m service_wed.scripts.container_bootstrap` before it starts
+> uvicorn — that script seeds the admin account and the wedding config from
+> `.env`'s `ADMIN_EMAIL`/`ADMIN_PASSWORD`/`WEDDING_DATE`/`RSVP_DEADLINE` (and
+> the optional wedding fields), but only if they don't already exist, so
+> it's safe on every restart. Set those in `.env` before `docker compose up`
+> and you can skip straight to [step 6](#6-build-and-upload-the-guest-list).
+> [`scripts/bootstrap.sh`](scripts/bootstrap.sh) additionally automates step
+> 6 (uploading a blank guest list) via the API — skip straight to
+> [step 7](#7-review-the-guest-list) if you use it. Read steps 1–6 anyway if
+> you want to understand what's happening, need to do any of it by hand
+> (e.g. against a deployed instance without shell access), or want to
+> re-seed something after editing `.env` on an already-running stack (the
+> "only if it doesn't already exist" guard means you can't just restart —
+> see each step below for the manual alternative).
 
 ### 1. Start the stack
 
@@ -148,14 +147,37 @@ curl -s http://localhost:8000/api/v1/health/ready   # {"status":"ok"} -- DB is r
 
 ### 2. Run migrations
 
-Run from the host (uses `.env`'s `DATABASE_URL`, which points at
-`db:5432` — the port Docker published):
+Already done automatically by `service-wed`'s container command on every
+start (safe to re-run — already-applied revisions are skipped). Manual runs
+are only for development, e.g. generating a new migration file. `db`/`redis`
+aren't published to the host by this `docker-compose.yml` (only `service-wed`'s
+API port is), so host-run Alembic can't reach `db:5432` directly — run it
+from a one-off container attached to the same Docker network instead:
 
 ```bash
-uv run alembic upgrade head
+docker run --rm \
+  --network service-wed_default \
+  -e DATABASE_URL="postgresql+asyncpg://$POSTGRES_USER:$POSTGRES_PASSWORD@db:5432/$POSTGRES_DB" \
+  -v "$(pwd)/src:/app/src:ro" \
+  -v "$(pwd)/alembic:/app/alembic:ro" \
+  -v "$(pwd)/alembic.ini:/app/alembic.ini:ro" \
+  --entrypoint /app/.venv/bin/alembic \
+  service-wed-service-wed:latest revision --autogenerate -m "describe your change"
 ```
 
+(Swap `revision --autogenerate` for `upgrade head` to just apply migrations
+by hand instead of writing a new one. `service-wed_default` is Compose's
+default network name for this directory — confirm with `docker network ls`
+if you've renamed the project.)
+
 ### 3. Seed the admin account
+
+Already done automatically if `ADMIN_EMAIL`/`ADMIN_PASSWORD` are set in
+`.env` before `docker compose up` (see the note above step 1) — but only the
+first time, since `container_bootstrap.py` skips this once an admin account
+exists, so it won't rotate a password you change in `.env` later. To do it
+manually instead (first time), or to rotate a password on an already-running
+stack:
 
 There is **no self-service registration** — the couple is the one and only
 admin account, and it's created directly in the database. Generate a
@@ -176,14 +198,18 @@ trimmed or reformatted, `verify()` expects it back exactly as printed.
 
 Insert the admin row. Write it to a `.sql` file rather than passing it on the
 `psql -c` command line — the hash contains bare `$` characters that bash will
-try to expand inside double quotes:
+try to expand inside double quotes. `db`/`redis` aren't published to the host
+by this `docker-compose.yml`, so run `psql` inside the `wedding_db` container
+instead of from the host:
 
 ```bash
 cat > seed_admin.sql <<'EOF'
 INSERT INTO admin_users (id, email, password_hash)
 VALUES (gen_random_uuid(), 'you@example.com', 'PASTE_YOUR_FULL_HASH_HERE');
 EOF
-PGPASSWORD=wedding_db_pw psql -h localhost -U wedding_db_user -d wedding_db -f seed_admin.sql
+docker cp seed_admin.sql wedding_db:/tmp/seed_admin.sql
+docker exec -e PGPASSWORD="$POSTGRES_PASSWORD" wedding_db \
+  psql -U "${POSTGRES_USER:-wedding_db_user}" -d "${POSTGRES_DB:-wedding_db}" -f /tmp/seed_admin.sql
 rm seed_admin.sql
 ```
 

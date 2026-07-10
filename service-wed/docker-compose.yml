@@ -4,20 +4,30 @@ services:
     container_name: wedding_db
     restart: always
     environment:
-      POSTGRES_USER: wedding_db_user
-      POSTGRES_PASSWORD: wedding_db_pw
-      POSTGRES_DB: wedding_db
-    ports:
-      - "5432:5432"
+      POSTGRES_USER: ${POSTGRES_USER:-wedding_db_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env -- see .env.example. Do not reuse wedding_db_pw.}
+      POSTGRES_DB: ${POSTGRES_DB:-wedding_db}
     volumes:
       - postgres_data:/var/lib/postgresql
+    # service-wed runs `alembic upgrade head` immediately on container start
+    # (see its command below) -- plain `depends_on: [db]` only waits for
+    # this container to *start*, not for Postgres to actually be ready to
+    # accept connections, so this healthcheck plus `condition: service_healthy`
+    # below closes that race (mirrors the root docker-compose.yml's db).
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-wedding_db_user} -d ${POSTGRES_DB:-wedding_db}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   redis:
     image: redis:8.8
     container_name: wedding_redis
     restart: always
-    ports:
-      - "6379:6379"
     volumes:
       - redis_data:/data
 
@@ -26,31 +36,69 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: service-wed
+    restart: on-failure
+    # 1. Migrations: always safe to re-run -- already-applied ones are
+    #    skipped, so this is a no-op on every restart after the first.
+    # 2. container_bootstrap: seeds the admin account / wedding config ONLY
+    #    if they don't already exist -- see that script's module docstring.
+    #    A no-op after first boot, same as the migration step. This makes a
+    #    bare `docker compose up -d --build` fully self-sufficient: no
+    #    separate `uv run alembic upgrade head` or bootstrap.sh run needed.
+    # 3. `exec uvicorn ...`: replaces this shell with uvicorn as PID 1, so
+    #    `docker stop`/compose's SIGTERM reaches uvicorn directly instead of
+    #    an intermediate shell process swallowing it.
+    command: >
+      sh -c "alembic upgrade head &&
+      python -m service_wed.scripts.container_bootstrap &&
+      exec uvicorn service_wed.main:app --host 0.0.0.0 --port 8000"
     environment:
-      - DATABASE_URL=postgresql+asyncpg://wedding_db_user:wedding_db_pw@db:5432/wedding_db
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-wedding_db_user}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@db:5432/${POSTGRES_DB:-wedding_db}
       - REDIS_URL=redis://redis:6379/0
       - DEBUG=${DEBUG:-false}
       - CORS_ALLOW_ORIGINS=${CORS_ALLOW_ORIGINS:-http://localhost:3000,http://localhost:5173}
       - PUBLIC_SITE_URL=${PUBLIC_SITE_URL:-http://localhost:5173}
+      - RESEND_API_KEY=${RESEND_API_KEY:-}
+      - RESEND_FROM_ADDRESS=${RESEND_FROM_ADDRESS:-wedding@example.com}
+      - RESEND_WEBHOOK_SECRET=${RESEND_WEBHOOK_SECRET:-}
+      - SESSION_COOKIE_NAME=${SESSION_COOKIE_NAME:-admin_session}
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-}
+      - WEDDING_DATE=${WEDDING_DATE:-}
+      - RSVP_DEADLINE=${RSVP_DEADLINE:-}
+      - RSVP_OPENS_AT=${RSVP_OPENS_AT:-}
+      - VENUE_NAME=${VENUE_NAME:-}
+      - VENUE_ADDRESS=${VENUE_ADDRESS:-}
+      - VENUE_CITY=${VENUE_CITY:-}
+      - BRIDE_FNAME=${BRIDE_FNAME:-}
+      - GROOM_FNAME=${GROOM_FNAME:-}
+      - REMINDER_CAP=${REMINDER_CAP:-2}
+      - REMINDER_INTERVAL_DAYS=${REMINDER_INTERVAL_DAYS:-7}
     ports:
       - "8000:8000"
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
 
   worker:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: service-wed-worker
+    restart: on-failure
     command: ["arq", "service_wed.worker.WorkerSettings"]
     environment:
-      - DATABASE_URL=postgresql+asyncpg://wedding_db_user:wedding_db_pw@db:5432/wedding_db
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-wedding_db_user}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@db:5432/${POSTGRES_DB:-wedding_db}
       - REDIS_URL=redis://redis:6379/0
+      - RESEND_API_KEY=${RESEND_API_KEY:-}
+      - RESEND_FROM_ADDRESS=${RESEND_FROM_ADDRESS:-wedding@example.com}
       - PUBLIC_SITE_URL=${PUBLIC_SITE_URL:-http://localhost:5173}
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
 
 volumes:
   postgres_data:
