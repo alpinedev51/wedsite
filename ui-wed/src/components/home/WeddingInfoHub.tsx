@@ -5,45 +5,47 @@ import InfoCard from "../ui/InfoCard";
 import { EucalyptusSprig } from "../decor/EucalyptusSprig";
 import { ColumbineSprig } from "../decor/ColumbineSprig";
 import { RoseBloom } from "../decor/RoseBloom";
-import { wedding } from "../../config/wedding";
+import { useWeddingConfig } from "../../config/WeddingConfigContext";
 import { formatLongDate, formatShortDate } from "../../lib/date";
 
-// Each card gets its own palette accent (top hairline + faint tint) so the
-// grid reads as a set of distinct destinations rather than four identical
-// boxes. `!` (important) is needed on the background override since
-// InfoCard already ships a hardcoded bg-linen/60 at equal specificity.
-const cards: {
-  title: string;
-  description: string;
-  to?: string;
-  accent: string;
-}[] = [
-    {
-      title: "Date & Venue",
-      description: `${formatLongDate(wedding.date)} at ${wedding.location.venue}, ${wedding.location.city}.`,
-      accent: "before:bg-sage bg-sage/8!",
-    },
-    {
-      title: "Travel",
-      description: "Hotel and directions info -- more details coming soon.",
-      to: "/travel",
-      accent: "before:bg-olive bg-olive/8!",
-    },
-    {
-      title: "Registry",
-      description: "Registry coming soon.",
-      to: "/registry",
-      accent: "before:bg-lightblue bg-lightblue/8!",
-    },
-    {
-      title: "RSVP",
-      description: `Please respond by ${formatShortDate(wedding.rsvpDeadline)}.`,
-      to: "/rsvp",
-      accent: "before:bg-dusty bg-dusty/8!",
-    },
-  ];
-
 function WeddingInfoHub() {
+  const { wedding } = useWeddingConfig();
+
+  // Each card gets its own palette accent (top hairline + faint tint) so the
+  // grid reads as a set of distinct destinations rather than four identical
+  // boxes. `!` (important) is needed on the background override since
+  // InfoCard already ships a hardcoded bg-linen/60 at equal specificity.
+  const cards: {
+    title: string;
+    description: string;
+    to?: string;
+    accent: string;
+  }[] = [
+      {
+        title: "Date & Venue",
+        description: `${formatLongDate(wedding.date)} at ${wedding.location.venue}, ${wedding.location.city}.`,
+        accent: "before:bg-sage bg-sage/8!",
+      },
+      {
+        title: "Travel",
+        description: "Hotel and directions info -- more details coming soon.",
+        to: "/travel",
+        accent: "before:bg-olive bg-olive/8!",
+      },
+      {
+        title: "Registry",
+        description: "Registry coming soon.",
+        to: "/registry",
+        accent: "before:bg-lightblue bg-lightblue/8!",
+      },
+      {
+        title: "RSVP",
+        description: `Please respond by ${formatShortDate(wedding.rsvpDeadline)}.`,
+        to: "/rsvp",
+        accent: "before:bg-dusty bg-dusty/8!",
+      },
+    ];
+
   return (
     <Section
       className="relative pt-4! text-center sm:pt-8!"

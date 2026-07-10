@@ -1,11 +1,13 @@
 import { Link } from "react-router-dom";
-import { wedding } from "@/config/wedding";
+import { useWeddingConfig } from "@/config/WeddingConfigContext";
 
 // A large headline at the very top of every page, above Nav (see
 // Layout.tsx). Normal in-flow content, not fixed/sticky -- it scrolls away
 // with the rest of the page like any other content. Nav is the only thing
 // in the header region that stays pinned as you scroll.
 function NameBanner() {
+  const { wedding } = useWeddingConfig();
+
   return (
     <Link
       to="/"

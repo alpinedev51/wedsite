@@ -5,12 +5,14 @@ import WeddingInfoHub from "../components/home/WeddingInfoHub";
 import { Monogram } from "../components/decor/Monogram";
 import Eyebrow from "../components/ui/Eyebrow";
 import { ButtonLink } from "../components/ui/Button";
-import { wedding } from "../config/wedding";
+import { useWeddingConfig } from "../config/WeddingConfigContext";
 import { formatLongDate } from "../lib/date";
 import coupleImg from "../assets/couple.jpg";
 import doorsImg from "../assets/ak_doors.jpg";
 
 function Home() {
+  const { wedding } = useWeddingConfig();
+
   return (
     <>
       <ScrollHero

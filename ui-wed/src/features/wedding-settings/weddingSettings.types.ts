@@ -7,6 +7,9 @@ export interface WeddingAdminView {
   wedding_date: string;
   venue_name: string | null;
   venue_address: string | null;
+  venue_city: string | null;
+  bride_first_name: string | null;
+  groom_first_name: string | null;
   rsvp_opens_at: string | null;
   rsvp_deadline: string;
   reminder_cap: number;
@@ -21,4 +24,7 @@ export interface WeddingUpsertRequest {
   reminder_interval_days?: number;
   venue_name?: string | null;
   venue_address?: string | null;
+  venue_city?: string | null;
+  bride_first_name?: string | null;
+  groom_first_name?: string | null;
 }

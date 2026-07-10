@@ -35,3 +35,7 @@ class Wedding(Timestamps, Base):
 
     venue_name: Mapped[str | None] = mapped_column(Text)
     venue_address: Mapped[str | None] = mapped_column(Text)
+    venue_city: Mapped[str | None] = mapped_column(Text)
+
+    bride_first_name: Mapped[str | None] = mapped_column(Text)
+    groom_first_name: Mapped[str | None] = mapped_column(Text)

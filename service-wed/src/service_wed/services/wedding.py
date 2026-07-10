@@ -47,6 +47,9 @@ class WeddingService:
                 reminder_interval_days=request.reminder_interval_days,
                 venue_name=request.venue_name,
                 venue_address=request.venue_address,
+                venue_city=request.venue_city,
+                bride_first_name=request.bride_first_name,
+                groom_first_name=request.groom_first_name,
             )
             await self.uow.commit()
             return WeddingAdminView.model_validate(wedding)

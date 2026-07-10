@@ -15,6 +15,9 @@ class WeddingPublicView(BaseModel):
     wedding_date: dt.datetime
     venue_name: str | None
     venue_address: str | None
+    venue_city: str | None
+    bride_first_name: str | None
+    groom_first_name: str | None
     rsvp_opens_at: dt.datetime | None
     rsvp_deadline: dt.datetime
 
@@ -43,6 +46,9 @@ class WeddingUpsertRequest(BaseModel):
     reminder_interval_days: int = Field(default=7, ge=1)
     venue_name: str | None = None
     venue_address: str | None = None
+    venue_city: str | None = None
+    bride_first_name: str | None = None
+    groom_first_name: str | None = None
 
     @model_validator(mode="after")
     def _check_dates(self) -> "WeddingUpsertRequest":

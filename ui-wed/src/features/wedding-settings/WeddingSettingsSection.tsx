@@ -13,6 +13,9 @@ interface FormState {
   reminderIntervalDays: number;
   venueName: string;
   venueAddress: string;
+  venueCity: string;
+  brideFirstName: string;
+  groomFirstName: string;
 }
 
 const BLANK_FORM: FormState = {
@@ -23,6 +26,9 @@ const BLANK_FORM: FormState = {
   reminderIntervalDays: 7,
   venueName: "",
   venueAddress: "",
+  venueCity: "",
+  brideFirstName: "",
+  groomFirstName: "",
 };
 
 function toFormState(wedding: WeddingAdminView): FormState {
@@ -36,6 +42,9 @@ function toFormState(wedding: WeddingAdminView): FormState {
     reminderIntervalDays: wedding.reminder_interval_days,
     venueName: wedding.venue_name ?? "",
     venueAddress: wedding.venue_address ?? "",
+    venueCity: wedding.venue_city ?? "",
+    brideFirstName: wedding.bride_first_name ?? "",
+    groomFirstName: wedding.groom_first_name ?? "",
   };
 }
 
@@ -96,6 +105,9 @@ function WeddingSettingsSection() {
         reminder_interval_days: form.reminderIntervalDays,
         venue_name: form.venueName || null,
         venue_address: form.venueAddress || null,
+        venue_city: form.venueCity || null,
+        bride_first_name: form.brideFirstName || null,
+        groom_first_name: form.groomFirstName || null,
       });
       setNotConfigured(false);
       setForm(toFormState(wedding));
@@ -167,6 +179,30 @@ function WeddingSettingsSection() {
         <div />
 
         <label className="flex flex-col gap-1 text-sm text-ink">
+          Bride First Name
+          <input
+            type="text"
+            value={form.brideFirstName}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, brideFirstName: e.target.value }))
+            }
+            className="rounded border border-walnut/30 bg-linen px-3 py-2"
+          />
+        </label>
+
+        <label className="flex flex-col gap-1 text-sm text-ink">
+          Groom First Name
+          <input
+            type="text"
+            value={form.groomFirstName}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, groomFirstName: e.target.value }))
+            }
+            className="rounded border border-walnut/30 bg-linen px-3 py-2"
+          />
+        </label>
+
+        <label className="flex flex-col gap-1 text-sm text-ink">
           Venue Name
           <input
             type="text"
@@ -185,6 +221,18 @@ function WeddingSettingsSection() {
             value={form.venueAddress}
             onChange={(e) =>
               setForm((f) => ({ ...f, venueAddress: e.target.value }))
+            }
+            className="rounded border border-walnut/30 bg-linen px-3 py-2"
+          />
+        </label>
+
+        <label className="flex flex-col gap-1 text-sm text-ink">
+          Venue City
+          <input
+            type="text"
+            value={form.venueCity}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, venueCity: e.target.value }))
             }
             className="rounded border border-walnut/30 bg-linen px-3 py-2"
           />

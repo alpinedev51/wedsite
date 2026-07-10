@@ -2,9 +2,11 @@ import Container from "../components/ui/Container";
 import Section from "../components/ui/Section";
 import Eyebrow from "../components/ui/Eyebrow";
 import MiniCalendar from "../components/ui/MiniCalendar";
-import { wedding } from "../config/wedding";
+import { useWeddingConfig } from "../config/WeddingConfigContext";
 
 function Travel() {
+  const { wedding } = useWeddingConfig();
+
   return (
     <Section className="text-center">
       <Container className="flex flex-col items-center gap-10">

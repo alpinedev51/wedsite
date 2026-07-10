@@ -21,6 +21,9 @@ class WeddingRepository(Protocol):
         reminder_interval_days: int,
         venue_name: str | None,
         venue_address: str | None,
+        venue_city: str | None,
+        bride_first_name: str | None,
+        groom_first_name: str | None,
     ) -> Wedding:
         """Create or overwrite the singleton wedding row (WEDDING_ID). There's
         only ever one row, so this is a full upsert, not separate

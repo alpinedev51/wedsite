@@ -89,6 +89,9 @@ async def seed_wedding(container: AppContainer) -> None:
         rsvp_opens_at=_env_datetime("RSVP_OPENS_AT"),
         venue_name=_env_or_none("VENUE_NAME"),
         venue_address=_env_or_none("VENUE_ADDRESS"),
+        venue_city=_env_or_none("VENUE_CITY"),
+        bride_first_name=_env_or_none("BRIDE_FNAME"),
+        groom_first_name=_env_or_none("GROOM_FNAME"),
         reminder_cap=int(os.environ.get("REMINDER_CAP", 2)),
         reminder_interval_days=int(os.environ.get("REMINDER_INTERVAL_DAYS", 7)),
     )

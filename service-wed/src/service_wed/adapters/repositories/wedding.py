@@ -28,6 +28,9 @@ class SQLAlchemyWeddingRepository(WeddingRepository):
         reminder_interval_days: int,
         venue_name: str | None,
         venue_address: str | None,
+        venue_city: str | None,
+        bride_first_name: str | None,
+        groom_first_name: str | None,
     ) -> Wedding:
         # There's exactly one row (id is always WEDDING_ID), so ON CONFLICT
         # DO UPDATE on the primary key gives a single "set the wedding
@@ -43,6 +46,9 @@ class SQLAlchemyWeddingRepository(WeddingRepository):
             "reminder_interval_days": reminder_interval_days,
             "venue_name": venue_name,
             "venue_address": venue_address,
+            "venue_city": venue_city,
+            "bride_first_name": bride_first_name,
+            "groom_first_name": groom_first_name,
         }
         stmt = (
             insert(Wedding)

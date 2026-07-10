@@ -14,7 +14,8 @@
 #                                    Alembic and to derive psql's connection
 #
 # Optional env vars (sensible defaults if unset):
-#   RSVP_OPENS_AT, VENUE_NAME, VENUE_ADDRESS
+#   RSVP_OPENS_AT, VENUE_NAME, VENUE_ADDRESS, VENUE_CITY
+#   BRIDE_FNAME, GROOM_FNAME
 #   REMINDER_CAP (2), REMINDER_INTERVAL_DAYS (7)
 #   API_BASE_URL (http://localhost:8000)
 #
@@ -76,6 +77,9 @@ API_BASE_URL="${API_BASE_URL:-http://localhost:8000}"
 RSVP_OPENS_AT="${RSVP_OPENS_AT:-}"
 VENUE_NAME="${VENUE_NAME:-}"
 VENUE_ADDRESS="${VENUE_ADDRESS:-}"
+VENUE_CITY="${VENUE_CITY:-}"
+BRIDE_FNAME="${BRIDE_FNAME:-}"
+GROOM_FNAME="${GROOM_FNAME:-}"
 REMINDER_CAP="${REMINDER_CAP:-2}"
 REMINDER_INTERVAL_DAYS="${REMINDER_INTERVAL_DAYS:-7}"
 
@@ -193,6 +197,9 @@ print(json.dumps({
     "rsvp_opens_at": env_or_none("RSVP_OPENS_AT"),
     "venue_name": env_or_none("VENUE_NAME"),
     "venue_address": env_or_none("VENUE_ADDRESS"),
+    "venue_city": env_or_none("VENUE_CITY"),
+    "bride_first_name": env_or_none("BRIDE_FNAME"),
+    "groom_first_name": env_or_none("GROOM_FNAME"),
     "reminder_cap": int(os.environ.get("REMINDER_CAP", 2)),
     "reminder_interval_days": int(os.environ.get("REMINDER_INTERVAL_DAYS", 7)),
 }))

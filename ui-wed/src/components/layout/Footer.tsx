@@ -1,8 +1,10 @@
-import { wedding } from "../../config/wedding";
+import { useWeddingConfig } from "../../config/WeddingConfigContext";
 import { Monogram } from "../decor/Monogram";
 import Container from "../ui/Container";
 
 function Footer() {
+  const { wedding } = useWeddingConfig();
+
   return (
     <footer className="relative overflow-hidden border-t border-walnut/15 bg-clay/8 py-5">
       <Container className="relative flex flex-col items-center gap-2 text-center">
