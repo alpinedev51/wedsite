@@ -128,11 +128,11 @@ services:
       context: ./ui-wed
       dockerfile: Dockerfile
       args:
-        VITE_COUPLE_NAMES: ${COUPLE_NAMES:-Austin & Kylie}
-        VITE_WEDDING_DATE: ${WEDDING_DATE:-2027-09-04T00:00:00}
-        VITE_VENUE_NAME: ${VENUE_NAME:-Behn Park}
-        VITE_VENUE_CITY: ${VENUE_CITY:-Durango, CO}
-        VITE_RSVP_DEADLINE: ${RSVP_DEADLINE:-2027-07-24T00:00:00}
+        VITE_COUPLE_NAMES: ${COUPLE_NAMES:-Mister & Missus}
+        VITE_WEDDING_DATE: ${WEDDING_DATE:-2027-01-01T00:00:00}
+        VITE_VENUE_NAME: ${VENUE_NAME:-Pretty Venue}
+        VITE_VENUE_CITY: ${VENUE_CITY:-Small Town, USA}
+        VITE_RSVP_DEADLINE: ${RSVP_DEADLINE:-2027-02-01T00:00:00}
     container_name: ui-wed
     depends_on:
       - service-wed

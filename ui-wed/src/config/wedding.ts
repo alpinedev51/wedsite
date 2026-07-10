@@ -16,13 +16,59 @@
 // public endpoint that reads the same database row instead of keeping a
 // second, build-time copy.
 export const wedding = {
-  coupleNames: import.meta.env.VITE_COUPLE_NAMES || "Austin & Kylie",
-  date: new Date(import.meta.env.VITE_WEDDING_DATE || "2027-09-04T00:00:00"),
+  coupleNames: import.meta.env.VITE_COUPLE_NAMES || "Mister & Missus",
+  brideFirstName: import.meta.env.VITE_BRIDE_FNAME || "Missus",
+  groomFirstName: import.meta.env.VITE_GROOM_FNAME || "Mister",
+  date: new Date(import.meta.env.VITE_WEDDING_DATE || "2027-01-01T00:00:00"),
   location: {
-    venue: import.meta.env.VITE_VENUE_NAME || "Behn Park",
-    city: import.meta.env.VITE_VENUE_CITY || "Durango, CO",
+    venue: import.meta.env.VITE_VENUE_NAME || "Pretty Venue",
+    city: import.meta.env.VITE_VENUE_CITY || "Small Town, USA",
   },
   rsvpDeadline: new Date(
-    import.meta.env.VITE_RSVP_DEADLINE || "2027-07-24T00:00:00",
+    import.meta.env.VITE_RSVP_DEADLINE || "2027-02-01T00:00:00",
   ),
 };
+
+export interface Milestone {
+  date: string;
+  title: string;
+  description: string;
+}
+
+const defaultMilestones: Milestone[] = [
+  {
+    date: "Fall 2021",
+    title: "How We Met",
+    description: "In college",
+  },
+  {
+    date: "Summer 2022",
+    title: "First Date",
+    description: "Went to dinner",
+  },
+];
+
+function getMilestones(): Milestone[] {
+  const rawData = import.meta.env.VITE_STORY_MILESTONES;
+  let parsed = defaultMilestones;
+
+  if (rawData) {
+    try {
+      parsed = JSON.parse(rawData);
+    } catch (e) {
+      console.error(
+        "Failed to parse VITE_STORY_MILESTONES JSON. Falling back to defaults.",
+        e,
+      );
+    }
+  }
+
+  return parsed.map((m) => ({
+    ...m,
+    description: m.description
+      .replace(/\{bride}/gi, wedding.brideFirstName)
+      .replace(/\{groom}/gi, wedding.groomFirstName),
+  }));
+}
+
+export const milestones = getMilestones();
