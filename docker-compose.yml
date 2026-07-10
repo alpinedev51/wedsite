@@ -31,12 +31,6 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-wedding_db}
     volumes:
       - postgres_data:/var/lib/postgresql
-    # service-wed now runs `alembic upgrade head` immediately on container
-    # start (see its command below) -- plain `depends_on: [db]` only waits
-    # for this container to *start*, not for Postgres to actually be ready
-    # to accept connections, so a fresh `docker compose up` could hit
-    # alembic before Postgres finishes initializing. This healthcheck plus
-    # service-wed/worker's `condition: service_healthy` below closes that race.
     healthcheck:
       test:
         [
