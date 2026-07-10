@@ -25,9 +25,10 @@ class DashboardService:
         async with self.uow:
             wedding = await self.uow.wedding_repo.get()
             guest_status_counts = await self.uow.guest_repo.count_by_rsvp_status()
-            households_total, households_responded = (
-                await self.uow.household_repo.count_summary()
-            )
+            (
+                households_total,
+                households_responded,
+            ) = await self.uow.household_repo.count_summary()
             email_status_counts = await self.uow.email_message_repo.count_by_status()
             event_type_counts = await self.uow.email_event_repo.count_by_type()
 

@@ -40,7 +40,8 @@ class Settings(BaseSettings):
     # origins may call this API, this is just a string interpolated into
     # outgoing email HTML).
     public_site_url: str = Field(
-        default="http://localhost:5173", validation_alias=AliasChoices("PUBLIC_SITE_URL")
+        default="http://localhost:5173",
+        validation_alias=AliasChoices("PUBLIC_SITE_URL"),
     )
 
     # Comma-separated, not a JSON list: pydantic-settings would otherwise

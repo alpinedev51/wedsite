@@ -57,7 +57,9 @@ async def _handle_unexpected_error(request: Request, exc: Exception) -> JSONResp
     # Anything reaching here escaped every service-layer error convention --
     # log it with a stack trace so it's actually diagnosable, and never hand
     # the client Python's own traceback/message.
-    logger.exception("Unhandled exception processing %s %s", request.method, request.url.path)
+    logger.exception(
+        "Unhandled exception processing %s %s", request.method, request.url.path
+    )
     return JSONResponse(
         status_code=500,
         content=_error_body("internal_error", "An unexpected error occurred."),

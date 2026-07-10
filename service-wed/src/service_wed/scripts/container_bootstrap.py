@@ -65,7 +65,9 @@ async def seed_admin(container: AppContainer) -> None:
             print("bootstrap: an admin account already exists, skipping.")
             return
         session.add(
-            AdminUser(email=email, password_hash=container.password_hasher.hash(password))
+            AdminUser(
+                email=email, password_hash=container.password_hasher.hash(password)
+            )
         )
         await session.commit()
         print(f"bootstrap: seeded admin account ({email}).")

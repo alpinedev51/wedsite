@@ -40,8 +40,9 @@ function ScrollHero({
 
   const overlayLayer = overlay && (
     <div
-      className={`absolute inset-0 flex justify-center p-6 ${overlayAlign === "bottom" ? "items-end pb-14 sm:pb-20" : "items-center"
-        }`}
+      className={`absolute inset-0 flex justify-center p-6 ${
+        overlayAlign === "bottom" ? "items-end pb-14 sm:pb-20" : "items-center"
+      }`}
     >
       {overlay}
     </div>

@@ -38,9 +38,7 @@ class SQLAlchemyCampaignRepository(CampaignRepository):
         )
         return result.scalar_one_or_none()
 
-    async def list_all(
-        self, limit: int, offset: int
-    ) -> tuple[list[Campaign], int]:
+    async def list_all(self, limit: int, offset: int) -> tuple[list[Campaign], int]:
         # Two round trips (count + page) rather than a window function --
         # simpler to read, and at this app's scale (a few hundred campaigns
         # at most) the extra query costs nothing worth optimizing away.

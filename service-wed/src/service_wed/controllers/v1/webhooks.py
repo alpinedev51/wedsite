@@ -90,7 +90,9 @@ async def resend_webhook(
     body = await request.body()
 
     if settings.resend_webhook_secret is not None:
-        if not (svix_id and svix_timestamp and svix_signature) or not _verify_svix_signature(
+        if not (
+            svix_id and svix_timestamp and svix_signature
+        ) or not _verify_svix_signature(
             secret=settings.resend_webhook_secret,
             msg_id=svix_id,
             timestamp=svix_timestamp,
