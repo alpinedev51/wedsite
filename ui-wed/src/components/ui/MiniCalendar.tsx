@@ -55,9 +55,9 @@ function MiniCalendar({
                     ry="15"
                     fill="none"
                     stroke="currentColor"
-                    strokeWidth="2"
+                    strokeWidth="1.5"
                     strokeLinecap="round"
-                    transform="rotate(-6 20 20)"
+                    transform="rotate(-16 20 20)"
                   />
                   <ellipse
                     cx="20"
@@ -69,7 +69,7 @@ function MiniCalendar({
                     strokeWidth="1.5"
                     strokeLinecap="round"
                     opacity="0.6"
-                    transform="rotate(8 20 20)"
+                    transform="rotate(12 12 20)"
                   />
                 </svg>
                 <span className="relative font-display text-base font-semibold text-walnut">
