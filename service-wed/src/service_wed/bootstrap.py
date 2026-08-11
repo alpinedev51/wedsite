@@ -1,27 +1,3 @@
-"""Shared wiring: build the process-wide adapters once, so the API
-(hooks/lifespan.py) and the worker (worker.py) end up with the exact same
-objects instead of two slightly-different copies of the wiring.
-
-AppContainer only holds things that are actually safe to share across
-concurrent requests/jobs: the DB engine/session factory, the Redis pool, the
-queue, the email sender, and the password hasher -- none of those hold any
-per-call mutable state.
-
-UnitOfWorkPort is NOT safe to share that way: SQLAlchemyUnitOfWork.__aenter__
-mutates `self.session` and every `self.xxx_repo` attribute in place (see
-adapters/uow.py), on the assumption that one instance is used for one
-`async with` block at a time. An earlier version of this file built ONE
-UnitOfWork and handed it to every service as a long-lived singleton -- fine
-under sequential requests, but under real concurrency (two requests
-interleaved on the same event loop, or arq running up to max_jobs at once)
-two coroutines inside `async with self.uow:` at the same time stomp on each
-other's session and repo references. AppContainer.new_uow() builds a fresh,
-cheap wrapper per call instead (no I/O happens until __aenter__), and each
-new_xxx_service() method builds a fresh service on top of that -- so callers
-get transaction isolation for free without every service needing to change
-its `async with self.uow:` / `self.uow.xxx_repo` pattern.
-"""
-
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -81,8 +57,6 @@ class AppContainer:
     password_hasher: PasswordHasherPort
 
     def new_uow(self) -> UnitOfWorkPort:
-        """A fresh UnitOfWork per call. See the module docstring for why
-        this can't be a single shared instance."""
         return SQLAlchemyUnitOfWork(self.session_factory)
 
     def new_auth_service(self) -> AuthService:

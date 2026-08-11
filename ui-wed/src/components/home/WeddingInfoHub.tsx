@@ -21,30 +21,30 @@ function WeddingInfoHub() {
     to?: string;
     accent: string;
   }[] = [
-    {
-      title: "Date & Venue",
-      description: `${formatLongDate(wedding.date)} at ${wedding.location.venue}, ${wedding.location.city}.`,
-      accent: "before:bg-sage bg-sage/8!",
-    },
-    {
-      title: "Travel",
-      description: "Hotel and directions info -- more details coming soon.",
-      to: "/travel",
-      accent: "before:bg-olive bg-olive/8!",
-    },
-    {
-      title: "Registry",
-      description: "Registry coming soon.",
-      to: "/registry",
-      accent: "before:bg-lightblue bg-lightblue/8!",
-    },
-    {
-      title: "RSVP",
-      description: `Please respond by ${formatShortDate(wedding.rsvpDeadline)}.`,
-      to: "/rsvp",
-      accent: "before:bg-dusty bg-dusty/8!",
-    },
-  ];
+      {
+        title: "Date & Venue",
+        description: `${formatLongDate(wedding.date)} at ${wedding.location.venue}, ${wedding.location.city}.`,
+        accent: "before:bg-sage bg-sage/8!",
+      },
+      {
+        title: "Travel",
+        description: "Hotel and directions info -- more details coming soon.",
+        to: "/travel",
+        accent: "before:bg-olive bg-olive/8!",
+      },
+      {
+        title: "Registry",
+        description: "Registry coming soon.",
+        to: "/registry",
+        accent: "before:bg-lightblue bg-lightblue/8!",
+      },
+      {
+        title: "RSVP",
+        description: `Please respond by ${formatShortDate(wedding.rsvpDeadline)}.`,
+        to: "/rsvp",
+        accent: "before:bg-dusty bg-dusty/8!",
+      },
+    ];
 
   return (
     <Section
@@ -79,7 +79,7 @@ function WeddingInfoHub() {
       <Container className="relative flex flex-col items-center gap-10">
         <div className="flex flex-col items-center gap-3">
           <Eyebrow>At A Glance</Eyebrow>
-          <h2 className="text-3xl sm:text-4xl">The Quick Version</h2>
+          <h2 className="text-3xl sm:text-4xl">Quick Version</h2>
           <div className="h-px w-16 bg-gradient-to-r from-transparent via-ochre to-transparent" />
         </div>
 

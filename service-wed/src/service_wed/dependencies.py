@@ -1,19 +1,3 @@
-"""API composition root: FastAPI Depends providers.
-
-Every dependency here plucks the already-built AppContainer (see
-bootstrap.py) off app.state -- built once at startup in hooks/lifespan.py,
-not per-request -- and asks it for a fresh service instance. This is the
-only module that should ever reach into `request.app.state`, so controllers
-just declare `Depends(get_auth_service)` etc. without knowing anything about
-how services got wired up.
-
-Each get_xxx_service() calls container.new_xxx_service() rather than
-returning a stored instance: every service holds a UnitOfWork, and
-UnitOfWork isn't safe to share across concurrent requests (see bootstrap.py's
-module docstring) -- constructing one per request is what gives each request
-its own isolated DB session.
-"""
-
 from typing import Annotated
 
 from fastapi import Depends, Request
