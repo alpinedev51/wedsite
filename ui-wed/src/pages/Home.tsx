@@ -27,7 +27,7 @@ function Home() {
         overlay={<HeroTagline />}
         // Puts the tagline on the grass in the bottom part of the photo.
         // Raise the number to move it lower, lower it to move it up.
-        overlayTopPct={65}
+        overlayTopPct={80}
         maskFadeTopPct={10}
         maskFadeBottomPct={6}
       />
