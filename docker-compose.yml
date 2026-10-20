@@ -19,8 +19,6 @@ services:
     image: cloudflare/cloudflared:2026.10.2
     container_name: wedding_tunnel
     restart: unless-stopped
-    # The tunnel's public hostname in the Cloudflare dashboard should point
-    # at http://traefik:80 (Docker resolves the service name on `edge`).
     command: tunnel --no-autoupdate run
     environment:
       - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN:?Set CLOUDFLARE_TUNNEL_TOKEN in your .env file}
@@ -245,7 +243,15 @@ services:
     depends_on:
       - service-wed
     healthcheck:
-      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/healthz"]
+      test:
+        [
+          "CMD",
+          "wget",
+          "-q",
+          "-O",
+          "/dev/null",
+          "http://127.0.0.1:8080/healthz",
+        ]
       interval: 30s
       timeout: 5s
       retries: 3
