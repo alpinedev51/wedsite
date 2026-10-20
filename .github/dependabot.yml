@@ -1,0 +1,17 @@
+# Dependabot: opens a pull request when a GitHub Action used in
+# .github/workflows/ has a new release. It updates the pinned commit hash
+# and the "# vX.Y.Z" comment together. CI runs on that PR; merge it if
+# green. Only actions are covered here -- app dependencies (npm, uv) and
+# Docker base images are updated by hand.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    # One PR per month for all actions, instead of one per action.
+    groups:
+      actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: ci

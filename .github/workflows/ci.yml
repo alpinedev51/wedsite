@@ -1,8 +1,8 @@
 # CI: scan for leaked secrets, then build the two images and (on main)
 # publish them to GHCR for the server to pull with deploy/deploy.sh.
 #
-#   pull request -> secret scan + build both images (nothing is pushed)
-#   push to main -> secret scan + build + push
+#   pull request -> secret scan + lint + build both images (nothing is pushed)
+#   push to main -> secret scan + lint + build + push
 #                   ghcr.io/<owner>/<repo>/service-wed:sha-<full commit sha>
 #                   ghcr.io/<owner>/<repo>/ui-wed:sha-<full commit sha>
 #                   (plus :latest on both)
@@ -18,7 +18,11 @@
 # public on the site anyway, so they are variables, not secrets. Unset ones
 # build with the placeholders in ui-wed/src/config/wedding.ts.
 #
-# Third-party actions are pinned to commit SHAs (tags can be moved).
+# Each `uses: owner/action@<40-char hash> # vX.Y.Z` pins an action to one
+# exact commit. A tag like v7 can be moved by whoever controls the action
+# (that's how the 2025 tj-actions compromise spread); a commit hash can't.
+# The comment says which release the hash is. To upgrade, swap in the new
+# release's commit hash and update the comment.
 
 name: CI
 
@@ -34,6 +38,9 @@ permissions:
 concurrency:
   group: ci-${{ github.ref }}
   # Never cancel a main build halfway through publishing; PR builds can go.
+  # GitHub keeps at most one run *waiting* per group: push three commits
+  # quickly and the middle one is skipped, so it has no images. deploy.sh
+  # refuses such a commit; deploy the newer one.
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
@@ -49,6 +56,10 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          # Don't leave the job's GitHub token in .git/config: nothing
+          # later needs it, and this checkout is handed to a third-party
+          # scanner image below.
+          persist-credentials: false
           # Full history: this is a public repo, so a secret in any old
           # commit is as exposed as one in the latest. Scanning all of it
           # takes seconds at this size.
@@ -67,9 +78,50 @@ jobs:
             --results=verified,unknown \
             --fail --no-update
 
+  # Static checks, the same ones as in the root README's "Checks" section.
+  # The frontend's type-check (tsc -b) runs inside its image build, so it
+  # isn't repeated here.
+  lint-service-wed:
+    name: Lint service-wed (ruff, mypy)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: service-wed
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # Installs uv; uv then installs Python (from .python-version) and the
+      # exact dev dependencies in uv.lock (--locked fails if it's stale).
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+      - run: uv sync --locked
+      - run: uv run ruff check src
+      - run: uv run ruff format --check src
+      - run: uv run mypy src
+
+  lint-ui-wed:
+    name: Lint ui-wed (eslint, prettier)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ui-wed
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24 # same major as ui-wed/Dockerfile
+          cache: npm
+          cache-dependency-path: ui-wed/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run format:check
+
   build:
     name: Build ${{ matrix.image }}
-    needs: secret-scan
+    # Lint failures block publishing, like the secret scan.
+    needs: [secret-scan, lint-service-wed, lint-ui-wed]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -95,6 +147,8 @@ jobs:
               VITE_RSVP_DEADLINE=${{ vars.RSVP_DEADLINE }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false # GHCR login below uses its own token
 
       # Optional: the real Our Story timeline. wedding.ts picks up
       # milestones.json when present and falls back to the committed

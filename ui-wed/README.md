@@ -18,23 +18,23 @@ API cross-origin instead, copy `.env.example` to `.env.local`. The backend then
 needs `DEBUG=true` for the admin cookie (see the backend README's
 [cookie note](../service-wed/README.md#cookie-based-auth)).
 
-| Script | Does |
-|---|---|
-| `npm run dev` | dev server with hot reload |
-| `npm run build` | type-check (`tsc -b`) + production build to `dist/` |
-| `npm run preview` | serve the built `dist/` |
-| `npm run lint` | ESLint |
-| `npm run format` / `format:check` | Prettier |
+| Script                            | Does                                                |
+| --------------------------------- | --------------------------------------------------- |
+| `npm run dev`                     | dev server with hot reload                          |
+| `npm run build`                   | type-check (`tsc -b`) + production build to `dist/` |
+| `npm run preview`                 | serve the built `dist/`                             |
+| `npm run lint`                    | ESLint                                              |
+| `npm run format` / `format:check` | Prettier                                            |
 
 ## Routes
 
-| Path | Page |
-|---|---|
-| `/`, `/our-story`, `/wedding-party`, `/things-to-do`, `/travel`, `/photos`, `/registry` | public pages |
-| `/rsvp/:token` | RSVP form for a household (the token is the magic link) |
-| `/find-invitation` | lost-link recovery by name + email (`/rsvp` redirects here) |
-| `/admin/login` | admin sign-in |
-| `/admin/admin_dashboard` | Dashboard, Guests (CSV import/export), Campaigns, Wedding settings |
+| Path                                                                                    | Page                                                               |
+| --------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `/`, `/our-story`, `/wedding-party`, `/things-to-do`, `/travel`, `/photos`, `/registry` | public pages                                                       |
+| `/rsvp/:token`                                                                          | RSVP form for a household (the token is the magic link)            |
+| `/find-invitation`                                                                      | lost-link recovery by name + email (`/rsvp` redirects here)        |
+| `/admin/login`                                                                          | admin sign-in                                                      |
+| `/admin/admin_dashboard`                                                                | Dashboard, Guests (CSV import/export), Campaigns, Wedding settings |
 
 All API calls go through `src/lib/api.ts` (`credentials: "include"`, one
 error type for both backend error shapes).

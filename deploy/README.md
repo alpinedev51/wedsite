@@ -21,7 +21,7 @@ Only creating the server differs: **[Hetzner](#option-a-hetzner)** or
 
 `.github/workflows/ci.yml`:
 
-| Trigger | Secret scan | Build images | Push to GHCR |
+| Trigger | Secret scan + lint | Build images | Push to GHCR |
 |---|---|---|---|
 | Pull request | yes | yes | no |
 | Push to `main` | yes | yes | yes |
@@ -31,6 +31,8 @@ Only creating the server differs: **[Hetzner](#option-a-hetzner)** or
 1. **Secret scan:** TruffleHog scans the whole git history (this repo is
    public). It fails the run on any credential that the provider confirms
    works, or that can't be checked.
+   **Lint** runs alongside it: `ruff` and `mypy` for service-wed, `eslint`
+   and `prettier` for ui-wed. Either failing stops the build.
 2. **Build:** `service-wed` and `ui-wed`, for `linux/amd64`. The worker runs
    the `service-wed` image, so there's no third image. ui-wed's fallback text
    comes from GitHub repository variables (below).
@@ -46,6 +48,11 @@ nothing in the pipeline changes between hosts. **One constraint:** CI builds
 x86 images only. Use an x86 server (Hetzner CPX, AWS t3/t3a). For AWS
 Graviton (t4g), add `linux/arm64` to `platforms:` in the workflow, plus a
 `docker/setup-qemu-action` step before buildx.
+
+Actions in the workflow are pinned to exact commit hashes (the comment next
+to each says which release). Dependabot (`.github/dependabot.yml`) opens one
+pull request a month when any of them has a new release; merge it once CI
+passes.
 
 ## What goes where
 
