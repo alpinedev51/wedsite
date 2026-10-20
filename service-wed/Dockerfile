@@ -1,13 +1,15 @@
 # Multi-stage production-grade Dockerfile for service-wed FastAPI backend
-FROM python:3.12-slim AS builder
+FROM python:3.12.15-slim AS builder
 
 # Install uv for extremely fast and reliable dependency caching/installation
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+COPY --from=ghcr.io/astral-sh/uv:0.13.4 /uv /uvx /bin/
 
 WORKDIR /app
 
-# Enable bytecode compilation
-ENV UV_COMPILE_BYTECODE=1
+# Enable bytecode compilation. Link mode copy: the uv cache is a separate
+# cache mount, so hardlinks into the venv always fail (uv warns, then copies).
+ENV UV_COMPILE_BYTECODE=1 \
+	UV_LINK_MODE=copy
 
 # Copy only dependency definitions to leverage Docker layer caching
 COPY pyproject.toml uv.lock ./
@@ -23,7 +25,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 	uv sync --frozen --no-dev
 
 
-FROM python:3.12-slim AS runner
+FROM python:3.12.15-slim AS runner
 
 # Run as a non-root user for security hardening
 RUN groupadd -r wed && useradd -r -g wed wed
@@ -31,13 +33,12 @@ RUN groupadd -r wed && useradd -r -g wed wed
 WORKDIR /app
 
 # Copy virtual environment and installed sources from builder stage
-COPY --from=builder /app/.venv /app/.venv
-COPY --from=builder /app/src /app/src
-COPY alembic /app/alembic
-COPY alembic.ini /app/alembic.ini
-
-# Fix file ownership
-RUN chown -R wed:wed /app
+# --chown at copy time instead of a separate `RUN chown -R`, which would
+# duplicate every file into another image layer just to change its owner.
+COPY --from=builder --chown=wed:wed /app/.venv /app/.venv
+COPY --from=builder --chown=wed:wed /app/src /app/src
+COPY --chown=wed:wed alembic /app/alembic
+COPY --chown=wed:wed alembic.ini /app/alembic.ini
 
 # Configure environmental path and flags
 ENV PATH="/app/.venv/bin:$PATH" \

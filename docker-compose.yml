@@ -1,28 +1,93 @@
+# Production stack. Network layout -- each container joins only what it needs:
+#   edge   cloudflared -> traefik -> service-wed / ui-wed
+#   data   service-wed, worker -> db, redis      (internal: no internet)
+#   egress worker -> internet (Resend API)
+#   socket traefik -> socket-proxy               (internal: no internet)
+# So the tunnel container can't reach Postgres/Redis at all, and the
+# database has no route to the internet.
+
+# Rotate container logs (Docker keeps them forever by default and a small
+# server's disk fills up). Applied to every service via `logging: *logging`.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   cloudflared:
-    image: cloudflare/cloudflared:latest
+    image: cloudflare/cloudflared:2026.10.2
     container_name: wedding_tunnel
     restart: unless-stopped
-    command: tunnel run
+    # The tunnel's public hostname in the Cloudflare dashboard should point
+    # at http://traefik:80 (Docker resolves the service name on `edge`).
+    command: tunnel --no-autoupdate run
     environment:
       - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN:?Set CLOUDFLARE_TUNNEL_TOKEN in your .env file}
+    networks: [edge]
+    logging: *logging
 
   traefik:
-    image: traefik:v3.7
+    image: traefik:v3.7.16
     container_name: wedding_proxy
     restart: unless-stopped
     command:
-      - "--providers.docker=true" # tells traefik to listen to docker daemon
-      - "--providers.docker.exposedbydefault=false" # secure default: don't expose containers unless labeled
-      - "--entrypoints.web.address=:80" # define port 80 entrypoint
+      # Container discovery goes through socket-proxy (below), not the raw
+      # Docker socket: the proxy only allows read-only container listing, so
+      # a Traefik bug can't be turned into control of Docker (= root on the
+      # host).
+      - "--providers.docker=true"
+      - "--providers.docker.endpoint=tcp://socket-proxy:2375"
+      - "--providers.docker.exposedbydefault=false" # only containers labelled traefik.enable=true
+      - "--providers.docker.network=wed_edge" # reach services over `edge`, not `data`
+      # Security-header middlewares (traefik/dynamic.yml).
+      - "--providers.file.filename=/etc/traefik/dynamic.yml"
+      - "--entrypoints.web.address=:80"
       - "--entrypoints.web.forwardedHeaders.insecure=true"
+      # /ping for the health check below; served on Traefik's internal
+      # :8080 entrypoint, which is not published or routed anywhere.
+      - "--ping=true"
+      - "--global.checkNewVersion=false"
+      - "--global.sendAnonymousUsage=false"
+    # Loopback only. Guests arrive through cloudflared over the `edge`
+    # network; this port is just for testing on the server itself
+    # (curl localhost). Published ports skip the host firewall (Docker
+    # writes its own iptables rules), so binding to 0.0.0.0 here would put
+    # an un-Cloudflared copy of the site on the open internet.
     ports:
-      - "${HTTP_PORT:-80}:80"
+      - "127.0.0.1:${HTTP_PORT:-80}:80"
+    volumes:
+      - ./traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    depends_on:
+      - socket-proxy
+    networks: [edge, socket]
+    logging: *logging
+
+  # Read-only gatekeeper in front of the Docker socket for Traefik. Only
+  # container listing/inspection, events, version and ping are allowed
+  # (CONTAINERS=1, the rest are this image's defaults); every write (POST)
+  # is refused.
+  socket-proxy:
+    image: linuxserver/socket-proxy:3.4.7
+    container_name: wedding_socket_proxy
+    restart: unless-stopped
+    environment:
+      - CONTAINERS=1
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
+    read_only: true
+    tmpfs:
+      - /run
+    networks: [socket]
+    logging: *logging
 
   db:
-    image: postgres:18
+    image: postgres:18.6
     container_name: wedding_db
     restart: always
     environment:
@@ -40,13 +105,22 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    networks: [data]
+    logging: *logging
 
   redis:
-    image: redis:8.8
+    image: redis:8.10.2
     container_name: wedding_redis
     restart: always
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [data]
+    logging: *logging
 
   service-wed:
     image: ${IMAGE_REPO:-wed-website}/service-wed:${IMAGE_TAG:-latest}
@@ -110,12 +184,16 @@ services:
       db:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.service-wed.rule=PathPrefix(`/api`)"
       - "traefik.http.routers.service-wed.entrypoints=web"
+      - "traefik.http.routers.service-wed.middlewares=security-headers@file,csp-api@file"
       - "traefik.http.services.service-wed.loadbalancer.server.port=8000"
+    # edge: Traefik reaches it. data: Postgres/Redis.
+    networks: [edge, data]
+    logging: *logging
 
   worker:
     image: ${IMAGE_REPO:-wed-website}/worker:${IMAGE_TAG:-latest}
@@ -135,7 +213,11 @@ services:
       db:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
+    # data: Postgres/Redis. egress: outbound HTTPS to Resend. Not on edge --
+    # nothing should route traffic to the worker.
+    networks: [data, egress]
+    logging: *logging
 
   ui-wed:
     image: ${IMAGE_REPO:-wed-website}/ui-wed:${IMAGE_TAG:-latest}
@@ -157,11 +239,31 @@ services:
     container_name: ui-wed
     depends_on:
       - service-wed
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.ui-wed.rule=PathPrefix(`/`)"
       - "traefik.http.routers.ui-wed.entrypoints=web"
-      - "traefik.http.services.ui-wed.loadbalancer.server.port=80"
+      - "traefik.http.routers.ui-wed.middlewares=security-headers@file,csp-ui@file"
+      # nginx-unprivileged listens on 8080 (non-root can't bind 80).
+      - "traefik.http.services.ui-wed.loadbalancer.server.port=8080"
+    networks: [edge]
+    logging: *logging
+
+networks:
+  # Fixed name so Traefik's --providers.docker.network can refer to it
+  # regardless of the compose project name.
+  edge:
+    name: wed_edge
+  data:
+    internal: true
+  egress: {}
+  socket:
+    internal: true
 
 volumes:
   postgres_data:

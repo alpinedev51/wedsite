@@ -1,6 +1,6 @@
 services:
   traefik:
-    image: traefik:v3.7
+    image: traefik:v3.7.16
     container_name: wedding_proxy
     restart: unless-stopped
     command:
@@ -28,7 +28,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
 
   db:
-    image: postgres:18
+    image: postgres:18.6
     container_name: wedding_db
     restart: always
     environment:
@@ -57,7 +57,7 @@ services:
       retries: 10
 
   redis:
-    image: redis:8.8
+    image: redis:8.10.2
     container_name: wedding_redis
     restart: always
     ports:
@@ -223,7 +223,7 @@ services:
     # No runtime environment and no published ports, deliberately: the frontend
     # calls the API same-origin/relative (src/config/env.ts's default),
     # baked in at build time, and Traefik is the only intended entry point
-    # -- nginx (this image's runner stage) listens on 80 internally, not
+    # -- nginx (this image's runner stage) listens on 8080 internally, not
     # 5173, so a host port mapping here has nothing meaningful behind it.
     depends_on:
       - service-wed
@@ -235,9 +235,9 @@ services:
       - "traefik.http.routers.ui-wed.rule=PathPrefix(`/`)"
       - "traefik.http.routers.ui-wed.entrypoints=websecure"
       - "traefik.http.routers.ui-wed.tls=true"
-      # nginx (this image's runner stage) listens on 80, not Vite's 5173 --
+      # nginx (this image's runner stage, unprivileged) listens on 8080, not Vite's 5173 --
       # there's no Vite dev server running in this container anymore.
-      - "traefik.http.services.ui-wed.loadbalancer.server.port=80"
+      - "traefik.http.services.ui-wed.loadbalancer.server.port=8080"
 
 volumes:
   postgres_data:

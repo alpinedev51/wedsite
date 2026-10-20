@@ -2,10 +2,14 @@
 just "is the process up" and "can it reach its dependencies."
 """
 
+import logging
+
 from fastapi import APIRouter, Response, status
 from sqlalchemy import text
 
 from service_wed.adapters.db import engine
+
+logger = logging.getLogger("service_wed.health")
 
 router = APIRouter(tags=["health"])
 
@@ -25,7 +29,10 @@ async def readiness(response: Response) -> dict[str, str]:
     try:
         async with engine.connect() as conn:
             await conn.execute(text("SELECT 1"))
-    except Exception as exc:
+    except Exception:
+        # The error goes to the logs, not the response: this endpoint is
+        # public, and DB driver errors can include hostnames/usernames.
+        logger.exception("Readiness check failed: database unreachable")
         response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
-        return {"status": "unavailable", "detail": str(exc)}
+        return {"status": "unavailable"}
     return {"status": "ok"}

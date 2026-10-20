@@ -1,0 +1,54 @@
+# Traefik dynamic config (file provider), mounted by docker-compose.yml.
+# Holds the security-header middlewares in one place for both routers,
+# instead of spreading them over container labels (ui-wed's nginx and
+# FastAPI set none of these themselves).
+#
+# Routers stay on container labels; they reference these as
+# <name>@file, e.g. "security-headers@file,csp-ui@file".
+http:
+  middlewares:
+    # Applied to everything (UI and API).
+    security-headers:
+      headers:
+        contentTypeNosniff: true # X-Content-Type-Options: nosniff
+        frameDeny: true # X-Frame-Options: DENY (no clickjacking via iframes)
+        referrerPolicy: strict-origin-when-cross-origin
+        permissionsPolicy: "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+        # HSTS: browsers only honour it over HTTPS, which Cloudflare
+        # provides. 6 months, no includeSubDomains/preload -- keeps other
+        # subdomains on the domain free to do their own thing.
+        stsSeconds: 15552000
+        # Traefik normally sends HSTS only on HTTPS requests, but it only
+        # ever sees plain HTTP here (Cloudflare ends TLS, the tunnel forwards
+        # over http), so force it on.
+        forceSTSHeader: true
+        customResponseHeaders:
+          # Hide what's running behind the proxy. An empty value removes
+          # the header.
+          Server: ""
+          X-Powered-By: ""
+
+    # Content-Security-Policy for the SPA. The only third party is Google
+    # Fonts (stylesheet from fonts.googleapis.com, files from
+    # fonts.gstatic.com). The cloudflareinsights entries allow Cloudflare
+    # Web Analytics, which Cloudflare injects if you turn it on; remove
+    # them if you don't. Keep Rocket Loader OFF in Cloudflare -- it
+    # rewrites script tags and would be blocked by this policy.
+    csp-ui:
+      headers:
+        contentSecurityPolicy: >-
+          default-src 'self';
+          script-src 'self' https://static.cloudflareinsights.com;
+          style-src 'self' https://fonts.googleapis.com;
+          font-src 'self' https://fonts.gstatic.com;
+          img-src 'self' data: blob:;
+          connect-src 'self' https://cloudflareinsights.com;
+          object-src 'none';
+          base-uri 'self';
+          form-action 'self';
+          frame-ancestors 'none'
+
+    # The API only returns JSON/CSV, never pages, so it may load nothing.
+    csp-api:
+      headers:
+        contentSecurityPolicy: "default-src 'none'; frame-ancestors 'none'"

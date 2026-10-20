@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres:18
+    image: postgres:18.6
     container_name: wedding_db
     restart: always
     environment:
@@ -25,7 +25,7 @@ services:
       retries: 10
 
   redis:
-    image: redis:8.8
+    image: redis:8.10.2
     container_name: wedding_redis
     restart: always
     volumes:
