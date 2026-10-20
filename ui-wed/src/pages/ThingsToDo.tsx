@@ -2,30 +2,33 @@ import { useState } from "react";
 import Container from "../components/ui/Container";
 import Section from "../components/ui/Section";
 import Eyebrow from "../components/ui/Eyebrow";
+import PageHeading from "../components/ui/PageHeading";
 import ActivityCard from "../components/ui/ActivityCard";
 import ActivityModal from "../components/ui/ActivityModal";
 import type { ActivityLink } from "../components/ui/ActivityModal";
 import type { GalleryImage } from "../components/ui/Gallery";
-import dgoTrain from "../assets/dgo_train.jpg";
+// *_web.jpg files are 1600px re-encodes of originals that were up to 4 MB
+// each. Photos without a _web copy were already small enough to use as-is.
+import dgoTrain from "../assets/dgo_train_web.jpg";
 import dgoTrainFall from "../assets/dgo_train_fall.jpg";
-import chicagoBasin from "../assets/chicagobasin.jpg";
+import chicagoBasin from "../assets/chicagobasin_web.jpg";
 import sanJuansWide from "../assets/sanjuans_wide.webp";
-import sanJuansPretty from "../assets/sanjuanspretty.jpg";
+import sanJuansPretty from "../assets/sanjuanspretty_web.jpg";
 import flyfishAnimas from "../assets/flyfish_animas.jpg";
 import flyfishDolores from "../assets/flyfish_dolores.jpg";
 import brownTrout from "../assets/browntrout.jpg";
-import dgoDowntown from "../assets/dgo_downtown.jpg";
+import dgoDowntown from "../assets/dgo_downtown_web.jpg";
 import eastAnimasClimb from "../assets/east_animas_climb.webp";
 import rockClimbDgo from "../assets/rockclimbdgo.jpg";
-import boulderTurtleLake from "../assets/boulderturtlelake.jpg";
-import purgMtb from "../assets/purg_mtb.jpg";
+import boulderTurtleLake from "../assets/boulderturtlelake_web.jpg";
+import purgMtb from "../assets/purg_mtb_web.jpg";
 import horseGulch from "../assets/horsegulch.jpg";
 import twinButtesMtb from "../assets/twinbuttesmtb.jpg";
-import engineerSummit from "../assets/engineersummit.jpg";
-import iceLakes from "../assets/icelakes.jpg";
-import mesaVerde from "../assets/mesaverde_dwellings.jpg"
-import mesaVerdeClose from "../assets/mesaverde_closeup.jpg"
-import mesaVerdeDwelling from "../assets/dweellingmesaverde.jpg"
+import engineerSummit from "../assets/engineersummit_web.jpg";
+import iceLakes from "../assets/icelakes_web.jpg";
+import mesaVerde from "../assets/mesaverde_dwellings.jpg";
+import mesaVerdeClose from "../assets/mesaverde_closeup.jpg";
+import mesaVerdeDwelling from "../assets/dweellingmesaverde_web.jpg";
 
 interface Activity {
   title: string;
@@ -125,7 +128,8 @@ const activities: Activity[] = [
   },
   {
     title: "Rock Climbing",
-    summary: "Dry, sunny crags close to town that are climbable pretty much year-round.",
+    summary:
+      "Dry, sunny crags close to town that are climbable pretty much year-round.",
     details:
       "It's dry and sunny enough here that people climb pretty much year-round. Turtle Lake and the East Animas are the local crags, with everything from easy sport routes to harder trad and bouldering. If you need gear or don't know the routes, just ask around at the wedding. Odds are someone can get you out there.",
     photos: [
@@ -157,15 +161,18 @@ function ThingsToDo() {
       <Container className="flex flex-col items-center gap-10">
         <div className="flex flex-col items-center gap-3">
           <Eyebrow>Things To Do</Eyebrow>
-          <h1 className="text-4xl">Make A Trip Of It</h1>
+          <PageHeading>Make A Trip Of It</PageHeading>
         </div>
 
-        <div className="grid w-full grid-cols-1 gap-6 text-left sm:grid-cols-2">
+        {/* Three columns at lg -- twelve cards in two columns made six very
+            tall rows on a wide screen. */}
+        <div className="grid w-full grid-cols-1 gap-6 text-left sm:grid-cols-2 lg:grid-cols-3">
           {activities.map((activity, index) => (
             <ActivityCard
               key={activity.title}
               title={activity.title}
               summary={activity.summary}
+              photo={activity.photos?.[0]}
               onOpen={() => setOpenIndex(index)}
             />
           ))}

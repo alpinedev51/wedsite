@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import Container from "../../components/ui/Container";
 import Section from "../../components/ui/Section";
 import Eyebrow from "../../components/ui/Eyebrow";
+import LoadingNote from "../../components/ui/LoadingNote";
 import { errorMessage } from "../../lib/api";
 import RsvpForm from "./RsvpForm";
 import { getInvitation, submitRsvp } from "./rsvp.api";
@@ -71,7 +72,7 @@ function RsvpPage() {
           </h1>
         </div>
 
-        {loading && <p className="text-center text-sm text-ink/70">Loading…</p>}
+        {loading && <LoadingNote>Finding your invitation</LoadingNote>}
 
         {loadError && (
           <p className="text-center text-sm text-terracotta">{loadError}</p>

@@ -27,8 +27,10 @@ function PersonCard({
         )}
       </div>
       <h3 className="font-display text-lg text-walnut">{name}</h3>
+      {/* text-walnut (5.8:1) rather than text-clay (2.76:1) -- 12px uppercase
+          tracked-out text is the last place to be spending contrast. */}
       {role && (
-        <p className="mt-1 font-utility text-xs uppercase tracking-widest text-clay">
+        <p className="mt-1 font-utility text-xs uppercase tracking-widest text-walnut">
           {role}
         </p>
       )}

@@ -1,7 +1,11 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Button } from "../../components/ui/Button";
 import { errorMessage } from "../../lib/api";
-import { fromDatetimeLocalInput, toDatetimeLocalInput } from "../../lib/date";
+import {
+  formatVenueDateTime,
+  fromDatetimeLocalInput,
+  toDatetimeLocalInput,
+} from "../../lib/date";
 import DeliveryStatsGrid from "../dashboard/DeliveryStatsGrid";
 import {
   fanOutCampaign,
@@ -118,14 +122,14 @@ function CampaignDetail({
       {campaign && (
         <>
           <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
-            <dt className="text-ink/60">Type</dt>
+            <dt className="text-ink/70">Type</dt>
             <dd>{TYPE_LABELS[campaign.type] ?? campaign.type}</dd>
-            <dt className="text-ink/60">Subject</dt>
+            <dt className="text-ink/70">Subject</dt>
             <dd>{campaign.subject}</dd>
-            <dt className="text-ink/60">Status</dt>
+            <dt className="text-ink/70">Status</dt>
             <dd className="capitalize">{campaign.status}</dd>
-            <dt className="text-ink/60">Scheduled For</dt>
-            <dd>{new Date(campaign.scheduled_for).toLocaleString()}</dd>
+            <dt className="text-ink/70">Scheduled For</dt>
+            <dd>{formatVenueDateTime(new Date(campaign.scheduled_for))}</dd>
           </dl>
 
           {campaign.status === "draft" ? (
@@ -134,9 +138,10 @@ function CampaignDetail({
               className="flex flex-col gap-3 border-t border-walnut/15 pt-4"
             >
               <label className="flex flex-col gap-1 text-sm text-ink">
-                Reschedule
+                Reschedule (Durango time)
                 <input
                   type="datetime-local"
+                  step={1}
                   required
                   value={rescheduleValue}
                   onChange={(e) => setRescheduleValue(e.target.value)}

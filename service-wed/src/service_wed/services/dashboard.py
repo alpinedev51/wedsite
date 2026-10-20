@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import datetime as dt
 
+from service_wed.config.venue import venue_date
 from service_wed.domain.value_objects import RsvpStatus
 from service_wed.ports.uow import UnitOfWorkPort
 from service_wed.schemas.dashboard import (
@@ -44,7 +45,11 @@ class DashboardService:
             # Whole calendar days, not a raw timedelta -- comparing dates
             # (not datetimes) avoids an off-by-one from time-of-day alone
             # (e.g. wedding at 3pm tomorrow vs. now at 4pm today).
-            days_until_wedding = (wedding.wedding_date.date() - now.date()).days
+            # Both sides as venue calendar dates -- UTC dates would roll
+            # over at 6 PM Durango time and count a day early each evening.
+            days_until_wedding = (
+                venue_date(wedding.wedding_date) - venue_date(now)
+            ).days
 
         rsvp = DashboardStatsResponse(
             total_invited=total_invited,

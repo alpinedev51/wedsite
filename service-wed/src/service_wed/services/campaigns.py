@@ -11,6 +11,7 @@ import uuid
 
 
 from service_wed.config.settings import settings
+from service_wed.config.venue import format_venue_date
 from service_wed.domain.errors import ConflictError, NotFoundError, ValidationError
 from service_wed.domain.value_objects import (
     CampaignStatus,
@@ -61,8 +62,10 @@ def build_household_email_context(
     # pre-formatted, not as raw datetime objects.
     if wedding is not None:
         context.update(
-            wedding_date=wedding.wedding_date.strftime("%B %-d, %Y"),
-            rsvp_deadline=wedding.rsvp_deadline.strftime("%B %-d, %Y"),
+            # Venue-local, not UTC: an end-of-day deadline in Durango is
+            # already the next day in UTC (see config/venue.py).
+            wedding_date=format_venue_date(wedding.wedding_date),
+            rsvp_deadline=format_venue_date(wedding.rsvp_deadline),
             venue_name=wedding.venue_name,
             venue_address=wedding.venue_address,
         )

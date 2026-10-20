@@ -52,8 +52,8 @@ function AdminPage() {
               onClick={() => setTab(t.key)}
               className={`border-b-2 px-1 pb-3 font-utility text-sm uppercase tracking-wider transition-colors ${
                 tab === t.key
-                  ? "border-clay text-clay"
-                  : "border-transparent text-ink/60 hover:text-ink"
+                  ? "border-walnut text-walnut"
+                  : "border-transparent text-ink/70 hover:text-ink"
               }`}
             >
               {t.label}

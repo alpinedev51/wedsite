@@ -1,6 +1,7 @@
-import { useEffect } from "react";
+import { useId } from "react";
 import Gallery from "./Gallery";
 import type { GalleryImage } from "./Gallery";
+import { useModalBehavior } from "../../hooks/useModalBehavior";
 
 export interface ActivityLink {
   label: string;
@@ -20,34 +21,39 @@ function ActivityModal({
   photos?: GalleryImage[];
   onClose: () => void;
 }) {
-  useEffect(() => {
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
-    }
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [onClose]);
+  // Escape handling, body scroll lock, focus trap and focus restore all live
+  // in this hook now (it used to be just the Escape listener).
+  const panelRef = useModalBehavior<HTMLDivElement>(onClose);
+  const titleId = useId();
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/90 p-4"
-      role="dialog"
-      aria-modal="true"
+      className="anim-scrim fixed inset-0 z-[60] flex items-center justify-center bg-ink/90 p-4"
       onClick={onClose}
     >
       <div
-        className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-linen p-8 text-left shadow-xl sm:p-10"
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        className="anim-panel max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-linen p-8 text-left shadow-xl outline-none sm:p-10"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-4">
-          <h2 className="font-display text-2xl text-walnut sm:text-3xl">
+          <h2
+            id={titleId}
+            className="font-display text-2xl text-walnut sm:text-3xl"
+          >
             {title}
           </h2>
+          {/* -m-2 p-2 gives this a 40px hit area without changing how the
+              icon looks -- it was a bare 24px target before. */}
           <button
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="shrink-0 text-ink/50 hover:text-ink"
+            className="-m-2 shrink-0 rounded-full p-2 text-ink/70 transition-colors hover:bg-walnut/10 hover:text-ink"
           >
             <svg
               viewBox="0 0 24 24"

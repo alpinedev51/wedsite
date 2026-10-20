@@ -44,7 +44,7 @@ function DashboardSection() {
           dataviz skill (large, same sans as everything else, exactly one
           per view), not folded in as just another stat tile. */}
       <div className="rounded-2xl border border-walnut/12 bg-linen/60 p-6 text-center">
-        <p className="font-utility text-sm uppercase tracking-wider text-ink/60">
+        <p className="font-utility text-sm uppercase tracking-wider text-ink/70">
           Days Until Wedding
         </p>
         <p className="font-display text-5xl text-walnut">

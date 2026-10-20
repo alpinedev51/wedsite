@@ -139,9 +139,10 @@ function WeddingSettingsSection() {
         className="grid grid-cols-1 gap-4 sm:grid-cols-2"
       >
         <label className="flex flex-col gap-1 text-sm text-ink">
-          Wedding Date
+          Wedding Date (Durango time)
           <input
             type="datetime-local"
+            step={1}
             required
             value={form.weddingDate}
             onChange={(e) =>
@@ -152,9 +153,10 @@ function WeddingSettingsSection() {
         </label>
 
         <label className="flex flex-col gap-1 text-sm text-ink">
-          RSVP Deadline
+          RSVP Deadline (Durango time)
           <input
             type="datetime-local"
+            step={1}
             required
             value={form.rsvpDeadline}
             onChange={(e) =>
@@ -165,9 +167,10 @@ function WeddingSettingsSection() {
         </label>
 
         <label className="flex flex-col gap-1 text-sm text-ink">
-          RSVP Opens At (optional)
+          RSVP Opens At (Durango time, optional)
           <input
             type="datetime-local"
+            step={1}
             value={form.rsvpOpensAt}
             onChange={(e) =>
               setForm((f) => ({ ...f, rsvpOpensAt: e.target.value }))

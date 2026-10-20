@@ -40,9 +40,10 @@ def _env_or_none(name: str) -> str | None:
 
 
 def _env_datetime(name: str) -> dt.datetime | None:
-    """WEDDING_DATE/RSVP_DEADLINE/RSVP_OPENS_AT are ISO 8601 with a literal
-    "Z" suffix (e.g. 2027-09-18T00:00:00Z) -- fromisoformat handles "Z"
-    natively since Python 3.11."""
+    """WEDDING_DATE/RSVP_DEADLINE/RSVP_OPENS_AT are ISO 8601. Without a
+    timezone ("2027-09-04", "2027-06-28T23:59:59") they're Durango local
+    time: WeddingUpsertRequest converts them (see config/venue.py). A value
+    ending in "Z" or an offset is used as that exact instant."""
     value = _env_or_none(name)
     return dt.datetime.fromisoformat(value) if value else None
 

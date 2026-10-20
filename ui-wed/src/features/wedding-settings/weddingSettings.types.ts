@@ -2,7 +2,7 @@
 // and WeddingUpsertRequest -- keep these in sync if those backend DTOs
 // change shape. All datetimes are ISO strings (UTC) over the wire; the
 // admin form converts to/from <input type="datetime-local"> via
-// lib/date.ts's toDatetimeLocalInput/fromDatetimeLocalInput.
+// lib/date.ts's toDatetimeLocalInput/fromDatetimeLocalInput (venue time).
 export interface WeddingAdminView {
   wedding_date: string;
   venue_name: string | null;

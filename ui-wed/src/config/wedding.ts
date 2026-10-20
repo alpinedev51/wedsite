@@ -14,17 +14,41 @@
 // `ui-wed.build.args`, see ui-wed/Dockerfile. Changing one means rebuilding,
 // not just restarting the container -- that's fine for a fallback layer that
 // should rarely need to change once set.
+import { civilToInstant, isValidDate } from "../lib/date";
+
+// A malformed VITE_* date would otherwise become an Invalid Date and show
+// "NaN" in every countdown slot. Falls back to the placeholder instead, with
+// a console note so whoever built the site can see why.
+function buildTimeDate(value: string | undefined, placeholder: string): Date {
+  const parsed = civilToInstant(value || placeholder);
+  if (isValidDate(parsed)) return parsed;
+  // eslint-disable-next-line no-console -- the only signal a bad build gives.
+  console.warn(`Unparseable build-time date "${value}", using ${placeholder}.`);
+  return civilToInstant(placeholder);
+}
+
 export const wedding = {
   coupleNames: import.meta.env.VITE_COUPLE_NAMES || "Mister & Missus",
   brideFirstName: import.meta.env.VITE_BRIDE_FNAME || "Missus",
   groomFirstName: import.meta.env.VITE_GROOM_FNAME || "Mister",
-  date: new Date(import.meta.env.VITE_WEDDING_DATE || "2027-01-01T00:00:00"),
+  // False while the names above are the "Mister"/"Missus" placeholders, so
+  // the Monogram can stay blank instead of flashing "M & M".
+  namesConfigured: Boolean(
+    import.meta.env.VITE_BRIDE_FNAME && import.meta.env.VITE_GROOM_FNAME,
+  ),
+  // civilToInstant (inside buildTimeDate), not `new Date(...)`: these
+  // strings usually carry no timezone, so a plain Date would resolve them
+  // against each viewer's own timezone and the site would report a different
+  // wedding date in Honolulu than in Denver. Read as wall-clock time at the
+  // venue instead -- see lib/date.ts.
+  date: buildTimeDate(import.meta.env.VITE_WEDDING_DATE, "2027-01-01"),
   location: {
     venue: import.meta.env.VITE_VENUE_NAME || "Pretty Venue",
     city: import.meta.env.VITE_VENUE_CITY || "Small Town, USA",
   },
-  rsvpDeadline: new Date(
-    import.meta.env.VITE_RSVP_DEADLINE || "2027-02-01T00:00:00",
+  rsvpDeadline: buildTimeDate(
+    import.meta.env.VITE_RSVP_DEADLINE,
+    "2027-02-01T23:59:59",
   ),
 };
 

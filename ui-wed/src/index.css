@@ -12,7 +12,10 @@
   --color-clay: #a98d74;
   --color-clay2: #d4a373;
   --color-tan: #a07a55;
-  --color-terracotta: #b86a5b;
+  /* Darkened from #b86a5b (3.55:1 on linen -- failed WCAG AA for normal text).
+     This token is only ever used for error text, so darkening it globally
+     fixes every error message in the app at once. */
+  --color-terracotta: #9e4e3c;
   --color-green: #3a564b;
   --color-darkgreen: #0c2a1e;
   --color-medgreen: #354e39;
@@ -33,6 +36,12 @@
   --color-slate2: #36475c;
   --color-slate3: #717787;
   --color-ochre: #c8a24c;
+  /* ochre is only 2.13:1 on linen -- fine for purely decorative marks (the
+     timeline dots, the gradient hairline) but not for anything that carries
+     information. ochre-deep (3.55:1) clears the 3:1 bar for non-text
+     indicators and is used where the gold has a job to do, e.g. the ring
+     around the wedding day in MiniCalendar. */
+  --color-ochre-deep: #9d7a28;
   --color-gold: #ffce00;
   --color-yellow: #fce300;
 
@@ -124,7 +133,63 @@
   ::selection {
     @apply bg-sage/30;
   }
+  /* walnut (5.8:1), not clay (2.76:1) -- a focus ring is a non-text indicator
+     and needs at least 3:1 to be usable by keyboard navigators. */
   :focus-visible {
-    @apply outline-2 outline-offset-2 outline-clay;
+    @apply outline-2 outline-offset-2 outline-walnut;
+  }
+}
+
+/* Every animation in the app opts out here, including the global
+   scroll-smooth above -- guests who've asked their OS for reduced motion get
+   an instant, static site rather than a janky one. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@keyframes wed-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes wed-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@layer components {
+  /* Used by the two overlays (ActivityModal, Lightbox): the scrim fades and
+     the panel rises, so opening something feels like a transition rather than
+     a hard cut.
+
+     `backwards`, not `both`: holding the final keyframe would leave a
+     transform on the panel, which makes it the containing block for any
+     position:fixed child -- the Lightbox opened from inside ActivityModal
+     would then be sized to, and clipped by, the modal panel. */
+  .anim-scrim {
+    animation: wed-fade-in 180ms ease-out backwards;
+  }
+  .anim-panel {
+    animation: wed-rise-in 220ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
   }
 }

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "../../components/ui/Button";
 import { errorMessage } from "../../lib/api";
+import { formatVenueDateTime } from "../../lib/date";
 import CampaignCreateForm from "./CampaignCreateForm";
 import CampaignDetail from "./CampaignDetail";
 import { listCampaigns } from "./campaigns.api";
@@ -92,7 +93,7 @@ function CampaignsSection() {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-b border-walnut/20 font-utility uppercase tracking-wider text-ink/60">
+              <tr className="border-b border-walnut/20 font-utility uppercase tracking-wider text-ink/70">
                 <th className="py-2 pr-4">Type</th>
                 <th className="py-2 pr-4">Subject</th>
                 <th className="py-2 pr-4">Status</th>
@@ -112,7 +113,7 @@ function CampaignsSection() {
                   <td className="py-2 pr-4">{campaign.subject}</td>
                   <td className="py-2 pr-4 capitalize">{campaign.status}</td>
                   <td className="py-2 pr-4">
-                    {new Date(campaign.scheduled_for).toLocaleString()}
+                    {formatVenueDateTime(new Date(campaign.scheduled_for))}
                   </td>
                 </tr>
               ))}

@@ -3,7 +3,9 @@ WEDDING_ID singleton)."""
 
 import datetime as dt
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+
+from service_wed.config.venue import as_venue_time
 
 
 class WeddingPublicView(BaseModel):
@@ -49,6 +51,15 @@ class WeddingUpsertRequest(BaseModel):
     venue_city: str | None = None
     bride_first_name: str | None = None
     groom_first_name: str | None = None
+
+    # A date or time with no timezone ("2027-09-04", "2027-06-28T23:59:59")
+    # means Durango time -- see config/venue.py. Applies to every way a
+    # wedding config comes in: the admin API, bootstrap.sh, and the
+    # container bootstrap's .env seeding.
+    @field_validator("wedding_date", "rsvp_deadline", "rsvp_opens_at")
+    @classmethod
+    def _naive_means_venue_time(cls, value: dt.datetime | None) -> dt.datetime | None:
+        return None if value is None else as_venue_time(value)
 
     @model_validator(mode="after")
     def _check_dates(self) -> "WeddingUpsertRequest":

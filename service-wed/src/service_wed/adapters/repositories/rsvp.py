@@ -27,7 +27,7 @@ class SQLAlchemyRsvpRepository(RsvpRepository):
             dietary_notes=dietary_notes,
         )
 
-        stmt = stmt.on_conflict_do_update(
+        upsert = stmt.on_conflict_do_update(
             index_elements=["guest_id"],
             set_=dict(
                 status=stmt.excluded.status,
@@ -46,5 +46,5 @@ class SQLAlchemyRsvpRepository(RsvpRepository):
             ),
         ).returning(RsvpResponse)
 
-        result = await self.session.execute(stmt)
+        result = await self.session.execute(upsert)
         return result.scalar_one()

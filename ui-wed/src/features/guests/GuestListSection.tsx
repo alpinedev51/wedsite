@@ -178,7 +178,7 @@ function GuestListSection() {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-walnut/20 font-utility uppercase tracking-wider text-ink/60">
+                <tr className="border-b border-walnut/20 font-utility uppercase tracking-wider text-ink/70">
                   <th className="py-2 pr-4">Household</th>
                   <th className="py-2 pr-4">Contact Email</th>
                   <th className="py-2 pr-4">Guests</th>

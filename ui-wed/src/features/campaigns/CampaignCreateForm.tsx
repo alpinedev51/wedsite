@@ -84,7 +84,7 @@ function CampaignCreateForm({
       </label>
 
       <label className="flex flex-col gap-1 text-sm text-ink">
-        Scheduled For
+        Scheduled For (Durango time)
         <input
           type="datetime-local"
           required

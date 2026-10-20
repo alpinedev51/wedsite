@@ -7,6 +7,7 @@ function ScrollHero({
   alt,
   overlay,
   overlayAlign = "center",
+  overlayTopPct,
   priority = false,
   heightClass = "h-dvh",
   maskFadeTopPct = 12,
@@ -17,6 +18,9 @@ function ScrollHero({
   alt: string;
   overlay?: ReactNode;
   overlayAlign?: "center" | "bottom";
+  /** Where the overlay's middle sits, as a % of the hero's height from the
+   * top (75 = three-quarters down). Overrides overlayAlign when set. */
+  overlayTopPct?: number;
   priority?: boolean;
   heightClass?: string;
   maskFadeTopPct?: number;
@@ -38,15 +42,29 @@ function ScrollHero({
     />
   );
 
-  const overlayLayer = overlay && (
-    <div
-      className={`absolute inset-0 flex justify-center p-6 ${
-        overlayAlign === "bottom" ? "items-end pb-14 sm:pb-20" : "items-center"
-      }`}
-    >
-      {overlay}
-    </div>
-  );
+  const overlayLayer =
+    overlay && overlayTopPct !== undefined ? (
+      // Centered on a point `overlayTopPct`% down the photo, so the text can
+      // sit on a particular part of the image (e.g. the grass at the bottom).
+      <div
+        className="absolute inset-x-0 flex -translate-y-1/2 justify-center px-6 text-center"
+        style={{ top: `${overlayTopPct}%` }}
+      >
+        {overlay}
+      </div>
+    ) : (
+      overlay && (
+        <div
+          className={`absolute inset-0 flex justify-center p-6 ${
+            overlayAlign === "bottom"
+              ? "items-end pb-14 sm:pb-20"
+              : "items-center"
+          }`}
+        >
+          {overlay}
+        </div>
+      )
+    );
 
   return (
     <div

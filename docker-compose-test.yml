@@ -121,6 +121,9 @@ services:
       - RSVP_OPENS_AT=${RSVP_OPENS_AT:-}
       - VENUE_NAME=${VENUE_NAME:-}
       - VENUE_ADDRESS=${VENUE_ADDRESS:-}
+      - VENUE_CITY=${VENUE_CITY:-}
+      - BRIDE_FNAME=${BRIDE_FNAME:-}
+      - GROOM_FNAME=${GROOM_FNAME:-}
       - REMINDER_CAP=${REMINDER_CAP:-2}
       - REMINDER_INTERVAL_DAYS=${REMINDER_INTERVAL_DAYS:-7}
     depends_on:
@@ -191,8 +194,19 @@ services:
     build:
       context: ./ui-wed
       dockerfile: Dockerfile
+      # Build-time fallback config (used until/unless service-wed's live
+      # GET /wedding answers) -- same args as docker-compose.yml. Unset ones
+      # pass through empty and the bundle uses the wedding.ts placeholders.
+      args:
+        VITE_COUPLE_NAMES: ${COUPLE_NAMES:-}
+        VITE_BRIDE_FNAME: ${BRIDE_FNAME:-}
+        VITE_GROOM_FNAME: ${GROOM_FNAME:-}
+        VITE_WEDDING_DATE: ${WEDDING_DATE:-}
+        VITE_VENUE_NAME: ${VENUE_NAME:-}
+        VITE_VENUE_CITY: ${VENUE_CITY:-}
+        VITE_RSVP_DEADLINE: ${RSVP_DEADLINE:-}
     container_name: ui-wed
-    # No environment and no published ports, deliberately: the frontend
+    # No runtime environment and no published ports, deliberately: the frontend
     # calls the API same-origin/relative (src/config/env.ts's default),
     # baked in at build time, and Traefik is the only intended entry point
     # -- nginx (this image's runner stage) listens on 80 internally, not

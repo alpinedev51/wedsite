@@ -30,7 +30,7 @@ function StatTile({
 
   return (
     <div className="flex flex-col gap-1 rounded-2xl border border-walnut/12 bg-linen/60 p-4">
-      <span className="font-utility text-xs uppercase tracking-wider text-ink/60">
+      <span className="font-utility text-xs uppercase tracking-wider text-ink/70">
         {label}
       </span>
       <span className={`font-display text-2xl ${valueClass}`}>{value}</span>

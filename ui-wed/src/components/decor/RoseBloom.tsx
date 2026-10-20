@@ -1,3 +1,5 @@
+// Not used anywhere right now (it was dropped from WeddingInfoHub). Kept
+// for possible reuse as decoration.
 interface RoseProps {
   className?: string;
 }

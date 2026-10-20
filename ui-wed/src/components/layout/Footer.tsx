@@ -1,4 +1,5 @@
 import { useWeddingConfig } from "../../config/WeddingConfigContext";
+import { formatShortDate } from "../../lib/date";
 import { Monogram } from "../decor/Monogram";
 import Container from "../ui/Container";
 
@@ -12,13 +13,12 @@ function Footer() {
         <p className="font-script text-2xl text-walnut">
           {wedding.coupleNames}
         </p>
-        <p className="font-utility text-xs uppercase tracking-widest text-walnut/60">
-          {wedding.date.toLocaleDateString("en-US", {
-            month: "long",
-            day: "numeric",
-            year: "numeric",
-          })}{" "}
-          | {wedding.location.city}
+        {/* text-walnut (5.8:1) rather than text-walnut/60 (2.55:1), and
+            formatShortDate so this renders in the venue's timezone like every
+            other date on the site -- toLocaleDateString() with no timeZone
+            showed the previous day to guests west of the venue. */}
+        <p className="font-utility text-xs uppercase tracking-widest text-walnut">
+          {formatShortDate(wedding.date)} | {wedding.location.city}
         </p>
       </Container>
     </footer>

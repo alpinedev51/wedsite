@@ -187,7 +187,7 @@ function RsvpForm({
 
       {error && <p className="text-sm text-terracotta">{error}</p>}
       {!allAnswered && (
-        <p className="text-sm text-ink/60">
+        <p className="text-sm text-ink/70">
           Please choose a response for everyone in your household before
           submitting.
         </p>

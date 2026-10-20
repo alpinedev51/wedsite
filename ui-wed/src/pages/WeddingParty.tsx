@@ -1,13 +1,14 @@
 import Container from "../components/ui/Container";
 import Section from "../components/ui/Section";
 import Eyebrow from "../components/ui/Eyebrow";
+import PageHeading from "../components/ui/PageHeading";
 import PersonCard from "../components/ui/PersonCard";
 
 // One object per person. `photoSrc` is optional — leave it out (like
 // below) and PersonCard shows a soft placeholder circle with the
 // person's first initial instead of a broken image. Once you have real
-// photos, import them the same way `coupleImg` is imported in
-// Home.tsx and add a `photoSrc: theirImg` field to that person's entry.
+// photos, import them the same way the photos are imported in
+// Photos.tsx and add a `photoSrc: theirImg` field to that person's entry.
 const weddingParty = [
   { name: "Lexi Behn (?)", role: "Maid of Honor" },
   { name: "TBD", role: "Best Man" },
@@ -19,13 +20,13 @@ function WeddingParty() {
       <Container className="flex flex-col items-center gap-10">
         <div className="flex flex-col items-center gap-3">
           <Eyebrow>Wedding Party</Eyebrow>
-          <h1 className="text-4xl">The People Standing With Us</h1>
+          <PageHeading>The People Standing With Us</PageHeading>
         </div>
 
         {/*
-          A CSS grid: 2 columns on small screens, 3 on larger ones
-          (`sm:grid-cols-3`). We map over `weddingParty` and render one
-          PersonCard per person.
+          A centred wrapping row, not a grid. This was `sm:grid-cols-3`, which
+          left-aligned the two current people against an empty third column;
+          flex-wrap + justify-center stays balanced at any number of people.
 
           `key={person.name}` — React requires a unique `key` on every
           item in a list so it can tell items apart when the array
@@ -35,9 +36,13 @@ function WeddingParty() {
           props — shorthand for writing
           `name={person.name} role={person.role}` by hand.
         */}
-        <div className="grid w-full grid-cols-2 gap-8 sm:grid-cols-3">
+        <div className="flex w-full flex-wrap justify-center gap-8 sm:gap-12">
           {weddingParty.map((person) => (
-            <PersonCard key={person.name} {...person} />
+            <PersonCard
+              key={person.name}
+              {...person}
+              className="w-32 sm:w-40"
+            />
           ))}
         </div>
       </Container>

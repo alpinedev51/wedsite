@@ -1,43 +1,41 @@
 import Container from "../components/ui/Container";
 import Section from "../components/ui/Section";
 import Eyebrow from "../components/ui/Eyebrow";
+import PageHeading from "../components/ui/PageHeading";
 import MiniCalendar from "../components/ui/MiniCalendar";
 import { useWeddingConfig } from "../config/WeddingConfigContext";
+import { formatLongDate, getWeddingDateParts } from "../lib/date";
 
 function Travel() {
   const { wedding } = useWeddingConfig();
+
+  // Resolved in the venue's timezone, not the viewer's. Calling
+  // wedding.date.getDate() here would circle the wrong square for any guest
+  // browsing from west of the venue -- see lib/date.ts.
+  // Null only for an unparseable date, in which case the calendar is skipped.
+  const parts = getWeddingDateParts(wedding.date);
 
   return (
     <Section className="text-center">
       <Container className="flex flex-col items-center gap-10">
         <div className="flex flex-col items-center gap-3">
           <Eyebrow>Travel</Eyebrow>
-          <h1 className="text-4xl">Getting To {wedding.location.city}</h1>
-          <p className="max-w-md font-body text-ink/70">
+          <PageHeading>Getting To {wedding.location.city}</PageHeading>
+          <p className="max-w-md font-body text-ink/75">
             The wedding will be held at {wedding.location.venue} in{" "}
-            {wedding.location.city}. More details on hotels and directions
-            coming soon.
+            {wedding.location.city} on {formatLongDate(wedding.date)}. More
+            details on hotels and directions coming soon.
           </p>
         </div>
 
-        {/*
-          MiniCalendar (src/components/ui/MiniCalendar.tsx) needs a
-          year, a month, and the day to circle. JavaScript's Date object
-          numbers months 0–11 (0 = January), which is why we call
-          `.getMonth()` rather than typing the number by hand.
-
-          All three values are read directly off `wedding.date` — the
-          single Date object defined in src/config/wedding.ts — instead
-          of being hardcoded here. That means if the wedding date ever
-          changes, you only update it in that one file, and every page
-          that uses it (Home's countdown, this calendar, etc.) stays in
-          sync automatically.
-        */}
-        <MiniCalendar
-          year={wedding.date.getFullYear()}
-          month={wedding.date.getMonth()}
-          highlightDay={wedding.date.getDate()}
-        />
+        {parts && (
+          <MiniCalendar
+            year={parts.year}
+            month={parts.month}
+            highlightDay={parts.day}
+            highlightLabel={formatLongDate(wedding.date)}
+          />
+        )}
       </Container>
     </Section>
   );

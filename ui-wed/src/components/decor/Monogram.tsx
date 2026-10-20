@@ -1,9 +1,19 @@
+import { useWeddingConfig } from "../../config/WeddingConfigContext";
+import { initialsFrom } from "../../lib/names";
+
 interface MonogramProps {
   className?: string;
-  initials?: [string, string];
 }
 
-export function Monogram({ className, initials = ["A", "K"] }: MonogramProps) {
+// Initials come from the couple's names in wedding config, read here so every
+// Monogram on the site shows the same pair in the same (groom & bride) order
+// without each caller having to build it. Just the rings and "&" until real
+// names are known, rather than showing the placeholder "M & M".
+export function Monogram({ className }: MonogramProps) {
+  const { wedding } = useWeddingConfig();
+  const initials = wedding.namesConfigured
+    ? initialsFrom(wedding.groomFirstName, wedding.brideFirstName)
+    : ["", ""];
   return (
     <svg viewBox="0 0 160 160" className={className} aria-hidden="true">
       <circle

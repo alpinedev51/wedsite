@@ -9,7 +9,8 @@
 #
 # Required env vars (set in .env or export before running):
 #   ADMIN_EMAIL, ADMIN_PASSWORD   -- the one admin account this app has
-#   WEDDING_DATE, RSVP_DEADLINE   -- ISO 8601, e.g. 2027-06-12T18:00:00Z
+#   WEDDING_DATE, RSVP_DEADLINE   -- Durango local time, e.g. 2027-09-04 or
+#                                    2027-06-28T23:59:59 (see .env.example)
 #   DATABASE_URL                  -- already in .env.example; used both by
 #                                    Alembic and to derive psql's connection
 #

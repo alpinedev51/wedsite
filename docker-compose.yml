@@ -124,14 +124,17 @@ services:
     build:
       context: ./ui-wed
       dockerfile: Dockerfile
+      # These all default to empty, so the placeholders in
+      # ui-wed/src/config/wedding.ts are the only fallback. A non-empty
+      # default here would make the site think real names were set.
       args:
-        VITE_COUPLE_NAMES: ${COUPLE_NAMES:-Mister & Missus}
-        VITE_BRIDE_FNAME: ${BRIDE_FNAME:-Missus}
-        VITE_GROOM_FNAME: ${GROOM_FNAME:-Mister}
-        VITE_WEDDING_DATE: ${WEDDING_DATE:-2027-01-01T00:00:00}
-        VITE_VENUE_NAME: ${VENUE_NAME:-Pretty Venue}
-        VITE_VENUE_CITY: ${VENUE_CITY:-Small Town, USA}
-        VITE_RSVP_DEADLINE: ${RSVP_DEADLINE:-2027-02-01T00:00:00}
+        VITE_COUPLE_NAMES: ${COUPLE_NAMES:-}
+        VITE_BRIDE_FNAME: ${BRIDE_FNAME:-}
+        VITE_GROOM_FNAME: ${GROOM_FNAME:-}
+        VITE_WEDDING_DATE: ${WEDDING_DATE:-}
+        VITE_VENUE_NAME: ${VENUE_NAME:-}
+        VITE_VENUE_CITY: ${VENUE_CITY:-}
+        VITE_RSVP_DEADLINE: ${RSVP_DEADLINE:-}
     container_name: ui-wed
     depends_on:
       - service-wed

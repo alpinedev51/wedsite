@@ -6,6 +6,7 @@ import {
   type ReactNode,
 } from "react";
 import { ApiError } from "../lib/api";
+import { isValidDate } from "../lib/date";
 import { getWeddingPublic } from "./wedding.api";
 import { wedding as fallbackWedding, type WeddingConfig } from "./wedding";
 
@@ -16,6 +17,16 @@ interface WeddingConfigContextValue {
 const WeddingConfigContext = createContext<WeddingConfigContextValue | null>(
   null,
 );
+
+// A date the backend sent that won't parse keeps the fallback rather than
+// replacing a good date with an Invalid one.
+function liveDateOr(value: string, fallback: Date): Date {
+  const parsed = new Date(value);
+  if (isValidDate(parsed)) return parsed;
+  // eslint-disable-next-line no-console -- the only signal a bad row gives.
+  console.warn(`Unparseable date from /wedding: ${value}, using fallback.`);
+  return fallback;
+}
 
 // Precedence: 1) service-wed's live `GET /wedding` row, 2) VITE_* build-time
 // env vars, 3) hardcoded literals -- levels 2/3 both live in ./wedding.ts and
@@ -43,12 +54,19 @@ export function WeddingConfigProvider({ children }: { children: ReactNode }) {
               : fallbackWedding.coupleNames,
           brideFirstName,
           groomFirstName,
-          date: new Date(data.wedding_date),
+          namesConfigured: Boolean(
+            (data.bride_first_name && data.groom_first_name) ||
+            fallbackWedding.namesConfigured,
+          ),
+          date: liveDateOr(data.wedding_date, fallbackWedding.date),
           location: {
             venue: data.venue_name ?? fallbackWedding.location.venue,
             city: data.venue_city ?? fallbackWedding.location.city,
           },
-          rsvpDeadline: new Date(data.rsvp_deadline),
+          rsvpDeadline: liveDateOr(
+            data.rsvp_deadline,
+            fallbackWedding.rsvpDeadline,
+          ),
         });
       })
       .catch((err: unknown) => {

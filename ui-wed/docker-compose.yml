@@ -9,13 +9,13 @@ services:
         # root docker-compose.yml's Traefik-fronted setup), so it must be
         # told exactly where service-wed is reachable.
         VITE_API_BASE_URL: ${VITE_API_BASE_URL:?Set VITE_API_BASE_URL in .env to wherever your standalone service-wed is reachable, e.g. https://api.example.com}
-        VITE_COUPLE_NAMES: ${VITE_COUPLE_NAMES:-Mister & Missus}
-        VITE_BRIDE_FNAME: ${VITE_BRIDE_FNAME:-Missus}
-        VITE_GROOM_FNAME: ${VITE_GROOM_FNAME:-Mister}
-        VITE_WEDDING_DATE: ${VITE_WEDDING_DATE:-2027-01-01T00:00:00}
-        VITE_VENUE_NAME: ${VITE_VENUE_NAME:-Pretty Venue}
-        VITE_VENUE_CITY: ${VITE_VENUE_CITY:-Small Town, USA}
-        VITE_RSVP_DEADLINE: ${VITE_RSVP_DEADLINE:-2027-02-01T00:00:00}
+        VITE_COUPLE_NAMES: ${VITE_COUPLE_NAMES:-}
+        VITE_BRIDE_FNAME: ${VITE_BRIDE_FNAME:-}
+        VITE_GROOM_FNAME: ${VITE_GROOM_FNAME:-}
+        VITE_WEDDING_DATE: ${VITE_WEDDING_DATE:-}
+        VITE_VENUE_NAME: ${VITE_VENUE_NAME:-}
+        VITE_VENUE_CITY: ${VITE_VENUE_CITY:-}
+        VITE_RSVP_DEADLINE: ${VITE_RSVP_DEADLINE:-}
     container_name: ui-wed
     restart: unless-stopped
     ports:
