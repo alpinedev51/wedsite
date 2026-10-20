@@ -61,6 +61,18 @@ class Settings(BaseSettings):
         default=None, validation_alias=AliasChoices("RESEND_WEBHOOK_SECRET")
     )
 
+    # Header that carries the real visitor IP, set by the edge in front of
+    # this app -- "CF-Connecting-IP" behind Cloudflare. Rate limits key on
+    # it (middleware/rate_limit.py). Behind Traefik, request.client.host is
+    # Traefik's container IP, so without this every guest shares one bucket.
+    # Only set it when every request really passes through that edge:
+    # Cloudflare overwrites the header, but a client reaching the app
+    # directly could send any value and dodge the limits. Unset = use the
+    # TCP peer address.
+    client_ip_header: str | None = Field(
+        default=None, validation_alias=AliasChoices("CLIENT_IP_HEADER")
+    )
+
     @property
     def cors_allow_origins_list(self) -> list[str]:
         return [

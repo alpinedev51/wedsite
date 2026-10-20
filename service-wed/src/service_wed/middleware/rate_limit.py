@@ -19,7 +19,20 @@ from typing import Annotated
 from fastapi import Depends, HTTPException, Request, status
 
 from service_wed.bootstrap import AppContainer
+from service_wed.config.settings import settings
 from service_wed.dependencies import get_container
+
+
+def client_ip(request: Request) -> str:
+    """The visitor's IP: the trusted edge header if configured and present
+    (see settings.client_ip_header), else the TCP peer address."""
+    if settings.client_ip_header:
+        header_value = request.headers.get(settings.client_ip_header, "").strip()
+        if header_value:
+            return header_value
+    # request.client is None only for in-process test clients that don't
+    # set up a transport address; real requests always have one.
+    return request.client.host if request.client else "unknown"
 
 
 def rate_limit(key: str, *, limit: int, window_seconds: int):
@@ -38,10 +51,7 @@ def rate_limit(key: str, *, limit: int, window_seconds: int):
         request: Request,
         container: Annotated[AppContainer, Depends(get_container)],
     ) -> None:
-        # request.client is None only for in-process test clients that don't
-        # set up a transport address; real requests always have one.
-        client_ip = request.client.host if request.client else "unknown"
-        redis_key = f"ratelimit:{key}:{client_ip}"
+        redis_key = f"ratelimit:{key}:{client_ip(request)}"
 
         count = await container.redis.incr(redis_key)
         if count == 1:

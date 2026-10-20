@@ -12,6 +12,7 @@ from arq.cron import cron
 
 from service_wed.adapters.redis import redis_settings_from_url
 from service_wed.bootstrap import build_container
+from service_wed.config.venue import VENUE_TZ
 from service_wed.tasks.dispatch import dispatch_due_emails
 from service_wed.tasks.reminders import evaluate_reminders
 from service_wed.tasks.send import send_email
@@ -38,9 +39,15 @@ class WorkerSettings:
         # at second 0" -- exactly what dispatch_due_emails needs: pick up
         # anything newly due as soon as reasonably possible.
         cron(dispatch_due_emails),
-        # Once a day at 09:00 local-worker-time: decide who's due a reminder.
+        # Once a day at 09:00 Durango time (see timezone below): decide
+        # who's due a reminder.
         cron(evaluate_reminders, hour=9, minute=0),
     ]
+
+    # Cron hours above are Durango wall-clock time. arq defaults to the
+    # system timezone, which is UTC in the container -- hour=9 would fire
+    # at 3am at the venue and reminder emails would go out then.
+    timezone = VENUE_TZ
 
     redis_settings = redis_settings_from_url()
     on_startup = startup

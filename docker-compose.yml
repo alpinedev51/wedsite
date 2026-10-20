@@ -54,7 +54,7 @@ services:
       context: ./service-wed
       dockerfile: Dockerfile
     container_name: service-wed
-    restart: on-failure
+    restart: unless-stopped
     # 1. Migrations: always safe to re-run -- already-applied ones are
     #    skipped, so this is a no-op on every restart after the first.
     # 2. container_bootstrap: seeds the admin account / wedding config ONLY
@@ -87,6 +87,25 @@ services:
       - GROOM_FNAME=${GROOM_FNAME:-}
       - REMINDER_CAP=${REMINDER_CAP:-2}
       - REMINDER_INTERVAL_DAYS=${REMINDER_INTERVAL_DAYS:-7}
+      # Real visitor IP for rate limiting. Cloudflare sets this on every
+      # request through the tunnel; without it every guest shares Traefik's
+      # IP and one rate-limit bucket. Only safe because the tunnel is the
+      # only way in -- see settings.client_ip_header.
+      - CLIENT_IP_HEADER=CF-Connecting-IP
+    # Python, not curl: the slim image has no curl. start_period covers
+    # migrations + bootstrap running before uvicorn starts listening.
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health/live', timeout=3)",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
     depends_on:
       db:
         condition: service_healthy
@@ -104,7 +123,7 @@ services:
       context: ./service-wed
       dockerfile: Dockerfile
     container_name: service-wed-worker
-    restart: on-failure
+    restart: unless-stopped
     command: ["arq", "service_wed.worker.WorkerSettings"]
     environment:
       - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-wedding_db_user}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@db:5432/${POSTGRES_DB:-wedding_db}
