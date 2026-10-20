@@ -43,26 +43,44 @@ answers.
    with only `read:packages`, then run this on the server:
    `echo <token> | docker login ghcr.io -u alpinedev51 --password-stdin`.
 
-## One-time server setup
+## One-time server setup (Hetzner)
 
-Prerequisites: Docker Engine with the compose plugin, plus git and curl.
+**1. Firewall.** In the Hetzner Console, go to **Firewalls → Create Firewall**:
+- **Inbound:** delete the default rules, so nothing is allowed in. Guests
+  arrive through the Cloudflare tunnel, which only connects *outward*.
+  - Plain SSH: add one rule, TCP 22 from **your IP only**.
+  - Tailscale: no inbound rules at all.
+- **Outbound:** leave everything allowed (GitHub, GHCR, Cloudflare, Resend,
+  Ubuntu updates).
+
+**2. Server.** Go to **Servers → Add Server**:
+- Location **Hillsboro, OR**, image **Ubuntu 26.04**, type **CPX11**
+  (shared vCPU, x86).
+- SSH key: yours. (Add it under Security → SSH Keys first.)
+- Firewall: the one from step 1.
+- **Cloud config:** paste `deploy/cloud-init.yml`. To use Tailscale, put a
+  one-time auth key in it first.
+
+On first boot (about 3 minutes) it runs `deploy/server-setup.sh`, which:
+- installs Docker, swap, automatic security updates and the host firewall;
+- creates the admin user `wedsite` with your key;
+- turns off root and password logins;
+- clones `/opt/wedsite` and creates `.env`.
+
+The log is at `/var/log/wedsite-setup.log`. To set up an existing server
+instead, run the script as root (see its header).
+
+**3. Configure and deploy.**
 
 ```bash
-sudo mkdir -p /opt/wedsite && sudo chown "$USER": /opt/wedsite
-git clone --filter=blob:none --no-checkout https://github.com/alpinedev51/wedsite.git /opt/wedsite
-cd /opt/wedsite
-git sparse-checkout set --no-cone /docker-compose.yml /traefik/ /deploy/ /.env.example
-git checkout main
-
-cp .env.example .env
-chmod 600 .env
-nano .env        # fill in every runtime value; IMAGE_REPO=ghcr.io/alpinedev51/wedsite
-
-deploy/deploy.sh
+ssh wedsite@<server-ip>          # or: ssh wedsite@wedsite (Tailscale)
+nano /opt/wedsite/.env           # every runtime value; IMAGE_REPO=ghcr.io/alpinedev51/wedsite
+/opt/wedsite/deploy/deploy.sh
 ```
 
-In the Cloudflare Zero Trust dashboard, point the tunnel's public hostname
-at **`http://traefik:80`**.
+**4. Tunnel.** In Cloudflare Zero Trust, point the tunnel's public hostname
+at **`http://traefik:80`**. The Pi's tunnel token works unchanged; only one
+connector should run it, and the Pi is gone.
 
 ## Day to day
 

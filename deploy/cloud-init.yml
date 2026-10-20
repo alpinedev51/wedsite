@@ -1,0 +1,20 @@
+#cloud-config
+# Paste into Hetzner Console -> Create Server -> "Cloud config" (once, at
+# creation). It runs deploy/server-setup.sh on first boot; see that file for
+# what it does. Progress: /var/log/wedsite-setup.log on the server.
+#
+# Before pasting, optionally fill in TAILSCALE_AUTHKEY below to reach the
+# server over Tailscale (then port 22 can stay closed). Use a ONE-TIME,
+# short-expiry key: anything in cloud config stays readable from inside
+# the server (Hetzner's metadata service). Leave it empty to use plain SSH
+# with the key you pick in the Hetzner console.
+#
+# No secrets for the app go here -- .env is filled in over SSH afterwards.
+
+runcmd:
+  - - bash
+    - -c
+    - |
+      set -euo pipefail
+      curl -fsSL --retry 5 https://raw.githubusercontent.com/alpinedev51/wedsite/main/deploy/server-setup.sh -o /root/server-setup.sh
+      TAILSCALE_AUTHKEY='' bash /root/server-setup.sh >/var/log/wedsite-setup.log 2>&1
