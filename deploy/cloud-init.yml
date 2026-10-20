@@ -1,13 +1,15 @@
 #cloud-config
-# Paste into Hetzner Console -> Create Server -> "Cloud config" (once, at
-# creation). It runs deploy/server-setup.sh on first boot; see that file for
-# what it does. Progress: /var/log/wedsite-setup.log on the server.
+# Paste in once, when creating the server:
+#   Hetzner: Console -> Add Server -> "Cloud config"
+#   AWS:     EC2 -> Launch instance -> Advanced details -> "User data"
+# It runs deploy/server-setup.sh on first boot; see that file for what it
+# does. Progress: /var/log/wedsite-setup.log on the server.
 #
 # Before pasting, optionally fill in TAILSCALE_AUTHKEY below to reach the
 # server over Tailscale (then port 22 can stay closed). Use a ONE-TIME,
 # short-expiry key: anything in cloud config stays readable from inside
-# the server (Hetzner's metadata service). Leave it empty to use plain SSH
-# with the key you pick in the Hetzner console.
+# the server (the provider's metadata service). Leave it empty to use plain
+# SSH with the key you pick in the console, or AWS SSM Session Manager.
 #
 # No secrets for the app go here -- .env is filled in over SSH afterwards.
 

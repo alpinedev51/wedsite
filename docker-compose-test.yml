@@ -5,10 +5,9 @@ services:
     restart: unless-stopped
     command:
       # this exposes the Traefik dashboard on :8080
-      # with no auth at all -- fine on a home LAN, but revisit (remove this
-      # flag, or add dashboard auth) once wed.austinkylieb.com is internet-
-      # facing, or anyone can reach your routing config.
-      - "--api.insecure=true" # enables local dashbaord at http://localhost:8080
+      # with no auth at all -- fine on a trusted LAN only. This file is for
+      # LAN testing; production (docker-compose.yml) doesn't enable it.
+      - "--api.insecure=true" # enables the dashboard at http://localhost:8080
       - "--providers.docker=true" # tells traefik to listen to docker daemon
       - "--providers.docker.exposedbydefault=false" # secure default: don't expose containers unless labeled
       - "--entrypoints.web.address=:80" # define port 80 entrypoint
@@ -16,9 +15,8 @@ services:
       - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
       - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
     ports:
-      # Host-side ports only -- these are the ones you've actually had to
-      # move before (Pi-hole/Nextcloud conflicts), so they're the ports
-      # worth making configurable. The container-internal side (right of
+      # Host-side ports only, configurable in case something else on the
+      # machine already uses them. The container-internal side (right of
       # each colon) matches --entrypoints.*.address above and never needs
       # to change.
       - "${HTTP_PORT:-80}:80"
@@ -100,8 +98,7 @@ services:
       # for CORS to allow in the first place.
       # RESEND_WEBHOOK_SECRET verifies incoming Resend delivery-event webhooks
       # (controllers/v1/webhooks.py) -- read from a root .env file (see
-      # .env.example) that you create on the Pi with your real values; never
-      # commit real secrets here.
+      # .env.example) with your real values; never commit real secrets here.
       - RESEND_WEBHOOK_SECRET=${RESEND_WEBHOOK_SECRET:-}
       # Embedded as the {{ rsvp_url }} link in every campaign email (see
       # services/campaigns.py's build_email_message) -- required, not
@@ -159,16 +156,6 @@ services:
       - "traefik.http.routers.service-wed.tls=true"
       # Tell Traefik which internal container port to send traffic to
       - "traefik.http.services.service-wed.loadbalancer.server.port=8000"
-      # FLAGGING, not removing: there's no /mcp route anywhere in
-      # service-wed's current controllers (only health/auth/wedding/
-      # invitations/rsvp/households/campaigns/dashboard/exports/webhooks) --
-      # this looks like it was carried over from a template and may be dead
-      # config. Left in (updated to match the Host()-less pattern above)
-      # rather than deleted outright in case it's for something planned;
-      # worth confirming and removing if not.
-      - "traefik.http.routers.mcp.rule=PathPrefix(`/mcp`)"
-      - "traefik.http.routers.mcp.entrypoints=websecure"
-      - "traefik.http.routers.mcp.tls=true"
 
   # Runs the arq cron jobs (tasks/dispatch.py's per-minute dispatch_due_emails,
   # tasks/reminders.py's daily evaluate_reminders) and the send_email job they

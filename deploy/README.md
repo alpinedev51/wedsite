@@ -13,6 +13,40 @@ git push (main) ──► GitHub Actions ──► ghcr.io/alpinedev51/wedsite/{
 The server never builds anything and holds no source code. It has the
 compose file, the Traefik config, this folder, and its own `.env`.
 
+The pipeline and the deploy steps are the same whichever host you choose.
+Only creating the server differs: **[Hetzner](#option-a-hetzner)** or
+**[AWS](#option-b-aws)**.
+
+## CI/CD pipeline
+
+`.github/workflows/ci.yml`:
+
+| Trigger | Secret scan | Build images | Push to GHCR |
+|---|---|---|---|
+| Pull request | yes | yes | no |
+| Push to `main` | yes | yes | yes |
+| Actions → CI → Run workflow on `main` | yes | yes | yes |
+| Run workflow on another branch | yes | yes | no |
+
+1. **Secret scan:** TruffleHog scans the whole git history (this repo is
+   public). It fails the run on any credential that the provider confirms
+   works, or that can't be checked.
+2. **Build:** `service-wed` and `ui-wed`, for `linux/amd64`. The worker runs
+   the `service-wed` image, so there's no third image. ui-wed's fallback text
+   comes from GitHub repository variables (below).
+3. **Push:** to `ghcr.io/alpinedev51/wedsite/<image>`, tagged
+   `sha-<full commit sha>` and `latest`. The run summary prints the deploy
+   command.
+4. **Deploy (CD):** manual, on purpose. Nothing reaches guests until you run
+   `deploy/deploy.sh` on the server. It deploys a commit, not `latest`, so
+   you always know exactly what's live, and a rollback is one command.
+
+The server pulls from GHCR over the internet on both Hetzner and AWS, so
+nothing in the pipeline changes between hosts. **One constraint:** CI builds
+x86 images only. Use an x86 server (Hetzner CPX, AWS t3/t3a). For AWS
+Graviton (t4g), add `linux/arm64` to `platforms:` in the workflow, plus a
+`docker/setup-qemu-action` step before buildx.
+
 ## What goes where
 
 | Value | Lives in | Used |
@@ -43,7 +77,26 @@ answers.
    with only `read:packages`, then run this on the server:
    `echo <token> | docker login ghcr.io -u alpinedev51 --password-stdin`.
 
-## One-time server setup (Hetzner)
+## Choose a host
+
+| | Hetzner | AWS |
+|---|---|---|
+| Server | CPX11: 2 vCPU, 2 GB, 40 GB disk | t3a.small: 2 vCPU, 2 GB, 30 GB gp3 disk |
+| Region | Hillsboro, OR | us-west-2 (Oregon) |
+| Approx. cost | ~$6–8/mo all-in | ~$20/mo: instance ~$14, disk ~$2.40, public IPv4 ~$3.65 |
+| Firewall | Hetzner Cloud Firewall | Security group |
+| Shell access without open ports | Tailscale | Tailscale, or SSM Session Manager (built in) |
+| Server backups | Hetzner Backups (+20% of server price) | EBS snapshots via Data Lifecycle Manager |
+
+Prices are approximate on-demand rates; check the provider's pricing before
+you commit. Either host easily handles this site; the stack uses about
+700 MB of RAM. Hetzner is cheaper. AWS gives you IAM, SSM and snapshot
+tooling, plus AWS experience. On AWS, a 1-year Compute Savings Plan cuts
+the instance cost by roughly a third and fits the time until the wedding.
+
+## One-time server setup
+
+### Option A: Hetzner
 
 **1. Firewall.** In the Hetzner Console, go to **Firewalls → Create Firewall**:
 - **Inbound:** delete the default rules, so nothing is allowed in. Guests
@@ -60,8 +113,64 @@ answers.
 - Firewall: the one from step 1.
 - **Cloud config:** paste `deploy/cloud-init.yml`. To use Tailscale, put a
   one-time auth key in it first.
+- Optional: enable **Backups** (daily server images, 7 kept).
 
-On first boot (about 3 minutes) it runs `deploy/server-setup.sh`, which:
+Then continue with [Both hosts: configure and deploy](#both-hosts-configure-and-deploy).
+
+### Option B: AWS
+
+Everything below is in the **us-west-2 (Oregon)** region.
+
+**1. Budget alert.** Go to **Billing → Budgets → Create budget** and make a
+monthly cost budget of about $25 that emails you. That way, a forgotten
+resource doesn't surprise you.
+
+**2. Shell access.** Pick one:
+- **SSM Session Manager (recommended):** no open port and no SSH key. Go to
+  **IAM → Roles → Create role**: trusted entity *EC2*, policy
+  `AmazonSSMManagedInstanceCore`, name `wedsite-ssm`. Ubuntu images on AWS
+  already include the SSM agent.
+- **SSH:** in **EC2 → Key Pairs**, import your public key (or create a
+  pair).
+- **Tailscale:** works as on Hetzner, using the auth key in the cloud config.
+
+**3. Security group.** Go to **EC2 → Security Groups → Create**, name
+`wedsite`:
+- **Inbound:** none with SSM or Tailscale; for plain SSH, TCP 22 from
+  **My IP** only.
+- **Outbound:** leave the default (all).
+
+**4. Launch the instance.** Go to **EC2 → Launch instance**:
+- Name `wedsite`. AMI: **Ubuntu Server 26.04 LTS**, 64-bit **(x86)**, from
+  Canonical.
+- Instance type **t3a.small** (or t3.small). Not t4g; see the
+  [architecture note](#cicd-pipeline).
+- Key pair: yours if you're using SSH, otherwise *Proceed without*.
+- Network: the default VPC, a public subnet, **auto-assign public IP:
+  enabled**. The server needs outbound internet to reach GitHub, GHCR,
+  Cloudflare and Resend. Nothing connects in, so no Elastic IP is needed.
+- Security group: `wedsite`.
+- Storage: **30 GiB gp3**, encrypted. The default 8 GiB is too small for
+  images, swap and backups.
+- **Advanced details:**
+  - IAM instance profile: `wedsite-ssm` (if using SSM).
+  - Metadata version: **V2 only**.
+  - Termination protection: **enable**.
+  - **User data:** paste `deploy/cloud-init.yml`, the same file Hetzner
+    uses.
+
+The setup script picks up the key AWS installed for the `ubuntu` user and
+gives it to `wedsite` as well. `ubuntu` stays as AWS's default admin
+account, also key-only.
+
+**5. Optional: snapshots.** Go to **EC2 → Lifecycle Manager → Create
+lifecycle policy**: EBS snapshots of volumes tagged `Name=wedsite` (tag the
+volume), daily, keep 7.
+
+### Both hosts: configure and deploy
+
+On first boot (about 3 minutes), the cloud config runs
+`deploy/server-setup.sh`, which:
 - installs Docker, swap, automatic security updates and the host firewall;
 - creates the admin user `wedsite` with your key;
 - turns off root and password logins;
@@ -70,19 +179,29 @@ On first boot (about 3 minutes) it runs `deploy/server-setup.sh`, which:
 The log is at `/var/log/wedsite-setup.log`. To set up an existing server
 instead, run the script as root (see its header).
 
-**3. Configure and deploy.**
+**Log in:**
 
 ```bash
-ssh wedsite@<server-ip>          # or: ssh wedsite@wedsite (Tailscale)
+ssh wedsite@<public-ip>                                   # SSH (Hetzner or AWS)
+ssh wedsite@wedsite                                       # Tailscale
+aws ssm start-session --target <instance-id> --region us-west-2   # AWS SSM
+sudo -iu wedsite                                          # ...then, after SSM
+```
+
+**Configure and deploy:**
+
+```bash
 nano /opt/wedsite/.env           # every runtime value; IMAGE_REPO=ghcr.io/alpinedev51/wedsite
 /opt/wedsite/deploy/deploy.sh
 ```
 
-**4. Tunnel.** In Cloudflare Zero Trust, point the tunnel's public hostname
-at **`http://traefik:80`**. The Pi's tunnel token works unchanged; only one
-connector should run it, and the Pi is gone.
+**Tunnel:** in Cloudflare Zero Trust, point the tunnel's public hostname at
+**`http://traefik:80`**. The Pi's tunnel token works unchanged: the tunnel
+doesn't care which machine runs it, as long as only the new server does.
 
 ## Day to day
+
+On the server, as `wedsite`, from `/opt/wedsite` (the same on both hosts):
 
 ```bash
 deploy/deploy.sh               # deploy the newest commit on main
@@ -92,8 +211,16 @@ deploy/deploy.sh rollback      # back to the previous successful deploy
 ```
 
 Each CI run on `main` prints the exact deploy command in its run summary.
+
+`rollback` redeploys the most recent successful deploy that isn't the
+current one. Running it twice in a row goes back to where you started. To
+step back further, deploy a specific commit (`status` lists recent ones).
+
 Deploys first take a database dump (`.deploy/backups/`, newest 10 kept),
 because migrations run on start and switching images back doesn't undo them.
+These dumps stay **on the server**: they protect against a bad deploy, not a
+lost server. For that, see the provider backups under
+[Choose a host](#choose-a-host).
 
 ### Changing configuration
 
@@ -126,11 +253,12 @@ docker compose start service-wed worker
 - For a pull request, the secret scan and both image builds are the checks.
 
 ### On your machine: a simulated server
-`deploy/local-server-sim.sh` sets up a folder (`~/wedsite-sim`) exactly the
-way the server is set up above, and you run the real `deploy.sh` in it. The
-differences: the tunnel container is replaced by one that does nothing,
-email and tunnel credentials are dummies, and the site is at
-`http://localhost`. It uses the same container names as the local dev
+`deploy/local-server-sim.sh` sets up a folder (`~/wedsite-sim`) the way
+`/opt/wedsite` is set up on the server: a sparse checkout plus `.env`. You
+run the real `deploy.sh` in it. It doesn't repeat the server-level setup
+(firewall, users, swap). The differences: the tunnel container is replaced
+by one that does nothing, email and tunnel credentials are dummies, and the
+site is at `http://localhost`. It uses the same container names as the local dev
 stack, so stop that first.
 
 ```bash
@@ -139,12 +267,14 @@ deploy/local-server-sim.sh setup ghcr
 ~/wedsite-sim/deploy/deploy.sh            # then status / rollback / <commit>
 
 # Before pushing anything: committed local main, images built here
-deploy/local-server-sim.sh setup local    # builds + publishes main's images
+deploy/local-server-sim.sh setup local    # builds main's images, pushes them to a
+                                          # throwaway registry on localhost:5000
 ~/wedsite-sim/deploy/deploy.sh
 # ...commit more, then:
 deploy/local-server-sim.sh publish && ~/wedsite-sim/deploy/deploy.sh
 
-deploy/local-server-sim.sh teardown       # removes everything it created
+deploy/local-server-sim.sh teardown       # removes everything it created,
+                                          # including that registry
 ```
 
 Worth trying: a deploy, `status`, a second deploy, `rollback`, and a
@@ -152,6 +282,13 @@ deploy of a commit CI hasn't built (it should stop and change nothing).
 
 ## Local builds
 
-These still work from a full checkout: `docker compose up -d --build`
-(leave out `cloudflared` so a local build never joins the production
-tunnel). `IMAGE_REPO` can be anything locally.
+From a full checkout, the same stack builds and runs locally without the
+tunnel. List the services, so `cloudflared` never starts and joins the
+production tunnel:
+
+```bash
+docker compose up -d --build db redis service-wed worker traefik ui-wed socket-proxy
+```
+
+`IMAGE_REPO` can be anything locally. See the
+[root README](../README.md#option-2-the-production-stack-locally).

@@ -11,8 +11,7 @@
 #   ADMIN_EMAIL, ADMIN_PASSWORD   -- the one admin account this app has
 #   WEDDING_DATE, RSVP_DEADLINE   -- Durango local time, e.g. 2027-09-04 or
 #                                    2027-06-28T23:59:59 (see .env.example)
-#   DATABASE_URL                  -- already in .env.example; used both by
-#                                    Alembic and to derive psql's connection
+#   POSTGRES_PASSWORD             -- needed by docker-compose.yml itself
 #
 # Optional env vars (sensible defaults if unset):
 #   RSVP_OPENS_AT, VENUE_NAME, VENUE_ADDRESS, VENUE_CITY
@@ -22,6 +21,10 @@
 #
 # Safe to re-run: seeding the admin user updates the password hash on
 # conflict, and the wedding config is a single-row upsert either way.
+#
+# Postgres isn't published to the host, so the migration and database steps
+# run inside the containers (`docker compose exec`). Host tools needed:
+# docker, curl, python3.
 
 set -euo pipefail
 
@@ -32,7 +35,7 @@ cd "$REPO_ROOT"
 # ---------------------------------------------------------------------------
 # 0. Preflight: required tools, required env vars, load .env
 # ---------------------------------------------------------------------------
-for tool in docker uv curl psql; do
+for tool in docker curl python3; do
   if ! command -v "$tool" >/dev/null 2>&1; then
     echo "ERROR: '$tool' is required on PATH but wasn't found." >&2
     exit 1
@@ -45,7 +48,7 @@ if [ -f .env ]; then
   # itself, which is an easy thing to forget and a confusing "command not
   # found" error when you do. Parse it in Python instead and re-emit as
   # properly shell-quoted `export` statements.
-  eval "$(uv run python -c '
+  eval "$(python3 -c '
 import shlex
 
 with open(".env") as f:
@@ -72,7 +75,7 @@ require_var ADMIN_EMAIL
 require_var ADMIN_PASSWORD
 require_var WEDDING_DATE
 require_var RSVP_DEADLINE
-require_var DATABASE_URL
+require_var POSTGRES_PASSWORD
 
 API_BASE_URL="${API_BASE_URL:-http://localhost:8000}"
 RSVP_OPENS_AT="${RSVP_OPENS_AT:-}"
@@ -135,39 +138,33 @@ fi
 # ---------------------------------------------------------------------------
 # 2. Migrations
 # ---------------------------------------------------------------------------
+# The container already migrates on start; this repeats it (a no-op when
+# up to date) so a failure shows up here, clearly.
 echo "==> [2/6] Running database migrations..."
-uv run alembic upgrade head
+docker compose exec -T service-wed alembic upgrade head
 
 # ---------------------------------------------------------------------------
 # 3. Seed the admin account
 # ---------------------------------------------------------------------------
 echo "==> [3/6] Seeding admin account ($ADMIN_EMAIL)..."
 
-PASSWORD_HASH="$(uv run python -c '
+# Hash with the app's own hasher, inside the API container. `-e
+# ADMIN_PASSWORD` passes this shell's value, so it wins over the container's.
+PASSWORD_HASH="$(docker compose exec -T -e ADMIN_PASSWORD service-wed python -c '
 from service_wed.adapters.security.hasher import ScryptPasswordHasher
 import os
 print(ScryptPasswordHasher().hash(os.environ["ADMIN_PASSWORD"]))
 ')"
 
-# Derive psql connection env vars (PGHOST etc.) from DATABASE_URL instead of
-# duplicating credentials in this script -- .env's DATABASE_URL stays the
-# single source of truth.
-eval "$(uv run python -c '
-from urllib.parse import urlparse
-import os
-url = urlparse(os.environ["DATABASE_URL"].replace("postgresql+asyncpg", "postgresql"))
-print(f"export PGHOST={url.hostname}")
-print(f"export PGPORT={url.port or 5432}")
-print(f"export PGUSER={url.username}")
-print(f"export PGPASSWORD={url.password}")
-print(f"export PGDATABASE={url.path.lstrip(chr(47))}")
-')"
-
+# psql runs in the db container. Email and hash go in as psql variables
+# (:'email' quotes them safely), not pasted into the SQL text.
 # ON CONFLICT ... DO UPDATE (not DO NOTHING) so re-running this script with a
 # changed ADMIN_PASSWORD actually rotates it, rather than silently no-op'ing.
-psql -v ON_ERROR_STOP=1 -q <<SQL
+docker compose exec -T db sh -c \
+  'psql -v ON_ERROR_STOP=1 -q -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v email="$1" -v hash="$2"' \
+  _ "$ADMIN_EMAIL" "$PASSWORD_HASH" <<'SQL'
 INSERT INTO admin_users (id, email, password_hash)
-VALUES (gen_random_uuid(), '$ADMIN_EMAIL', '$PASSWORD_HASH')
+VALUES (gen_random_uuid(), :'email', :'hash')
 ON CONFLICT (email) DO UPDATE SET password_hash = EXCLUDED.password_hash;
 SQL
 
@@ -175,7 +172,7 @@ SQL
 # 4. Log in
 # ---------------------------------------------------------------------------
 echo "==> [4/6] Logging in as $ADMIN_EMAIL..."
-LOGIN_BODY="$(uv run python -c '
+LOGIN_BODY="$(python3 -c '
 import json, os
 print(json.dumps({"email": os.environ["ADMIN_EMAIL"], "password": os.environ["ADMIN_PASSWORD"]}))
 ')"
@@ -185,7 +182,7 @@ api_call POST /api/v1/auth/login "$LOGIN_BODY" >/dev/null
 # 5. Seed the wedding
 # ---------------------------------------------------------------------------
 echo "==> [5/6] Seeding wedding configuration..."
-WEDDING_BODY="$(uv run python -c '
+WEDDING_BODY="$(python3 -c '
 import json, os
 
 def env_or_none(name):

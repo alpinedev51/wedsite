@@ -1,188 +1,130 @@
 # wedsite
 
-A simple full-stack wedding web application — event details, RSVP, and guest info for our wedding.
+A full-stack wedding website for one wedding: event details, photos, things to
+do, magic-link RSVPs, and an admin area for the guest list and email campaigns
+(save the date, invitations, reminders, final details, thank-yous).
 
-The project is split into two independently deployable services:
+| Package | What | Stack |
+|---|---|---|
+| [`ui-wed`](ui-wed/README.md) | Public site + admin UI | Vite, React 19, TypeScript, Tailwind; served by nginx |
+| [`service-wed`](service-wed/README.md) | API + background worker | FastAPI, SQLAlchemy (async), Alembic, PostgreSQL 18, Redis + arq, Resend |
 
-| Package      | Description                                   | Stack                                              |
-|--------------|------------------------------------------------|-----------------------------------------------------|
-| `ui-wed`     | Frontend web app                                | Vite, React, TypeScript                              |
-| `service-wed`| Backend API                                     | FastAPI, PostgreSQL, SQLAlchemy, Alembic, Pydantic   |
+## Deploying
 
+Production runs on a single small server (Hetzner or AWS) behind a Cloudflare
+Tunnel. GitHub Actions scans for secrets and builds the images, and
+`deploy/deploy.sh` on the server deploys a chosen commit. Setup, the CI/CD
+pipeline, both hosting options, and how to test it all locally are in
+**[deploy/README.md](deploy/README.md)**.
 
-## Repository Structure
+## Repository layout
 
 ```
-wedsite/
-├── ui-wed/          # React frontend (Vite)
-├── service-wed/      # FastAPI backend
-├── docker-compose.yml
-└── README.md
+.
+├── ui-wed/                  # frontend (see ui-wed/README.md)
+├── service-wed/             # backend (see service-wed/README.md)
+│   └── docker-compose.yml   #   backend-only dev stack: db, redis, API on :8000, worker
+├── docker-compose.yml       # production stack (also runs locally, see below)
+├── docker-compose-test.yml  # LAN/HTTPS variant for testing on another device
+├── traefik/dynamic.yml      # security headers + CSP (Traefik file provider)
+├── deploy/                  # deploy.sh, server setup, cloud-init, local server simulator
+├── .github/workflows/ci.yml # secret scan + image builds
+└── .env.example             # template for the root .env
 ```
 
----
+Production request path: `browser → Cloudflare → tunnel (cloudflared) →
+Traefik → /api/* to service-wed, everything else to ui-wed`. The worker sends
+email; Postgres and Redis sit on an internal network.
 
-## ui-wed (Frontend)
+## Environment files
 
-Built with **Vite** + **React** (TypeScript).
+| File | Feeds | Template |
+|---|---|---|
+| `.env` (root) | `docker-compose.yml`, `docker-compose-test.yml`, and the production server | `.env.example` |
+| `service-wed/.env` | `service-wed/docker-compose.yml`, `service-wed/scripts/bootstrap.sh` | `service-wed/.env.example` |
+| `ui-wed/.env.local` | `npm run dev` only (Vite `VITE_*` values) | `ui-wed/.env.example` |
 
-### Getting started
+All three are gitignored. Wedding dates in all of them are **Durango (venue)
+local time**, e.g. `WEDDING_DATE=2027-09-04` or
+`RSVP_DEADLINE=2027-06-28T23:59:59`; see the note in `.env.example`.
+
+## Running locally
+
+### Option 1: development (fast reload)
+
+The backend runs in Docker and the frontend runs with Vite's dev server.
 
 ```bash
-cd ui-wed
-npm install
-npm run dev
-```
-
-The app runs at `http://localhost:5173` by default and expects `service-wed` to be running (see `.env` for the API base URL).
-
-### Environment variables
-
-```
-VITE_API_BASE_URL=http://localhost:8000
-```
-
----
-
-## service-wed (Backend)
-
-Built with **FastAPI**, **PostgreSQL**, **SQLAlchemy**, **Alembic**, and **Pydantic**, following a **hexagonal (ports & adapters) architecture**.
-
-### Architecture
-
-Hexagonal architecture keeps the domain logic independent of frameworks and infrastructure. Inbound adapters (HTTP) and outbound adapters (database, email, etc.) plug into the core through defined ports (interfaces).
-
-### Getting started
-
-```bash
+# 1. Backend: db, redis, API on http://localhost:8000, worker
 cd service-wed
-
-uv sync
-
-cp .env.example .env
-
-# Run database migrations
-alembic upgrade head
-
-# Start the API
-uvicorn app.main:app --reload
+cp .env.example .env        # set POSTGRES_PASSWORD, ADMIN_EMAIL/ADMIN_PASSWORD,
+                            # WEDDING_DATE, RSVP_DEADLINE (and DEBUG=true, below)
+docker compose up -d --build
 ```
 
-The API runs at `http://localhost:8000`, with interactive docs at `http://localhost:8000/docs`.
+On first start, the API container runs the migrations and creates the admin
+account and wedding config from `.env`. If those already exist, it leaves them
+alone (see `service-wed/README.md`).
 
-### Environment variables
-
-```
-DATABASE_URL=postgresql+asyncpg://user:password@db:5432/wedsite
-SECRET_KEY=change-me
-CORS_ORIGINS=http://localhost:5173
-```
-
-### Database migrations (Alembic)
+Set `DEBUG=true` in `service-wed/.env` for local development. Otherwise the
+admin cookie is `Secure`, and some browsers (Safari) won't send it over plain
+`http://localhost`.
 
 ```bash
-# Create a new migration after changing SQLAlchemy models
-alembic revision --autogenerate -m "describe your change"
-
-# Apply migrations
-alembic upgrade head
-```
-
----
-
-## Running everything locally
-
-```bash
-docker compose up --build
-```
-
-This starts PostgreSQL, `service-wed`, Redis, Traefik, and `ui-wed` together.
-
-| Service     | URL                          |
-|-------------|-------------------------------|
-| Frontend    | http://localhost:5173         |
-| API         | http://localhost:8000         |
-| API docs    | http://localhost:8000/docs    |
-
----
-
-## Local dev: admin login + guest list CSV (verified path)
-
-The section above uses the root `docker-compose.yml` (Traefik + a
-containerized `ui-wed`), which is a separate, still-in-progress
-reverse-proxy setup. The steps below are the ones actually exercised
-end-to-end -- backend in Docker via `service-wed`'s own compose file,
-frontend run directly with `npm run dev` (no container) -- to test the
-admin login and guest-list CSV import/export flow in a real browser.
-
-### 1. Start the backend
-
-```bash
-cd service-wed
-cp .env.example .env   # if you don't already have one
-```
-
-Edit `service-wed/.env` and set `DEBUG=true`. This is required locally:
-with `DEBUG=false` the admin session cookie is marked `Secure`, and a
-browser won't send it back over plain `http://localhost:5173` (see
-`service-wed/README.md`'s ["Integrating with a React + Vite + Node.js
-frontend"](service-wed/README.md#integrating-with-a-react--vite--nodejs-frontend)
-section for why). `CORS_ALLOW_ORIGINS` already defaults to include
-`http://localhost:5173`, so it only needs setting if your frontend runs
-somewhere else.
-
-```bash
-docker compose up -d --build   # starts db, redis, service-wed, worker
-```
-
-Migrations run automatically as part of `service-wed`'s container start --
-no separate `alembic upgrade head` step needed (see
-`service-wed/README.md`'s ["2. Run migrations"](service-wed/README.md#2-run-migrations)
-for the manual/one-off-container alternative, e.g. if you're generating a
-new migration).
-
-### 2. Seed the one admin account
-
-There's no self-service registration -- see `service-wed/README.md`'s
-["3. Seed the admin
-account"](service-wed/README.md#3-seed-the-admin-account) for the manual
-steps, or simplest, set `ADMIN_EMAIL`/`ADMIN_PASSWORD`/`WEDDING_DATE`/
-`RSVP_DEADLINE` in `service-wed/.env` and run the bundled script, which
-does this (plus creates the wedding config) in one idempotent step:
-
-```bash
-./scripts/bootstrap.sh
-```
-
-### 3. Start the frontend
-
-```bash
+# 2. Frontend on http://localhost:5173
 cd ../ui-wed
-cp .env.example .env.local
 npm install
 npm run dev
 ```
 
-`ui-wed/.env.example`'s `VITE_API_BASE_URL=http://localhost:8000` already
-matches step 1's default, so `.env.local` shouldn't need editing unless
-the API runs elsewhere.
+With `VITE_API_BASE_URL` unset, the frontend calls `/api/...` on its own
+origin, and Vite proxies that to `localhost:8000` (see `vite.config.ts`), so
+no CORS setup is needed. To call the API cross-origin instead, as
+`ui-wed/.env.example` does, copy it to `.env.local`. The API already allows
+`http://localhost:5173` (`CORS_ALLOW_ORIGINS`).
 
-### 4. Test the integration in a browser
+**Try the admin area:** go to `http://localhost:5173/admin`. It redirects to
+`/admin/login`, then to the dashboard at `/admin/admin_dashboard`, which has
+**Dashboard**, **Guests**, **Campaigns** and **Wedding** tabs. On the
+**Guests** tab you can download and upload the guest list CSV (format:
+[service-wed README, step 6](service-wed/README.md#6-build-and-upload-the-guest-list)).
+**Log out** revokes the session on the server.
 
-- Visit `http://localhost:5173/admin/guests` while logged out -- it
-  should redirect to `/admin/login`.
-- Log in with the admin account from step 2.
-- On the guest list page (`/admin/guests`):
-  - **Download CSV** -- pulls the current `guests.csv` snapshot from
-    `GET /admin/exports/guests.csv`.
-  - **Upload CSV** -- pick a CSV with `HouseholdName,ContactEmail,
-    GuestName,IsPlusOne` headers (see `service-wed/README.md`'s ["Build
-    and upload the guest
-    list"](service-wed/README.md#6-build-and-upload-the-guest-list) for
-    the exact row rules); the page shows the success message and any
-    warnings, and refreshes the household table below with the result.
-  - **Log Out** -- revokes the session server-side; revisiting
-    `/admin/guests` afterward redirects back to `/admin/login`.
+### Option 2: the production stack, locally
 
----
+This uses the same compose file, images and Traefik config as the server,
+without the tunnel. Fill in the root `.env` from `.env.example` first.
 
+```bash
+# from the repo root -- list the services so cloudflared is NOT started
+docker compose up -d --build db redis service-wed worker traefik ui-wed socket-proxy
+```
+
+The site is at `http://localhost` (or `HTTP_PORT`), and the API at
+`http://localhost/api/v1/...`. Never start the `cloudflared` service locally:
+with the real `CLOUDFLARE_TUNNEL_TOKEN`, your laptop would start serving the
+live domain.
+
+### Option 3: a simulated server
+
+To rehearse a real deploy (`deploy.sh`, `status`, `rollback`), see
+[deploy/README.md → Testing](deploy/README.md#testing).
+
+### `docker-compose-test.yml`
+
+This is a variant for testing from other devices on your LAN, over HTTPS
+(Traefik's self-signed certificate). It publishes ports 80 and 443, the
+**unauthenticated** Traefik dashboard on 8080, and Postgres (5432) and Redis
+(6379) on **all interfaces**. Use it only on a trusted network, and stop it
+afterwards. Ports can be changed with `HTTPS_PORT`, `TRAEFIK_DASHBOARD_PORT`,
+`POSTGRES_PORT` and `REDIS_PORT` in the root `.env`.
+
+## Checks
+
+```bash
+cd service-wed && uv run ruff check src && uv run mypy src
+cd ui-wed && npm run lint && npm run build     # build also type-checks (tsc -b)
+```
+
+There's no automated test suite yet. Changes are checked against a running
+stack; see [service-wed README → Testing](service-wed/README.md#testing).

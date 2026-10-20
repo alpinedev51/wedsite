@@ -9,6 +9,12 @@ lightweight hexagonal layout (`controllers/` → `services/` → `ports/` +
 `adapters/`). This app is designed for **one wedding, one admin account** (the
 couple) — there's no multi-tenant or self-service registration model.
 
+This README covers the backend on its own, using **this directory's**
+`docker-compose.yml`: Postgres, Redis, the API on `http://localhost:8000` and
+the worker. In production the same image runs behind Traefik on one origin
+with the frontend. See the [root README](../README.md) and
+[deploy/README.md](../deploy/README.md).
+
 ---
 
 ## Table of contents
@@ -83,18 +89,25 @@ Inside the Docker network they talk to Postgres/Redis by service name (`db`,
 all (only `service-wed`'s API port, `8000`, is), so anything you run
 *from the host* (Alembic, one-off admin-seeding scripts) can't reach
 Postgres/Redis directly. See [step 2](#2-run-migrations)/[step
-3](#3-seed-the-admin-account) above for the one-off-container workaround.
+3](#3-seed-the-admin-account) below for the one-off-container workaround.
 
 | Variable | Default | Used by | Notes |
 |---|---|---|---|
 | `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` | `wedding_db_user` / *(required)* / `wedding_db` | `db`, composed into `DATABASE_URL` for API/worker | `POSTGRES_PASSWORD` has no default — `docker-compose.yml` fails loudly if unset. Don't reuse `wedding_db_pw` |
+| `DATABASE_URL` | built by compose from the `POSTGRES_*` values | API, worker | Not set in `.env`; compose builds it, pointing at `db:5432` inside the Docker network |
 | `REDIS_URL` | `redis://redis:6379` | API, worker | Shared by the arq queue *and* the rate limiter |
 | `DEBUG` | `false` | API | See [cookie note](#cookie-based-auth) below — controls the admin session cookie's `Secure` flag and SQL echo logging |
-| `RESEND_API_KEY` | unset | API | If unset, emails are printed to stdout via a console sender instead of actually sent |
-| `RESEND_FROM_ADDRESS` | `wedding@example.com` | API | From-address used when `RESEND_API_KEY` is set |
+| `RESEND_API_KEY` | unset | worker | If unset, emails are printed to the worker's logs via a console sender instead of actually sent. Every email goes through the worker; the API only queues them |
+| `RESEND_FROM_ADDRESS` | `wedding@example.com` | worker | From-address used when `RESEND_API_KEY` is set |
 | `RESEND_WEBHOOK_SECRET` | unset | API | Resend/Svix webhook signing secret. If unset, `/webhooks/resend` accepts payloads **without verifying** them (logs a warning) — only acceptable for local dev, must be set before this is reachable from the internet |
+| `PUBLIC_SITE_URL` | `http://localhost:5173` | API, worker | Where the frontend lives; used to build the `{{ rsvp_url }}` link in emails. Must be the real `https://` domain in production |
 | `SESSION_COOKIE_NAME` | `admin_session` | API | |
-| `CORS_ALLOW_ORIGINS` | `http://localhost:3000,http://localhost:5173` | API | Comma-separated list of allowed frontend origins |
+| `CORS_ALLOW_ORIGINS` | `http://localhost:3000,http://localhost:5173` | API | Comma-separated list of allowed frontend origins. Not needed in production, where the frontend and API share one origin |
+| `CLIENT_IP_HEADER` | unset | API | Header holding the real visitor IP, used for per-visitor rate limits. Production sets `CF-Connecting-IP` (Cloudflare). Leave unset when nothing trusted sets it, or a client could fake its IP |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | unset | API (first boot) | Seed the one admin account if none exists yet (see note below) |
+| `WEDDING_DATE` / `RSVP_DEADLINE` / `RSVP_OPENS_AT` | unset | API (first boot) | Seed the wedding config. **Durango local time**, e.g. `2027-09-04` or `2027-06-28T23:59:59`; a value with `Z` or an offset is taken as that exact instant |
+| `VENUE_NAME` / `VENUE_ADDRESS` / `VENUE_CITY` / `BRIDE_FNAME` / `GROOM_FNAME` | unset | API (first boot) | Optional wedding config fields |
+| `REMINDER_CAP` / `REMINDER_INTERVAL_DAYS` | `2` / `7` | API (first boot) | Automatic reminder limits (see [step 11](#11-reminders-automatic)) |
 
 ---
 
@@ -113,9 +126,12 @@ before you do.
 > the optional wedding fields), but only if they don't already exist, so
 > it's safe on every restart. Set those in `.env` before `docker compose up`
 > and you can skip straight to [step 6](#6-build-and-upload-the-guest-list).
-> [`scripts/bootstrap.sh`](scripts/bootstrap.sh) additionally automates step
-> 6 (uploading a blank guest list) via the API — skip straight to
-> [step 7](#7-review-the-guest-list) if you use it. Read steps 1–6 anyway if
+> [`scripts/bootstrap.sh`](scripts/bootstrap.sh) automates steps 1–6
+> (including uploading a blank guest list). Unlike the first-boot seeding,
+> it re-applies `.env`'s admin password and wedding values on every run, so
+> use it to push `.env` changes to an existing stack. It needs only
+> `docker`, `curl` and `python3` on the host; the database steps run inside
+> the containers. Read steps 1–6 anyway if
 > you want to understand what's happening, need to do any of it by hand
 > (e.g. against a deployed instance without shell access), or want to
 > re-seed something after editing `.env` on an already-running stack (the
@@ -241,6 +257,9 @@ curl -s -b cookies.txt -X PUT http://localhost:8000/api/v1/admin/wedding \
     "rsvp_opens_at": "2026-08-01T00:00:00Z",
     "venue_name": "Willow Creek Barn",
     "venue_address": "123 Countryside Rd, Nowhere, USA",
+    "venue_city": "Nowhere",
+    "bride_first_name": "Kylie",
+    "groom_first_name": "Austin",
     "reminder_cap": 2,
     "reminder_interval_days": 7
   }'
@@ -250,6 +269,11 @@ Notes:
 - `wedding_date` and `rsvp_deadline` are required; `rsvp_deadline` must not
   be after `wedding_date`, and `rsvp_opens_at` (optional) must be before
   `rsvp_deadline` — both are validated and return `422` if violated.
+- Datetimes **without** a `Z`/offset are read as Durango (venue) local time,
+  e.g. `"2027-06-28T23:59:59"` is the end of June 28 at the venue
+  (`config/venue.py`). With `Z` or an offset, they're exact instants. Everything
+  is stored in UTC.
+- `venue_*`, `bride_first_name` and `groom_first_name` are optional.
 - `reminder_cap`/`reminder_interval_days` control the automatic reminder
   cron (see [step 11](#11-reminders-automatic)); they default to `2` and `7`
   if omitted.
@@ -452,25 +476,26 @@ otherwise nothing is sent, but the response is identical either way.
 
 ### 11. Reminders (automatic)
 
-The `worker` container runs `evaluate_reminders` once a day (09:00
-worker-local time). It finds every household with at least one guest who
+The `worker` container runs `evaluate_reminders` once a day at 09:00
+**Durango time** (`WorkerSettings.timezone`, so it doesn't depend on the
+container's UTC clock). It finds every household with at least one guest who
 hasn't responded, checks each against `reminder_cap`/`reminder_interval_days`
 from the wedding config, and — if any are due — creates and fans out a
 `REMINDER` campaign to just those households, in one step (no separate
 create/fan-out call needed, unlike the manual campaigns above). Nothing for
 you to trigger by hand in normal operation.
 
-To test this without waiting for the daily schedule, enqueue the job
-directly against the running worker:
+To test this without waiting for the daily schedule, enqueue the job from
+inside the worker container (Redis isn't reachable from the host):
 
 ```bash
-uv run python -c "
-import asyncio
+docker compose exec worker python -c "
+import asyncio, os
 from arq import create_pool
 from arq.connections import RedisSettings
 
 async def main():
-    redis = await create_pool(RedisSettings.from_dsn('redis://redis:6379/0'))
+    redis = await create_pool(RedisSettings.from_dsn(os.environ['REDIS_URL']))
     await redis.enqueue_job('evaluate_reminders')
     await redis.aclose()
 
@@ -576,9 +601,15 @@ cookie is missing/invalid/expired:
 curl -s -i http://localhost:8000/api/v1/admin/campaigns | head -5
 ```
 
-**Rate limiting** — login is capped at 10 attempts / 5 minutes per IP;
-invitation-token lookups (shared between `/invitations/{token}` and
-`/rsvp/{token}`) at 30 / 5 minutes; magic-link recovery at 5 / 15 minutes:
+**Rate limiting**, per visitor IP:
+- login: 10 attempts per 5 minutes;
+- invitation-token lookups: 30 per 5 minutes, shared between
+  `/invitations/{token}` and `/rsvp/{token}`;
+- RSVP submits: 20 per 5 minutes;
+- magic-link recovery: 5 per 15 minutes.
+
+Behind a proxy, the visitor IP comes from `CLIENT_IP_HEADER` (see
+[Configuration](#configuration)).
 ```bash
 for i in $(seq 1 12); do
   curl -s -o /dev/null -w "%{http_code}\n" -X POST http://localhost:8000/api/v1/auth/login \
@@ -591,7 +622,9 @@ done
 sent, without waiting for its real `scheduled_for` time:
 ```bash
 # Backdate a message so the next cron tick claims it
-psql ... -c "UPDATE email_messages SET scheduled_for = now() - interval '1 minute' WHERE id = '<id>';"
+docker compose exec -T db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"' <<'SQL'
+UPDATE email_messages SET scheduled_for = now() - interval '1 minute' WHERE id = '<id>';
+SQL
 docker compose logs worker --tail 20 --follow
 # within ~60s: "cron:dispatch_due_emails" claims it, "send_email" runs,
 # and (with no RESEND_API_KEY set) the console sender prints the "email"
@@ -603,7 +636,7 @@ it locally, run a throwaway instance with a fake secret rather than
 reconfiguring the real stack:
 ```bash
 docker run -d --rm --name webhook-test --network service-wed_default \
-  -e DATABASE_URL="postgresql+asyncpg://wedding_db_user:wedding_db_pw@db:5432/wedding_db" \
+  -e DATABASE_URL="postgresql+asyncpg://$POSTGRES_USER:$POSTGRES_PASSWORD@db:5432/$POSTGRES_DB" \
   -e REDIS_URL="redis://redis:6379/0" \
   -e RESEND_WEBHOOK_SECRET="whsec_MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAw" \
   -p 8001:8000 \
@@ -633,6 +666,10 @@ curl -s -i -X POST http://localhost:8001/api/v1/webhooks/resend \
 docker stop webhook-test   # cleanup -- --rm removes it automatically
 ```
 
+(Export `POSTGRES_USER`/`POSTGRES_PASSWORD`/`POSTGRES_DB` from your `.env`
+first. `service-wed-service-wed` is the image `docker compose build` makes
+in this directory.)
+
 **Reminder cadence** — enqueue `evaluate_reminders` twice in a row (see
 [step 11](#11-reminders-automatic)); the second call should create *no* new
 campaign if `reminder_interval_days` hasn't elapsed since the last one —
@@ -641,6 +678,16 @@ check the `campaigns` table row count didn't change.
 ---
 
 ## Integrating with a React + Vite + Node.js frontend
+
+`ui-wed` already does all of this (see `ui-wed/src/lib/api.ts`). There are
+two setups:
+
+- **Production, and the root compose:** Traefik serves the frontend and
+  `/api` on one origin. Calls are relative (`/api/v1/...`), so there's no CORS
+  and the `Secure` cookie works over HTTPS.
+- **Local dev:** either Vite's proxy (same origin, no CORS), or cross-origin
+  calls to `http://localhost:8000` with `VITE_API_BASE_URL`. The rest of this
+  section is about the cross-origin case.
 
 ### CORS
 
@@ -665,15 +712,18 @@ Admin auth is a plain httponly session cookie, not a bearer token — there is
 1. **Always pass `credentials: "include"`** — without it, the browser won't
    send the cookie on cross-origin requests (frontend on `:5173`, API on
    `:8000` counts as cross-origin even though both are `localhost`).
-2. **The cookie is `Secure` unless `DEBUG=true`** on the API. A browser will
-   silently refuse to send a `Secure` cookie back over plain `http://`. For
-   local development against `http://localhost:8000`, set `DEBUG=true` in
-   the API's environment; in production, serve the API over HTTPS instead
-   and leave `DEBUG` off.
+2. **The cookie is `Secure` unless `DEBUG=true`** on the API. Browsers won't
+   send a `Secure` cookie over plain `http://`. Chrome and Firefox make an
+   exception for `localhost`, but Safari doesn't. For local development, set
+   `DEBUG=true` in the API's environment. In production, serve over HTTPS and
+   leave `DEBUG` off.
+
+A minimal version of the pattern (`ui-wed/src/lib/api.ts` is the real one,
+and defaults to `""`, i.e. same origin):
 
 ```ts
 // api.ts
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE_URL}/api/v1${path}`, {
@@ -752,7 +802,8 @@ dashboard's job, and should redirect to a login screen on a `401`.
 ### A note on tokens in URLs
 
 Magic-link tokens (`invite_token`) are meant to be embedded directly in a
-frontend route, e.g. `https://yoursite.com/rsvp?token=<invite_token>` — the
+frontend route. ui-wed uses `https://<site>/rsvp/<invite_token>`, the same
+`{{ rsvp_url }}` the emails link to (`PUBLIC_SITE_URL` + `/rsvp/<token>`). The
 frontend reads it from the URL and passes it straight through to
 `GET/PUT /rsvp/{token}`. There's no session or cookie involved on this path
 at all; the token itself is the credential, so treat it with the same care
@@ -790,8 +841,9 @@ All routes are mounted under `/api/v1`.
 | GET | `/admin/exports/guests.csv` | admin | Full guest-list CSV snapshot |
 | POST | `/webhooks/resend` | Svix signature | Resend delivery-event callback |
 
-Interactive docs (Swagger UI) are available at `/docs` whenever the API is
-running.
+Interactive docs (Swagger UI) are at `http://localhost:8000/docs` when you
+run this directory's compose file. They aren't reachable in production,
+because Traefik only routes `/api/*` to the API.
 
 ---
 
@@ -807,6 +859,9 @@ Worth knowing before you rely on these:
   directly) for real delivery state, not the campaign's own `status` field.
   There's also no way to cancel a campaign once fanned out short of editing
   the database directly.
+- **CSV import: conflicting emails for one household.** If two rows for the
+  same `HouseholdName` give different `ContactEmail`s, the first one wins,
+  and the second is dropped without a warning.
 - **No automated test suite.** See [Testing](#testing) — everything is
   manual verification against a running stack right now.
 - **No self-service admin registration**, by design — see

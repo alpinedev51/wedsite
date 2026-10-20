@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# One-time setup of a fresh Ubuntu server (Hetzner CPX11, Ubuntu 26.04 or
-# 24.04 LTS) as a deploy target for deploy/deploy.sh. Run as root. Safe to
-# re-run: every step checks what's already there.
+# One-time setup of a fresh Ubuntu server (Ubuntu 26.04 or 24.04 LTS, x86;
+# Hetzner CPX11 or AWS t3a.small) as a deploy target for deploy/deploy.sh.
+# Run as root. Safe to re-run: every step checks what's already there.
 #
 # Normally run on first boot by deploy/cloud-init.yml. By hand:
 #   curl -fsSL https://raw.githubusercontent.com/alpinedev51/wedsite/main/deploy/server-setup.sh -o setup.sh
@@ -14,15 +14,17 @@
 #   - automatic security updates, rebooting at 09:00 UTC (3am Durango) when needed
 #   - a non-root admin user ($DEPLOY_USER) with your SSH key, docker + sudo
 #   - SSH: keys only, no root login (only once the admin user has a key)
-#   - host firewall (ufw): deny all incoming except SSH. The Hetzner Cloud
-#     Firewall in front should deny everything (see deploy/README.md)
+#   - host firewall (ufw): deny all incoming except SSH. The provider's
+#     firewall in front (Hetzner Cloud Firewall / AWS security group)
+#     should deny everything (see deploy/README.md)
 #   - optional Tailscale, for SSH without any open port
 #   - /opt/wedsite: sparse checkout + .env (from .env.example, chmod 600)
 #
 # Settings (environment variables, all optional):
 #   DEPLOY_USER        admin user to create             (default: wedsite)
-#   SSH_PUBKEY         public key for that user         (default: copy root's
-#                      authorized_keys -- Hetzner puts your key there)
+#   SSH_PUBKEY         public key for that user         (default: the keys
+#                      the provider installed -- root's on Hetzner, the
+#                      `ubuntu` user's on AWS)
 #   TAILSCALE_AUTHKEY  join your tailnet with Tailscale SSH (default: skip)
 #   REPO_URL           git repo                         (default: GitHub wedsite)
 #   APP_DIR            where the app lives              (default: /opt/wedsite)
@@ -169,10 +171,8 @@ step_admin_user() {
 	install -d -m 700 -o "$DEPLOY_USER" -g "$DEPLOY_USER" "$ssh_dir"
 	if [ -n "$SSH_PUBKEY" ]; then
 		keys="$SSH_PUBKEY"
-	elif [ -s /root/.ssh/authorized_keys ]; then
-		keys="$(cat /root/.ssh/authorized_keys)"
 	else
-		keys=""
+		keys="$(provider_keys)"
 	fi
 	if [ -n "$keys" ]; then
 		# Add each key once; keep keys added later by hand.
@@ -184,6 +184,19 @@ step_admin_user() {
 		chown "$DEPLOY_USER:$DEPLOY_USER" "$ssh_dir/authorized_keys"
 		chmod 600 "$ssh_dir/authorized_keys"
 	fi
+}
+
+# The key(s) you picked in the provider's console: Hetzner installs them
+# for root, AWS for the `ubuntu` user (and puts a "Please login as ubuntu"
+# forced command on root's copy). Keep only "<type> <key> [comment]",
+# dropping any options/command="..." prefix, so the copy works as a
+# normal login for $DEPLOY_USER.
+provider_keys() {
+	local f
+	for f in /root/.ssh/authorized_keys /home/ubuntu/.ssh/authorized_keys; do
+		[ -s "$f" ] || continue
+		grep -oE '(ssh-(ed25519|rsa|dss)|ecdsa-sha2-nistp[0-9]+|sk-(ssh-ed25519|ecdsa-sha2-nistp256)@openssh\.com) [A-Za-z0-9+/=]+( [^"]*)?$' "$f" || true
+	done | sort -u
 }
 
 step_ssh() {
