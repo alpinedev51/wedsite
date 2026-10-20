@@ -1,4 +1,4 @@
-# wedsite
+# :star: wedsite
 
 A full-stack wedding website for one wedding: event details, photos, things to
 do, magic-link RSVPs, and an admin area for the guest list and email campaigns
