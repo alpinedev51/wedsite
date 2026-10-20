@@ -1,0 +1,166 @@
+# CI: scan for leaked secrets, then build the two images and (on main)
+# publish them to GHCR for the server to pull with deploy/deploy.sh.
+#
+#   pull request -> secret scan + build both images (nothing is pushed)
+#   push to main -> secret scan + build + push
+#                   ghcr.io/<owner>/<repo>/service-wed:sha-<full commit sha>
+#                   ghcr.io/<owner>/<repo>/ui-wed:sha-<full commit sha>
+#                   (plus :latest on both)
+#
+# The worker runs the service-wed image with a different command, so there
+# is no separate worker image.
+#
+# ui-wed's build-time values come from GitHub repository *variables*
+# (Settings -> Secrets and variables -> Actions -> Variables), named exactly
+# like the .env keys: COUPLE_NAMES, BRIDE_FNAME, GROOM_FNAME, WEDDING_DATE,
+# VENUE_NAME, VENUE_CITY, RSVP_DEADLINE -- plus optional MILESTONES_JSON
+# (the real Our Story content, kept out of the public repo). They are all
+# public on the site anyway, so they are variables, not secrets. Unset ones
+# build with the placeholders in ui-wed/src/config/wedding.ts.
+#
+# Third-party actions are pinned to commit SHAs (tags can be moved).
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  # Never cancel a main build halfway through publishing; PR builds can go.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  TRUFFLEHOG_VERSION: "3.99.3"
+  # Only main publishes images (deploy.sh only deploys commits on main).
+  # A manual run on another branch builds but doesn't push.
+  PUSH: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
+
+jobs:
+  secret-scan:
+    name: Secret scan (TruffleHog)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Full history: this is a public repo, so a secret in any old
+          # commit is as exposed as one in the latest. Scanning all of it
+          # takes seconds at this size.
+          fetch-depth: 0
+
+      # verified = the provider confirmed the credential works.
+      # unknown  = it couldn't be checked either way -- treat as real.
+      # Skips "unverified" (the provider rejected it), which here is only
+      # a package checksum in an old uv.lock that looks like a Sentry token.
+      # --fail exits non-zero on any finding, failing the job.
+      - name: Scan full git history
+        run: |
+          docker run --rm -v "$PWD:/repo:ro" \
+            "trufflesecurity/trufflehog:${TRUFFLEHOG_VERSION}" \
+            git file:///repo \
+            --results=verified,unknown \
+            --fail --no-update
+
+  build:
+    name: Build ${{ matrix.image }}
+    needs: secret-scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write # push to GHCR (GITHUB_TOKEN, no PAT needed)
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: service-wed
+            context: service-wed
+            build-args: ""
+          - image: ui-wed
+            context: ui-wed
+            # VITE_API_BASE_URL is left unset on purpose: empty = same-origin
+            # /api calls, which is what Traefik serves (src/config/env.ts).
+            build-args: |
+              VITE_COUPLE_NAMES=${{ vars.COUPLE_NAMES }}
+              VITE_BRIDE_FNAME=${{ vars.BRIDE_FNAME }}
+              VITE_GROOM_FNAME=${{ vars.GROOM_FNAME }}
+              VITE_WEDDING_DATE=${{ vars.WEDDING_DATE }}
+              VITE_VENUE_NAME=${{ vars.VENUE_NAME }}
+              VITE_VENUE_CITY=${{ vars.VENUE_CITY }}
+              VITE_RSVP_DEADLINE=${{ vars.RSVP_DEADLINE }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Optional: the real Our Story timeline. wedding.ts picks up
+      # milestones.json when present and falls back to the committed
+      # example otherwise. Written into the build context only, never
+      # committed.
+      - name: Add Our Story content
+        if: matrix.image == 'ui-wed'
+        env:
+          MILESTONES_JSON: ${{ vars.MILESTONES_JSON }}
+        run: |
+          if [ -n "$MILESTONES_JSON" ]; then
+            printf '%s' "$MILESTONES_JSON" > ui-wed/src/config/milestones.json
+            python3 -m json.tool ui-wed/src/config/milestones.json > /dev/null
+            echo "Using milestones.json from the MILESTONES_JSON variable."
+          else
+            echo "MILESTONES_JSON not set -- building with milestones.example.json."
+          fi
+
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Log in to GHCR
+        if: env.PUSH == 'true'
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Image tags
+        id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        with:
+          images: ghcr.io/${{ github.repository }}/${{ matrix.image }}
+          # sha-<full sha> is what deploy.sh deploys. latest is only a
+          # convenience pointer to the newest main build.
+          tags: |
+            type=sha,format=long
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build${{ env.PUSH == 'true' && ' and push' || '' }}
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: ${{ matrix.context }}
+          # The Hetzner CPX11 is x86_64.
+          platforms: linux/amd64
+          push: ${{ env.PUSH == 'true' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: ${{ matrix.build-args }}
+          cache-from: type=gha,scope=${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}
+
+  deploy-hint:
+    name: Deploy command
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print the command to deploy this build
+        run: |
+          {
+            echo "### Images published"
+            echo
+            echo "Deploy this build on the server with:"
+            echo
+            echo '```'
+            echo "/opt/wedsite/deploy/deploy.sh ${GITHUB_SHA}"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

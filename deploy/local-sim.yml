@@ -1,0 +1,11 @@
+# Compose override for the local server simulation ONLY
+# (deploy/local-server-sim.sh sets COMPOSE_FILE in the simulated server's
+# .env to include this file). The real server never loads it.
+#
+# Swaps cloudflared for a container that just sleeps, so a test run can never
+# connect to the real Cloudflare tunnel and serve wed.austinkylieb.com from
+# your laptop.
+services:
+  cloudflared:
+    image: busybox:1.37
+    command: ["sleep", "infinity"]

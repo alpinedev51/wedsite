@@ -13,3 +13,6 @@ dist/
 .DS_Store
 .idea/
 .vscode/
+
+# Server-side deploy state (deploy/deploy.sh): history + pre-deploy DB dumps
+.deploy/

@@ -40,8 +40,10 @@ services:
       - "--providers.docker.endpoint=tcp://socket-proxy:2375"
       - "--providers.docker.exposedbydefault=false" # only containers labelled traefik.enable=true
       - "--providers.docker.network=wed_edge" # reach services over `edge`, not `data`
-      # Security-header middlewares (traefik/dynamic.yml).
-      - "--providers.file.filename=/etc/traefik/dynamic.yml"
+      # Security-header middlewares (traefik/dynamic.yml). The folder is
+      # watched, so a deploy that changes it applies without a restart.
+      - "--providers.file.directory=/etc/traefik/dynamic"
+      - "--providers.file.watch=true"
       - "--entrypoints.web.address=:80"
       - "--entrypoints.web.forwardedHeaders.insecure=true"
       # /ping for the health check below; served on Traefik's internal
@@ -56,8 +58,11 @@ services:
     # an un-Cloudflared copy of the site on the open internet.
     ports:
       - "127.0.0.1:${HTTP_PORT:-80}:80"
+    # The folder, not the single file: git checkout replaces dynamic.yml
+    # with a new file, and a single-file bind mount would keep showing the
+    # old one until the container is recreated.
     volumes:
-      - ./traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
+      - ./traefik:/etc/traefik/dynamic:ro
     healthcheck:
       test: ["CMD", "traefik", "healthcheck", "--ping"]
       interval: 30s
@@ -196,10 +201,10 @@ services:
     logging: *logging
 
   worker:
-    image: ${IMAGE_REPO:-wed-website}/worker:${IMAGE_TAG:-latest}
-    build:
-      context: ./service-wed
-      dockerfile: Dockerfile
+    # Same image as service-wed (same code, different command), so CI
+    # builds and publishes one backend image, not two identical ones. No
+    # `build:` here: `docker compose build` builds it once, via service-wed.
+    image: ${IMAGE_REPO:-wed-website}/service-wed:${IMAGE_TAG:-latest}
     container_name: service-wed-worker
     restart: unless-stopped
     command: ["arq", "service_wed.worker.WorkerSettings"]
