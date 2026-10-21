@@ -11,6 +11,7 @@ import NotFound from "./pages/NotFound";
 import ErrorPage from "./pages/ErrorPage";
 import RsvpPage from "./features/rsvp/RsvpPage";
 import FindInvitationPage from "./features/invitation/FindInvitationPage";
+import RsvpGate from "./features/rsvp/RsvpGate";
 import { AuthProvider } from "./features/auth/AuthContext";
 import RequireAdmin from "./features/auth/RequireAdmin";
 import LoginPage from "./features/auth/LoginPage";
@@ -41,8 +42,23 @@ export const router = createBrowserRouter([
           // nothing to load, so it sends the guest to look their invitation
           // up instead.
           { path: "rsvp", element: <Navigate to="/find-invitation" replace /> },
-          { path: "rsvp/:token", element: <RsvpPage /> },
-          { path: "find-invitation", element: <FindInvitationPage /> },
+          // RsvpGate shows "Coming soon" until RSVPs open.
+          {
+            path: "rsvp/:token",
+            element: (
+              <RsvpGate>
+                <RsvpPage />
+              </RsvpGate>
+            ),
+          },
+          {
+            path: "find-invitation",
+            element: (
+              <RsvpGate>
+                <FindInvitationPage />
+              </RsvpGate>
+            ),
+          },
           { path: "*", element: <NotFound /> },
         ],
       },

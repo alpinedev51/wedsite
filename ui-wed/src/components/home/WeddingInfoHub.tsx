@@ -8,7 +8,7 @@ import { useWeddingConfig } from "../../config/WeddingConfigContext";
 import { ceremonyTime, formatLongDate, formatShortDate } from "../../lib/date";
 
 function WeddingInfoHub() {
-  const { wedding } = useWeddingConfig();
+  const { wedding, rsvpOpen } = useWeddingConfig();
   const time = ceremonyTime(wedding.date);
 
   const cards: {
@@ -39,7 +39,10 @@ function WeddingInfoHub() {
     },
     {
       title: "RSVP",
-      description: `Please respond by ${formatShortDate(wedding.rsvpDeadline)}.`,
+      description:
+        !rsvpOpen && wedding.rsvpOpensAt
+          ? `RSVPs open ${formatShortDate(wedding.rsvpOpensAt)}.`
+          : `Please respond by ${formatShortDate(wedding.rsvpDeadline)}.`,
       to: "/rsvp",
       accent: "before:bg-dusty bg-dusty/8!",
     },

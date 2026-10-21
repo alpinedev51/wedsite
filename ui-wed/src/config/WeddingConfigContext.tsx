@@ -12,6 +12,12 @@ import { wedding as fallbackWedding, type WeddingConfig } from "./wedding";
 
 interface WeddingConfigContextValue {
   wedding: WeddingConfig;
+  // True once GET /wedding has answered or failed. Pages that must not show
+  // fallback values first (the RSVP gate) wait for this.
+  loaded: boolean;
+  // False before wedding.rsvpOpensAt. Worked out once, when the config
+  // arrives (a guest won't sit on the page across the opening moment).
+  rsvpOpen: boolean;
 }
 
 const WeddingConfigContext = createContext<WeddingConfigContextValue | null>(
@@ -37,12 +43,17 @@ function liveDateOr(value: string, fallback: Date): Date {
 // public pages must never show an error for this.
 export function WeddingConfigProvider({ children }: { children: ReactNode }) {
   const [wedding, setWedding] = useState<WeddingConfig>(fallbackWedding);
+  const [loaded, setLoaded] = useState(false);
+  const [rsvpOpen, setRsvpOpen] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     getWeddingPublic()
       .then((data) => {
         if (cancelled) return;
+        const rsvpOpensAt = data.rsvp_opens_at
+          ? liveDateOr(data.rsvp_opens_at, new Date(0))
+          : null;
         const brideFirstName =
           data.bride_first_name ?? fallbackWedding.brideFirstName;
         const groomFirstName =
@@ -67,7 +78,9 @@ export function WeddingConfigProvider({ children }: { children: ReactNode }) {
             data.rsvp_deadline,
             fallbackWedding.rsvpDeadline,
           ),
+          rsvpOpensAt,
         });
+        setRsvpOpen(!rsvpOpensAt || Date.now() >= rsvpOpensAt.getTime());
       })
       .catch((err: unknown) => {
         if (cancelled) return;
@@ -80,6 +93,9 @@ export function WeddingConfigProvider({ children }: { children: ReactNode }) {
             err,
           );
         }
+      })
+      .finally(() => {
+        if (!cancelled) setLoaded(true);
       });
     return () => {
       cancelled = true;
@@ -87,7 +103,7 @@ export function WeddingConfigProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <WeddingConfigContext.Provider value={{ wedding }}>
+    <WeddingConfigContext.Provider value={{ wedding, loaded, rsvpOpen }}>
       {children}
     </WeddingConfigContext.Provider>
   );

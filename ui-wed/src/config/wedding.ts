@@ -50,6 +50,9 @@ export const wedding = {
     import.meta.env.VITE_RSVP_DEADLINE,
     "2027-02-01T23:59:59",
   ),
+  // When RSVPs open (admin Wedding tab). Live value only -- no build-time
+  // fallback: null means "open", and the backend enforces it either way.
+  rsvpOpensAt: null as Date | null,
 };
 
 export type WeddingConfig = typeof wedding;
