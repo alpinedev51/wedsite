@@ -29,6 +29,9 @@ import iceLakes from "../assets/icelakes_web.jpg";
 import mesaVerde from "../assets/mesaverde_dwellings.jpg";
 import mesaVerdeClose from "../assets/mesaverde_closeup.jpg";
 import mesaVerdeDwelling from "../assets/dweellingmesaverde_web.jpg";
+import animasRafting from "../assets/animas_rafting.jpg"
+import hotSprings from "../assets/hotsprings.jpg"
+import lakeNighthorse from "../assets/lakenighthorse.jpg"
 
 interface Activity {
   title: string;
@@ -91,6 +94,9 @@ const activities: Activity[] = [
       "Sandy lake shores with swimming, paddleboards, and the San Juans in the background.",
     details:
       "When it's hot, people head up to Vallecito, Haviland Lake, or Lemon Reservoir instead of the river. All three have sandy spots for swimming, paddleboards, boats you can rent, and the San Juans right there in the background.",
+    photos: [
+      { src: lakeNighthorse, alt: "Lake Nighthorse" }
+    ]
   },
   {
     title: "Whitewater Rafting",
@@ -98,6 +104,9 @@ const activities: Activity[] = [
       "The Animas runs straight through downtown, from easy floats to real whitewater.",
     details:
       "The Animas runs straight through downtown, from easy scenic floats to the whitewater through Smelter Rapid, so it's an easy way to cool off and see the valley from the water. There are outfitters in town if you want a guided trip, kid-friendly ones included. Tip: Ask us or the family about rafting if interested and we can help you figure something out.",
+    photos: [
+      { src: animasRafting, alt: "Rafting the Animas River" }
+    ]
   },
   {
     title: "Downtown Durango",
@@ -125,6 +134,9 @@ const activities: Activity[] = [
       "Natural soaks ranging from an easy stop in town to a hike-in reward up the Piedra.",
     details:
       "Trimble is just north of town and the easy option if you want to soak after a day out. Pinkerton and Rainbow, up along the Piedra, take more of a drive and a bit of a walk to reach, but they're more natural and worth it if you're up for it.",
+    photos: [
+      { src: hotSprings, alt: "Hot Springs Resort" }
+    ]
   },
   {
     title: "Rock Climbing",
