@@ -50,9 +50,12 @@ Graviton (t4g), add `linux/arm64` to `platforms:` in the workflow, plus a
 `docker/setup-qemu-action` step before buildx.
 
 Actions in the workflow are pinned to exact commit hashes (the comment next
-to each says which release). Dependabot (`.github/dependabot.yml`) opens one
-pull request a month when any of them has a new release; merge it once CI
-passes.
+to each says which release). Dependabot (`.github/dependabot.yml`) opens a
+monthly grouped pull request per ecosystem: actions, Dockerfile base
+images, compose images, npm and uv packages (major versions are skipped for
+images; a Postgres major needs a dump/restore). Merge once CI passes, then
+deploy. Turn on **Settings → Code security → Dependabot security updates**
+too, so security fixes arrive straight away instead of monthly.
 
 ## What goes where
 

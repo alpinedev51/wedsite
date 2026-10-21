@@ -169,6 +169,9 @@ services:
       # IP and one rate-limit bucket. Only safe because the tunnel is the
       # only way in -- see settings.client_ip_header.
       - CLIENT_IP_HEADER=CF-Connecting-IP
+      # Empty: the site and API share one origin, so no other origin may
+      # make credentialed calls (the default allows localhost dev servers).
+      - CORS_ALLOW_ORIGINS=
     # Python, not curl: the slim image has no curl. start_period covers
     # migrations + bootstrap running before uvicorn starts listening.
     healthcheck:
@@ -192,7 +195,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.service-wed.rule=PathPrefix(`/api`)"
       - "traefik.http.routers.service-wed.entrypoints=web"
-      - "traefik.http.routers.service-wed.middlewares=security-headers@file,csp-api@file"
+      - "traefik.http.routers.service-wed.middlewares=api-body-limit@file,security-headers@file,csp-api@file"
       - "traefik.http.services.service-wed.loadbalancer.server.port=8000"
     # edge: Traefik reaches it. data: Postgres/Redis.
     networks: [edge, data]

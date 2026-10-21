@@ -1,17 +1,76 @@
-# Dependabot: opens a pull request when a GitHub Action used in
-# .github/workflows/ has a new release. It updates the pinned commit hash
-# and the "# vX.Y.Z" comment together. CI runs on that PR; merge it if
-# green. Only actions are covered here -- app dependencies (npm, uv) and
-# Docker base images are updated by hand.
+# Dependabot: opens pull requests when something this repo pins has a new
+# release. CI runs on each PR; merge it if green, then deploy.
+#
+# Monthly, one grouped PR per ecosystem, to keep the noise down. Security
+# fixes don't wait for the schedule: with "Dependabot security updates"
+# turned on (Settings -> Code security), GitHub opens those PRs right away.
 version: 2
 updates:
+  # GitHub Actions in .github/workflows/ (updates the pinned commit hash and
+  # the "# vX.Y.Z" comment together).
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: monthly
-    # One PR per month for all actions, instead of one per action.
     groups:
       actions:
         patterns: ["*"]
     commit-message:
       prefix: ci
+
+  # Base images in the two Dockerfiles (python, uv, node, nginx).
+  - package-ecosystem: docker
+    directories: [/service-wed, /ui-wed]
+    schedule:
+      interval: monthly
+    groups:
+      dockerfiles:
+        patterns: ["*"]
+    # Major versions (e.g. node 24 -> 26) are deliberate upgrades, not
+    # routine bumps.
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    commit-message:
+      prefix: deps
+
+  # Images in the production docker-compose.yml (postgres, redis, traefik,
+  # cloudflared, socket-proxy).
+  - package-ecosystem: docker-compose
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      compose:
+        patterns: ["*"]
+    # Never a major Postgres (or other) upgrade by PR: a new Postgres major
+    # can't read the old data directory without a dump/restore.
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    commit-message:
+      prefix: deps
+
+  # Frontend libraries (ui-wed/package-lock.json).
+  - package-ecosystem: npm
+    directory: /ui-wed
+    schedule:
+      interval: monthly
+    groups:
+      npm:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+    commit-message:
+      prefix: deps
+
+  # Backend libraries (service-wed/uv.lock).
+  - package-ecosystem: uv
+    directory: /service-wed
+    schedule:
+      interval: monthly
+    groups:
+      python:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+    commit-message:
+      prefix: deps

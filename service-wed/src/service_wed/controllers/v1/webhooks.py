@@ -21,9 +21,11 @@ retried webhooks more precisely than this composite key does.
 """
 
 import base64
+import binascii
 import hashlib
 import hmac
 import logging
+import time
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
@@ -37,6 +39,10 @@ from service_wed.services.delivery import DeliveryService
 logger = logging.getLogger("service_wed.webhooks")
 
 router = APIRouter(tags=["webhooks"])
+
+# Svix's recommended window: a signed request older (or newer) than this is
+# rejected, so a captured request can't be replayed later.
+_TIMESTAMP_TOLERANCE_SECONDS = 5 * 60
 
 # Resend event `type` strings we know how to translate. Anything else (e.g.
 # "email.sent", which just echoes state send_one() already recorded) is
@@ -60,10 +66,21 @@ def _verify_svix_signature(
     rotation)."""
     # Secret is handed out as "whsec_<base64>"; the prefix isn't part of the
     # key material.
-    secret_b64 = secret.removeprefix("whsec_")
-    secret_bytes = base64.b64decode(secret_b64)
+    try:
+        sent_at = int(timestamp)
+    except ValueError:
+        return False
+    if abs(time.time() - sent_at) > _TIMESTAMP_TOLERANCE_SECONDS:
+        return False
 
-    signed_content = f"{msg_id}.{timestamp}.{body.decode()}".encode()
+    secret_b64 = secret.removeprefix("whsec_")
+    try:
+        secret_bytes = base64.b64decode(secret_b64)
+    except (binascii.Error, ValueError):
+        logger.error("RESEND_WEBHOOK_SECRET is not valid base64 after 'whsec_'.")
+        return False
+
+    signed_content = msg_id.encode() + b"." + timestamp.encode() + b"." + body
     expected = base64.b64encode(
         hmac.new(secret_bytes, signed_content, hashlib.sha256).digest()
     ).decode()
@@ -89,7 +106,7 @@ async def resend_webhook(
     # not guaranteed to byte-for-byte match what was signed.
     body = await request.body()
 
-    if settings.resend_webhook_secret is not None:
+    if settings.resend_webhook_secret:
         if not (
             svix_id and svix_timestamp and svix_signature
         ) or not _verify_svix_signature(
@@ -102,11 +119,16 @@ async def resend_webhook(
             raise HTTPException(
                 status.HTTP_401_UNAUTHORIZED, "Invalid webhook signature."
             )
-    else:
+    elif settings.debug:
         logger.warning(
             "RESEND_WEBHOOK_SECRET is not configured -- accepting /webhooks/resend "
-            "without verifying its signature. Set it before exposing this endpoint "
-            "publicly."
+            "without verifying its signature (DEBUG only)."
+        )
+    else:
+        # Fail closed: outside local dev, an unsigned webhook is never trusted.
+        logger.error("RESEND_WEBHOOK_SECRET is not configured -- rejecting webhook.")
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE, "Webhook receiver not configured."
         )
 
     payload = EmailWebhookPayload.model_validate_json(body)

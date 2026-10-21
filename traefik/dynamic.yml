@@ -48,6 +48,14 @@ http:
           form-action 'self';
           frame-ancestors 'none'
 
+    # Caps request bodies sent to the API (the largest real one is the
+    # guest-list CSV upload, a few KB). Without it, anyone could send a huge
+    # body to a public endpoint and the API would read it into memory.
+    # Larger requests get 413.
+    api-body-limit:
+      buffering:
+        maxRequestBodyBytes: 2097152 # 2 MB
+
     # The API only returns JSON/CSV, never pages, so it may load nothing.
     csp-api:
       headers:

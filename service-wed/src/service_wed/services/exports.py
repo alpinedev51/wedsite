@@ -13,6 +13,17 @@ import io
 
 from service_wed.ports.uow import UnitOfWorkPort
 
+# Spreadsheet apps run a cell starting with one of these as a formula. Guests
+# type free text (dietary notes, song requests, messages), so a guest could
+# plant e.g. =HYPERLINK(...) in the file the couple opens. A leading ' makes
+# the app show the text as-is (OWASP's "CSV injection" advice).
+_FORMULA_PREFIXES = ("=", "+", "-", "@", "\t", "\r")
+
+
+def _safe_cell(value: str) -> str:
+    return "'" + value if value.startswith(_FORMULA_PREFIXES) else value
+
+
 _CSV_HEADER = [
     "HouseholdName",
     "ContactEmail",
@@ -43,7 +54,8 @@ class ExportService:
         for household in households:
             for guest in household.guests:
                 writer.writerow(
-                    [
+                    _safe_cell(cell)
+                    for cell in [
                         household.display_name,
                         household.contact_email or "",
                         guest.full_name,

@@ -5,6 +5,8 @@ adapters (DB engine, Redis, email sender, arq queue -- see bootstrap.py).
 Run locally with: uvicorn service_wed.main:app --reload
 """
 
+import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -12,7 +14,13 @@ from service_wed.config.settings import settings
 from service_wed.controllers.router import api_router
 from service_wed.exceptions import register_exception_handlers
 from service_wed.hooks.lifespan import lifespan
-from service_wed.middleware.request_context import RequestContextMiddleware
+from service_wed.middleware.request_context import (
+    RedactTokensFilter,
+    RequestContextMiddleware,
+)
+
+# uvicorn's access log prints every full URL, RSVP tokens included.
+logging.getLogger("uvicorn.access").addFilter(RedactTokensFilter())
 
 
 def create_app() -> FastAPI:
