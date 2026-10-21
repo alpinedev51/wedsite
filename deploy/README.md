@@ -148,8 +148,12 @@ resource doesn't surprise you.
 - **Outbound:** leave the default (all).
 
 **4. Launch the instance.** Go to **EC2 → Launch instance**:
-- Name `wedsite`. AMI: **Ubuntu Server 26.04 LTS**, 64-bit **(x86)**, from
-  Canonical.
+- Name `wedsite`. Under **Add additional tags**, set the `Name` tag's
+  resource types to **Instances and Volumes**, so the disk is tagged too
+  (step 5 finds it by that tag).
+- AMI: click the **Ubuntu** tile, then **Ubuntu Server 26.04 LTS**, 64-bit
+  **(x86)**, from Canonical. The wizard preselects Amazon Linux, which the
+  setup script refuses (it stops with "this script is for Ubuntu").
 - Instance type **t3a.small** (or t3.small). Not t4g; see the
   [architecture note](#cicd-pipeline).
 - Key pair: yours if you're using SSH, otherwise *Proceed without*.
@@ -171,8 +175,9 @@ gives it to `wedsite` as well. `ubuntu` stays as AWS's default admin
 account, also key-only.
 
 **5. Optional: snapshots.** Go to **EC2 → Lifecycle Manager → Create
-lifecycle policy**: EBS snapshots of volumes tagged `Name=wedsite` (tag the
-volume), daily, keep 7.
+lifecycle policy**: EBS snapshot policy, target **volumes** tagged
+`Name=wedsite`, default IAM role, daily, keep 7. These are whole-disk
+copies that stay in AWS, separate from the server.
 
 ### Both hosts: configure and deploy
 
