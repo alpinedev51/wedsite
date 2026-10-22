@@ -72,6 +72,136 @@ one only if all of these are true:
 Both settings are on the **Wedding** tab. Uploading a guest list never sends
 anything by itself. Details: [service-wed README, step 11](service-wed/README.md#11-reminders-automatic).
 
+How the Resend account is set up, and how the app talks to it, is in
+[Email with Resend](#email-with-resend).
+
+## Email with Resend
+
+[Resend](https://resend.com) is the service that actually delivers the
+site's emails. The app never talks to guests' mail servers itself: the
+worker hands each email to Resend's API, Resend delivers it from your
+domain, and Resend calls the site back (a **webhook**) to report what
+happened to it.
+
+### What the site sends
+
+| Email | Sent when |
+|---|---|
+| Save the date, RSVP invitation, final details, thank you | You fan out a campaign (admin **Campaigns** tab) |
+| RSVP reminder | Automatically each morning, or by a reminder campaign (API only) |
+| RSVP confirmation | Every time a household submits or edits its RSVP |
+| RSVP link recovery | A guest asks for their link again on the site |
+
+Every email goes to the household's contact email. Households without one
+are skipped. The HTML comes from `service-wed/src/service_wed/templates/email/`.
+
+### One-time setup in Resend
+
+1. **Create an account** at resend.com.
+2. **Add your domain** (**Domains → Add domain**, e.g. `austinkylieb.com`).
+   Resend lists a few DNS records: a DKIM `TXT` record (proves the email
+   really comes from you), plus an `MX` and an SPF `TXT` record on a `send.`
+   subdomain (where bounce reports go). Add them in Cloudflare **DNS** as
+   shown, with the proxy **off** (grey cloud), and wait until Resend shows
+   the domain as **Verified**. Until then, every send is refused. Adding a
+   DMARC record (`TXT` at `_dmarc`, value `v=DMARC1; p=none;`) helps
+   delivery to Gmail and Yahoo.
+3. **Create an API key** (**API Keys**): permission **Sending access**,
+   limited to your domain. It's shown once; it goes in `RESEND_API_KEY`.
+4. **Pick the from-address**, e.g. `Austin & Kylie <hello@austinkylieb.com>`,
+   for `RESEND_FROM_ADDRESS`. It must be on the verified domain. Resend
+   only sends: guests who hit **Reply** write to this address, so use one
+   that reaches a real inbox (Cloudflare Email Routing can forward it), or
+   replies are lost.
+5. **Add the webhook** (**Webhooks → Add endpoint**):
+   - URL: `https://wed.austinkylieb.com/api/v1/webhooks/resend`
+   - Events: `email.delivered`, `email.opened`, `email.clicked`,
+     `email.bounced`, `email.complained`, `email.failed`, `email.suppressed`
+   - Copy its **signing secret** (`whsec_...`) into `RESEND_WEBHOOK_SECRET`.
+     The site rejects any webhook call not signed with it, so nobody else
+     can fake delivery reports.
+6. **Decide on tracking.** Open and click tracking are per-domain settings
+   in Resend. With them off, the dashboard's opened/clicked counts stay at
+   zero; everything else works. Click tracking also rewrites links in the
+   email through Resend's servers, so leaving it off is better for privacy.
+7. **Check your plan's limits** on Resend's pricing page: the daily and
+   monthly email quotas, and the API rate limit. Set
+   `RESEND_MAX_SENDS_PER_SECOND` (default `2`) at or below that rate
+   limit, and make sure a campaign to every household fits in one day's
+   quota (otherwise the rest wait for the next day, see below).
+
+Then put the three values in the server's `.env` and run
+`docker compose up -d` from `/opt/wedsite`.
+
+| Variable | Used by | What it is |
+|---|---|---|
+| `RESEND_API_KEY` | worker | Lets the worker send. If unset, nothing is sent: the worker prints each email to its log instead (handy for local development) |
+| `RESEND_FROM_ADDRESS` | worker | Who emails are from |
+| `RESEND_MAX_SENDS_PER_SECOND` | worker | How fast the worker calls Resend |
+| `RESEND_WEBHOOK_SECRET` | API | Checks webhook signatures. If unset, the webhook endpoint refuses every call |
+
+### How an email moves through the app
+
+```
+API creates the email (status: scheduled)
+  │  worker checks every minute for emails that are due
+  ▼
+worker sends it to Resend (status: sending)
+  │  Resend accepts it and returns an email id
+  ▼
+status: sent  ──►  Resend delivers it, then calls the webhook:
+                    delivered / opened / clicked  → recorded for the dashboard
+                    bounced / complained / failed / suppressed → status: failed
+```
+
+- **Sent means Resend accepted it**, not that it arrived. Whether it
+  arrived shows a few seconds later in **Resend → Emails**, and bounces
+  and complaints come back to the site's dashboard through the webhook.
+- **No duplicates.** Each email carries an idempotency key, so if the
+  worker retries after a timeout, Resend still delivers it only once.
+- **Pacing.** The worker spaces its calls to `RESEND_MAX_SENDS_PER_SECOND`,
+  so a big campaign goes out over a few minutes instead of tripping the
+  rate limit.
+
+### When something goes wrong
+
+| What happens | What the app does |
+|---|---|
+| Rate limit (`429`), a Resend outage (`5xx`), a network error | Retries by itself, up to 5 attempts over about 8 minutes |
+| Daily or monthly quota used up, bad API key, domain not verified | Holds the email and tries again every hour, without using up attempts. Once you fix it (or the quota resets), it goes out. After 3 days of refusals it's marked failed |
+| A permanent error, e.g. an invalid address (`422`) | Marked **failed** right away |
+| Bounce, spam complaint, or an address on Resend's suppression list | Marked **failed** when the webhook arrives |
+
+Failed emails count toward the dashboard's **failed** number, and the
+reason is saved with the message (`last_error`) and shown in **Resend →
+Emails**. An address that bounced once lands on Resend's
+**suppression list**, and Resend refuses to email it again until you remove
+it there (**Suppressions**). Fix the household's email first.
+
+### Checking it works
+
+- Before the first real campaign, add yourselves as a household and send
+  to that first.
+- Resend's test addresses show each outcome without hurting your sender
+  reputation: a household with `delivered@resend.dev` should show as
+  delivered in Resend, and one with `bounced@resend.dev` should add one to
+  the dashboard's **failed** and **bounced** counts.
+- **Resend → Emails** lists every email with its status. **Resend →
+  Webhooks** shows each callback and the site's response. A `401` there
+  means `RESEND_WEBHOOK_SECRET` doesn't match the endpoint's signing
+  secret. A `503` for a few seconds after a send is normal (the site asks
+  Resend to retry an event that arrived before the worker had saved the
+  email's id). A `503` on every call means the secret isn't set.
+- If webhook calls never reach the site, check that a Cloudflare security
+  rule (e.g. Bot Fight Mode) isn't challenging requests to
+  `/api/v1/webhooks/resend`.
+- If nothing is going out at all: is the worker healthy
+  (`/api/v1/health/worker`), and does `docker compose logs worker` show
+  errors from Resend?
+
+Implementation details (code layout, retry timing, webhook signature
+format) are in the [service-wed README](service-wed/README.md).
+
 ## Deploying
 
 Production runs on a single small server (currently AWS EC2; Hetzner also
