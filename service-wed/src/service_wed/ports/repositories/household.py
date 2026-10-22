@@ -43,7 +43,8 @@ class HouseholdRepository(Protocol):
         ...
 
     async def list_non_responding(self) -> list[Household]:
-        """Fetch households that have at least one guest without an RSVP."""
+        """Fetch households with at least one guest who hasn't given a final
+        answer: no RSVP yet, or "Not Sure Yet" (waiting)."""
         ...
 
     async def list_paginated(

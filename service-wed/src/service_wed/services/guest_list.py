@@ -19,6 +19,20 @@ class _CleanedGuestRow:
     is_plus_one: bool
 
 
+def _decode_csv(file_bytes: bytes) -> str:
+    """The upload as text. utf-8-sig, not utf-8: Excel's "CSV UTF-8" format
+    starts the file with an invisible byte-order mark, which plain utf-8
+    would keep as part of the first column name ("\ufeffHouseholdName"),
+    so the import would report HouseholdName as missing."""
+    try:
+        return file_bytes.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        raise ValidationError(
+            'The file isn\'t UTF-8 text. Export it as "CSV UTF-8" (Excel) or '
+            '"Comma-separated values" (Google Sheets, Numbers) and try again.'
+        ) from None
+
+
 class GuestListService:
     def __init__(self, uow: UnitOfWorkPort) -> None:
         self.uow = uow
@@ -73,7 +87,7 @@ class GuestListService:
           accepted, since it's very likely a data-entry gap rather than
           intentional.
         """
-        text_data = file_bytes.decode("utf-8")
+        text_data = _decode_csv(file_bytes)
         reader = csv.DictReader(io.StringIO(text_data))
 
         required_columns = {"HouseholdName", "ContactEmail", "GuestName", "IsPlusOne"}

@@ -37,6 +37,14 @@ class EmailMessageRepository(Protocol):
         """Update message state after a send attempt."""
         ...
 
+    async def reschedule(
+        self, message_id: uuid.UUID, scheduled_for: dt.datetime, last_error: str
+    ) -> None:
+        """Put a message back to SCHEDULED for a later send (attempts
+        unchanged): dispatch_due_emails claims it again once it's due. Also
+        records send_blocked_since, the first time this happened."""
+        ...
+
     async def get_by_provider_message_id(
         self, provider_message_id: str
     ) -> EmailMessage | None:
@@ -53,7 +61,18 @@ class EmailMessageRepository(Protocol):
     async def get_reminder_stats(
         self, household_ids: list[uuid.UUID]
     ) -> dict[uuid.UUID, ReminderStats]:
-        """For each of the given households, how many REMINDER messages already exist and when the most recent one was scheduled."""
+        """For each of the given households, how many REMINDER messages
+        count toward its cap, and when the most recent one was scheduled.
+        Canceled reminders, and failed ones the provider never accepted,
+        don't count."""
+        ...
+
+    async def get_invitation_sent_at(
+        self, household_ids: list[uuid.UUID]
+    ) -> dict[uuid.UUID, dt.datetime]:
+        """For each of the given households that has been sent an RSVP
+        invitation, when the most recent one went out. Households with no
+        successfully sent invitation are absent from the result."""
         ...
 
     async def count_by_status(

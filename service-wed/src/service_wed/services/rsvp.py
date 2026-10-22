@@ -3,6 +3,7 @@ import datetime as dt
 import uuid
 
 from service_wed.domain.errors import NotFoundError, RsvpClosedError, ValidationError
+from service_wed.domain.rsvp_window import RsvpWindow, rsvp_window
 from service_wed.domain.value_objects import EmailStatus, EmailType
 from service_wed.models.email_message import EmailMessage
 from service_wed.ports.uow import UnitOfWorkPort
@@ -30,9 +31,14 @@ class RsvpService:
             now = dt.datetime.now(dt.timezone.utc)
             wedding = await self.uow.wedding_repo.get()
             if wedding:
-                if wedding.rsvp_opens_at and now < wedding.rsvp_opens_at:
+                window = rsvp_window(
+                    opens_at=wedding.rsvp_opens_at,
+                    deadline=wedding.rsvp_deadline,
+                    now=now,
+                )
+                if window == RsvpWindow.NOT_OPEN_YET:
                     raise RsvpClosedError("RSVPs are not open yet.")
-                if now > wedding.rsvp_deadline:
+                if window == RsvpWindow.CLOSED:
                     raise RsvpClosedError("The RSVP deadline has passed.")
 
             # Ensure the frontend isn't trying to RSVP for guests in other households

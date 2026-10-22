@@ -99,7 +99,8 @@ Postgres/Redis directly. See [step 2](#2-run-migrations)/[step
 | `DEBUG` | `false` | API | See [cookie note](#cookie-based-auth) below — controls the admin session cookie's `Secure` flag and SQL echo logging |
 | `RESEND_API_KEY` | unset | worker | If unset, emails are printed to the worker's logs via a console sender instead of actually sent. Every email goes through the worker; the API only queues them |
 | `RESEND_FROM_ADDRESS` | `wedding@example.com` | worker | From-address used when `RESEND_API_KEY` is set |
-| `RESEND_WEBHOOK_SECRET` | unset | API | Resend/Svix webhook signing secret. If unset, `/webhooks/resend` accepts payloads **without verifying** them (logs a warning) — only acceptable for local dev, must be set before this is reachable from the internet |
+| `RESEND_MAX_SENDS_PER_SECOND` | `2` | worker | How fast the worker calls Resend. Keep at or below your Resend account's rate limit, or bulk campaigns hit `429`s (those are retried, but slower) |
+| `RESEND_WEBHOOK_SECRET` | unset | API | Resend/Svix webhook signing secret. If unset, `/webhooks/resend` rejects every call (`503`), except with `DEBUG=true`, where it accepts them **unverified** (local dev only). In Resend, subscribe the webhook to `email.delivered`, `email.opened`, `email.clicked`, `email.bounced`, `email.complained`, `email.failed` and `email.suppressed`; the last four mark the message `failed` |
 | `PUBLIC_SITE_URL` | `http://localhost:5173` | API, worker | Where the frontend lives; used to build the `{{ rsvp_url }}` link in emails. Must be the real `https://` domain in production |
 | `SESSION_COOKIE_NAME` | `admin_session` | API | |
 | `CORS_ALLOW_ORIGINS` | `http://localhost:3000,http://localhost:5173` | API | Comma-separated list of allowed frontend origins. Not needed in production, where the frontend and API share one origin |
@@ -159,6 +160,7 @@ Confirm it's healthy:
 ```bash
 curl -s http://localhost:8000/api/v1/health/live    # {"status":"ok"} -- process is up
 curl -s http://localhost:8000/api/v1/health/ready   # {"status":"ok"} -- DB is reachable
+curl -s http://localhost:8000/api/v1/health/worker  # {"status":"ok"} -- the worker is running
 ```
 
 ### 2. Run migrations
@@ -430,6 +432,23 @@ curl -s -b cookies.txt -X POST \
 This is the email that actually puts each household's `invite_token` (magic
 link) in front of them.
 
+**If a send fails:** temporary errors (Resend rate limit `429`, Resend
+`5xx`, network errors) are retried automatically, up to 5 attempts with a
+growing wait (30s, 1m, 2m, 4m). The message stays `sending` meanwhile, with
+the latest error in `last_error`. Permanent errors (e.g. `422` invalid
+address) mark it `failed` right away. If Resend refuses for an
+**account-level** reason (daily or monthly quota used up, bad API key,
+sending domain not verified), the message goes back to `scheduled` for an
+hour later, without using up an attempt, until the quota resets or the
+account is fixed; if it's still refused 3 days after the first refusal, it's
+marked `failed`. The error is in `last_error` meanwhile. Each message sends with a Resend idempotency key, so a retry never
+delivers it twice.
+
+**Reminder campaigns created by hand** (`"type": "reminder"`) go to the
+same households the automatic ones would, minus the cap and interval:
+households that were sent an RSVP invitation and haven't answered (or
+answered "Not Sure Yet").
+
 ### 10. Guests respond
 
 No admin auth here — the token itself is the credential. This is what your
@@ -478,12 +497,22 @@ otherwise nothing is sent, but the response is identical either way.
 
 The `worker` container runs `evaluate_reminders` once a day at 09:00
 **Durango time** (`WorkerSettings.timezone`, so it doesn't depend on the
-container's UTC clock). It finds every household with at least one guest who
-hasn't responded, checks each against `reminder_cap`/`reminder_interval_days`
-from the wedding config, and — if any are due — creates and fans out a
+container's UTC clock). If any households are due, it creates and fans out a
 `REMINDER` campaign to just those households, in one step (no separate
 create/fan-out call needed, unlike the manual campaigns above). Nothing for
 you to trigger by hand in normal operation.
+
+A household gets a reminder only when **all** of these hold (see
+`services/reminders.py`):
+
+1. RSVPs are open: after `rsvp_opens_at` (if set) and before `rsvp_deadline`.
+2. It was actually sent an RSVP invitation (step 9) — an `rsvp_invite`
+   email with status `sent`. Uploading a guest list alone never triggers
+   reminders.
+3. At least one of its guests hasn't responded, or answered "Not Sure Yet".
+4. It has had fewer than `reminder_cap` reminders. `0` turns reminders off.
+5. `reminder_interval_days` have passed since its last contact: the
+   invitation, or its most recent reminder.
 
 To test this without waiting for the daily schedule, enqueue the job from
 inside the worker container (Redis isn't reachable from the host):
@@ -820,6 +849,7 @@ All routes are mounted under `/api/v1`.
 |---|---|---|---|
 | GET | `/health/live` | none | Process liveness |
 | GET | `/health/ready` | none | DB connectivity check |
+| GET | `/health/worker` | none | Email worker is alive (its Redis heartbeat is under a minute old); `503` otherwise |
 | POST | `/auth/login` | none (rate-limited) | Start an admin session |
 | POST | `/auth/logout` | admin | Revoke the current admin session |
 | GET | `/wedding` | none | Public wedding config (date, venue, RSVP deadline) |

@@ -7,9 +7,19 @@ from typing import Any, Protocol
 class QueuePort(Protocol):
     """Port for scheduling background jobs onto the async worker."""
 
-    async def enqueue(self, job_name: str, **kwargs: Any) -> None:
+    async def enqueue(
+        self, job_name: str, *, job_id: str | None = None, **kwargs: Any
+    ) -> None:
         """Schedule `job_name` (an arq task function name, see worker.py) to
         run asynchronously with the given kwargs. Fire-and-forget from the
         caller's perspective -- the job's own success/failure is handled by
-        the worker (see tasks/send.py's retry/backoff)."""
+        the worker (see tasks/send.py's retry/backoff).
+
+        `job_id`: if a job with this id is already queued or running,
+        nothing new is enqueued."""
+        ...
+
+    async def worker_alive(self) -> bool:
+        """Whether a worker is currently running and processing this queue
+        (it has checked in within the last minute or so)."""
         ...

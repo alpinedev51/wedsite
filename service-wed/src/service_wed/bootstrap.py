@@ -37,6 +37,7 @@ def build_email_sender() -> EmailSenderPort:
         return ResendEmailSender(
             api_key=settings.resend_api_key,
             from_address=settings.resend_from_address,
+            max_sends_per_second=settings.resend_max_sends_per_second,
         )
     return ConsoleEmailSender()
 

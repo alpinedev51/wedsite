@@ -21,6 +21,7 @@ retried webhooks more precisely than this composite key does.
 """
 
 import base64
+import datetime as dt
 import binascii
 import hashlib
 import hmac
@@ -44,6 +45,13 @@ router = APIRouter(tags=["webhooks"])
 # rejected, so a captured request can't be replayed later.
 _TIMESTAMP_TOLERANCE_SECONDS = 5 * 60
 
+# An event for an email id we don't know yet is retried for this long after
+# it happened (see resend_webhook), then ignored. Svix retries after ~5s,
+# 5m, 30m, 2h, 5h...; this covers the 2h retry, which comes after even the
+# slowest way the id gets stored (a stuck message reclaimed after
+# STUCK_SENDING_AFTER = 30 minutes and re-sent with the same idempotency key).
+_UNMATCHED_EVENT_RETRY_WINDOW = dt.timedelta(hours=3)
+
 # Resend event `type` strings we know how to translate. Anything else (e.g.
 # "email.sent", which just echoes state send_one() already recorded) is
 # accepted and ignored rather than treated as an error.
@@ -53,6 +61,12 @@ _EVENT_TYPE_MAP: dict[str, EmailEventType] = {
     "email.clicked": EmailEventType.CLICKED,
     "email.bounced": EmailEventType.BOUNCED,
     "email.complained": EmailEventType.COMPLAINED,
+    # Resend gave up sending it (e.g. a rejected payload), or refused to
+    # because the address is on the account's suppression list (it bounced
+    # or complained before). Either way it never reaches the guest, so both
+    # flip the message to FAILED (services/delivery.py's _FAILURE_EVENTS).
+    "email.failed": EmailEventType.FAILED,
+    "email.suppressed": EmailEventType.DROPPED,
 }
 
 
@@ -142,11 +156,29 @@ async def resend_webhook(
         return {"status": "ignored"}
 
     provider_event_id = f"{email_id}:{payload.type}:{payload.created_at.isoformat()}"
-    await delivery_service.record_webhook_event(
+    matched = await delivery_service.record_webhook_event(
         provider_message_id=email_id,
         event_type=event_type,
         provider_event_id=provider_event_id,
         occurred_at=payload.created_at,
         payload=payload.data,
     )
+    if not matched and _is_recent(payload.created_at):
+        # Probably beat send_one: Resend can fire an event (email.suppressed
+        # especially) before the worker has stored the email's id. A non-2xx
+        # makes Resend/Svix retry (first after ~5s), when it will match.
+        # Older unmatched events (test sends from the dashboard, mail from
+        # elsewhere on the account) get a 200, so they aren't retried for
+        # days and don't get the endpoint disabled.
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE, "Unknown email id; retry later."
+        )
     return {"status": "ok"}
+
+
+def _is_recent(occurred_at: dt.datetime) -> bool:
+    if occurred_at.tzinfo is None:  # Resend sends UTC; be safe if it's unmarked
+        occurred_at = occurred_at.replace(tzinfo=dt.timezone.utc)
+    return (
+        dt.datetime.now(dt.timezone.utc) - occurred_at < _UNMATCHED_EVENT_RETRY_WINDOW
+    )

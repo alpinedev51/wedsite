@@ -93,7 +93,16 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - RESEND_API_KEY=${RESEND_API_KEY:-}
       - RESEND_FROM_ADDRESS=${RESEND_FROM_ADDRESS:-wedding@example.com}
+      - RESEND_MAX_SENDS_PER_SECOND=${RESEND_MAX_SENDS_PER_SECOND:-2}
       - PUBLIC_SITE_URL=${PUBLIC_SITE_URL:-http://localhost:5173}
+    healthcheck:
+      # Exits non-zero unless the worker refreshed its Redis health key in
+      # the last minute (WorkerSettings.health_check_interval).
+      test: ["CMD", "arq", "--check", "service_wed.worker.WorkerSettings"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     depends_on:
       db:
         condition: service_healthy

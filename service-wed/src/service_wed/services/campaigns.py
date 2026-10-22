@@ -32,6 +32,7 @@ from service_wed.schemas.campaign import (
 )
 from service_wed.schemas.common import Page
 from service_wed.schemas.dashboard import DeliveryStatsResponse
+from service_wed.services.audience import households_awaiting_answer
 
 
 def _ensure_future(scheduled_for: dt.datetime, now: dt.datetime) -> None:
@@ -186,8 +187,14 @@ class CampaignService:
                 )
             messages = await self._build_email_messages(campaign)
             if not messages:
+                detail = (
+                    " Reminders only go to households that were sent an RSVP"
+                    " invitation and haven't answered yet."
+                    if campaign.type == CampaignType.REMINDER
+                    else ""
+                )
                 raise ConflictError(
-                    f"Campaign {campaign_id} has no eligible recipients; nothing to fan out."
+                    f"Campaign {campaign_id} has no eligible recipients; nothing to fan out.{detail}"
                 )
 
             await self.uow.email_message_repo.create_batch(messages)
@@ -204,7 +211,11 @@ class CampaignService:
         """Pick the target household list for campaign.type and build one."""
         wedding = await self.uow.wedding_repo.get()
         if campaign.type == CampaignType.REMINDER:
-            households = await self.uow.household_repo.list_non_responding()
+            # Same audience as the automatic reminders: only households
+            # that were sent an RSVP invitation and still owe an answer.
+            households = [
+                household for household, _ in await households_awaiting_answer(self.uow)
+            ]
         else:
             households = await self.uow.household_repo.list_all()
         return [

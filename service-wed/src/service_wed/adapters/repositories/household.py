@@ -1,9 +1,10 @@
 import uuid
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from service_wed.domain.value_objects import RsvpStatus
 from service_wed.models.household import Household
 from service_wed.models.guest import Guest
 from service_wed.models.rsvp_response import RsvpResponse
@@ -83,7 +84,12 @@ class SQLAlchemyHouseholdRepository(HouseholdRepository):
             select(Household)
             .join(Household.guests)
             .join(Guest.rsvp_response, isouter=True)
-            .where(RsvpResponse.id.is_(None))
+            .where(
+                or_(
+                    RsvpResponse.id.is_(None),
+                    RsvpResponse.status == RsvpStatus.WAITING,
+                )
+            )
             .distinct()
         )
         result = await self.session.execute(stmt)

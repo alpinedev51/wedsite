@@ -28,16 +28,14 @@ const STATUS_OPTIONS: { value: RsvpStatus; label: string }[] = [
 function buildInitialGuestState(
   invitation: InvitationResponse,
 ): GuestFormState[] {
-  // meal_choice pre-fills from a prior submission; dietary_notes doesn't --
-  // InvitationGuestDetail (the GET response) doesn't return it at all (see
-  // rsvp.types.ts), only the PUT accepts it, so an edit starts that one
-  // field blank even if something was saved before.
+  // Every field pre-fills from a prior submission. Submitting replaces all
+  // of them, so a field that started blank would erase the saved value.
   return invitation.guests.map((guest) => ({
     guestId: guest.id,
     fullName: guest.full_name,
     status: guest.rsvp_status ?? "",
     mealChoice: guest.meal_choice ?? "",
-    dietaryNotes: "",
+    dietaryNotes: guest.dietary_notes ?? "",
   }));
 }
 
@@ -57,8 +55,10 @@ function RsvpForm({
   const [guests, setGuests] = useState<GuestFormState[]>(() =>
     buildInitialGuestState(invitation),
   );
-  const [messageToCouple, setMessageToCouple] = useState("");
-  const [songRequest, setSongRequest] = useState("");
+  const [messageToCouple, setMessageToCouple] = useState(
+    invitation.message_to_couple ?? "",
+  );
+  const [songRequest, setSongRequest] = useState(invitation.song_request ?? "");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

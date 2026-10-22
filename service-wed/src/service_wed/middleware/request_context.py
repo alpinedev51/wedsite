@@ -1,6 +1,8 @@
-"""Request ID + one log line per request. Reuses an incoming X-Request-ID
-header if a client/proxy already set one, so a request can be traced across
-service boundaries instead of getting a new id at every hop.
+"""Request ID, one log line per request, and Cache-Control: no-store.
+
+Reuses an incoming X-Request-ID header if a client/proxy already set one, so
+a request can be traced across service boundaries instead of getting a new
+id at every hop.
 """
 
 import logging
@@ -52,6 +54,11 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
         duration_ms = (time.perf_counter() - start) * 1000
 
         response.headers["X-Request-ID"] = request_id
+        # API responses are per-user and change constantly. Without this,
+        # Cloudflare caches anything ending in a "static" extension -- the
+        # guests.csv export included -- and could serve a stale copy, while
+        # holding guest data in its cache.
+        response.headers.setdefault("Cache-Control", "no-store")
         logger.info(
             "%s %s -> %s (%.1fms) [%s]",
             request.method,

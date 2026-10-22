@@ -51,6 +51,13 @@ class EmailMessage(UUIDPrimaryKey, Timestamps, Base):
     )
     last_error: Mapped[str | None] = mapped_column(Text)
     sent_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True))
+    # When the provider first refused this message for an account-level
+    # reason (quota used up, bad API key, unverified domain). Set by
+    # EmailMessageRepository.reschedule; services/delivery.py gives up once
+    # it's been blocked for ACCOUNT_BLOCKED_GIVE_UP_AFTER.
+    send_blocked_since: Mapped[dt.datetime | None] = mapped_column(
+        DateTime(timezone=True)
+    )
 
     campaign: Mapped[Campaign | None] = relationship(back_populates="email_messages")
     household: Mapped[Household] = relationship(

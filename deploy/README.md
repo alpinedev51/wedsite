@@ -237,6 +237,20 @@ These dumps stay **on the server**: they protect against a bad deploy, not a
 lost server. For that, see the provider backups under
 [Choose a host](#choose-a-host).
 
+### Monitoring
+
+Point an uptime monitor (e.g. UptimeRobot) at both of these:
+
+- `https://<your domain>/api/v1/health/ready`: the site and its database.
+- `https://<your domain>/api/v1/health/worker`: the background worker that
+  sends every email. If it's down, emails silently stop going out while the
+  site still looks fine.
+
+Both return `200` when healthy and `503` when not. In Resend's webhook
+settings, subscribe to `email.delivered`, `email.opened`, `email.clicked`,
+`email.bounced`, `email.complained`, `email.failed` and `email.suppressed`,
+so emails Resend can't deliver show up as failed on the dashboard.
+
 ### Changing configuration
 
 - **A runtime value** (anything in `.env`): edit `.env`, then run

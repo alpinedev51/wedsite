@@ -15,12 +15,15 @@ export interface InvitationGuestDetail {
   is_plus_one: boolean;
   rsvp_status: RsvpStatus | null;
   meal_choice: string | null;
+  dietary_notes: string | null;
 }
 
 export interface InvitationResponse {
   id: string;
   display_name: string;
   guests: InvitationGuestDetail[];
+  message_to_couple: string | null;
+  song_request: string | null;
 }
 
 // PUT /rsvp/{token} request body.

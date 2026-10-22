@@ -29,6 +29,15 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("RESEND_FROM_ADDRESS"),
     )
 
+    # Resend's API rate limit for this account (requests/second). The worker
+    # paces sends to stay under it (adapters/email/resend.py). Raise it only
+    # if Resend has raised your account's limit.
+    resend_max_sends_per_second: float = Field(
+        default=2.0,
+        gt=0,
+        validation_alias=AliasChoices("RESEND_MAX_SENDS_PER_SECOND"),
+    )
+
     session_cookie_name: str = Field(
         default="admin_session", validation_alias=AliasChoices("SESSION_COOKIE_NAME")
     )
