@@ -21,18 +21,19 @@ Only creating the server differs: **[Hetzner](#option-a-hetzner)** or
 
 `.github/workflows/ci.yml`:
 
-| Trigger | Secret scan + lint | Build images | Push to GHCR |
+| Trigger | Secret scan + checks | Build images | Push to GHCR |
 |---|---|---|---|
 | Pull request | yes | yes | no |
 | Push to `main` | yes | yes | yes |
 | Actions → CI → Run workflow on `main` | yes | yes | yes |
 | Run workflow on another branch | yes | yes | no |
 
-1. **Secret scan:** TruffleHog scans the whole git history (this repo is
-   public). It fails the run on any credential that the provider confirms
-   works, or that can't be checked.
-   **Lint** runs alongside it: `ruff` and `mypy` for service-wed, `eslint`
-   and `prettier` for ui-wed. Either failing stops the build.
+1. **Secret scan:** TruffleHog scans the whole git history. It fails the
+   run on any credential that the provider confirms works, or that can't be
+   checked.
+   **Checks** run alongside it: `ruff`, `mypy` and the `pytest` tests for
+   service-wed, `eslint` and `prettier` for ui-wed. Any failure stops the
+   build.
 2. **Build:** `service-wed` and `ui-wed`, for `linux/amd64`. The worker runs
    the `service-wed` image, so there's no third image. ui-wed's fallback text
    comes from GitHub repository variables (below).
@@ -169,8 +170,17 @@ resource doesn't surprise you.
   images, swap and backups.
 - **Advanced details:**
   - IAM instance profile: `wedsite-ssm` (if using SSM).
-  - Metadata version: **V2 only**.
   - Termination protection: **enable**.
+  - Metadata accessible: **enabled** (the SSM agent needs it).
+  - Metadata version: **V2 only**.
+  - Metadata response hop limit: **1**. Only the server itself can then
+    read instance metadata, not the Docker containers, so a compromised
+    container can't pick up the server's AWS credentials.
+  - Allow tags in metadata: **disabled**.
+  - Credit specification: **Standard**. The CPU is capped when its burst
+    credits run out instead of billing for extra use; the site needs far
+    less than the cap.
+  - EBS-optimized: leave the default. Domain join directory: none.
   - **User data:** paste `deploy/cloud-init.yml`, the same file Hetzner
     uses, after setting `REPO` in it to your GitHub repo.
 
@@ -181,7 +191,9 @@ account, also key-only.
 **5. Optional: snapshots.** Go to **EC2 → Lifecycle Manager → Create
 lifecycle policy**: EBS snapshot policy, target **volumes** tagged
 `Name=wedsite`, default IAM role, daily, keep 7. These are whole-disk
-copies that stay in AWS, separate from the server.
+copies that stay in AWS, separate from the server. Any tag works (e.g.
+`Stage=prod`), as long as it's on the **volume** itself, not only the
+instance. The day after launch, check **EC2 → Snapshots** for the first one.
 
 ### Both hosts: configure and deploy
 
@@ -192,8 +204,24 @@ On first boot (about 3 minutes), the cloud config runs
 - turns off root and password logins;
 - clones `/opt/wedsite` and creates `.env`.
 
-The log is at `/var/log/wedsite-setup.log`. To set up an existing server
-instead, run the script as root (see its header).
+Check it finished, after logging in (below):
+
+```bash
+cloud-init status --wait              # "status: done"
+sudo tail -n 30 /var/log/wedsite-setup.log
+```
+
+To set up an existing server instead, run the script as root with
+`REPO_URL` set (see its header).
+
+If the GitHub repo is **private**, the cloud config can't download the
+script (raw.githubusercontent.com needs a login for private repos), and the
+server can't clone without credentials. Add a read-only **deploy key**
+(repo **Settings → Deploy keys**) for an SSH key made on the server, copy
+the script over by hand, and run it with
+`REPO_URL=git@github.com:<github-user>/<repo>.git`. Make the GHCR packages
+private too, and use the `docker login` step from
+[One-time GitHub setup](#one-time-github-setup).
 
 **Log in:**
 
@@ -204,16 +232,48 @@ aws ssm start-session --target <instance-id> --region us-west-2   # AWS SSM
 sudo -iu wedsite                                          # ...then, after SSM
 ```
 
+With SSM you can also connect from the browser: **EC2 → Instances →** your
+instance **→ Connect → Session Manager**. If it says the instance isn't
+available, wait a few minutes, then check the IAM role is attached. When
+you're done, `exit` (or **Terminate** the *session*, not the instance).
+
 **Configure and deploy:**
 
 ```bash
 nano /opt/wedsite/.env           # every runtime value; IMAGE_REPO=ghcr.io/<github-user>/<repo>
 /opt/wedsite/deploy/deploy.sh
+/opt/wedsite/deploy/deploy.sh status
 ```
 
-**Tunnel:** in Cloudflare Zero Trust, point the tunnel's public hostname at
-**`http://traefik:80`**. The Pi's tunnel token works unchanged: the tunnel
-doesn't care which machine runs it, as long as only the new server does.
+`.env` needs:
+- **Secrets:** `CLOUDFLARE_TUNNEL_TOKEN`, `POSTGRES_PASSWORD`,
+  `RESEND_API_KEY`, `RESEND_WEBHOOK_SECRET`, `ADMIN_PASSWORD`.
+- **Site and email:** `PUBLIC_SITE_URL` (`https://<your domain>`),
+  `RESEND_FROM_ADDRESS`, `ADMIN_EMAIL`, `IMAGE_REPO`.
+- **Wedding values** (venue local time, no `Z`): `WEDDING_DATE`,
+  `RSVP_DEADLINE`, `RSVP_OPENS_AT`, plus the venue, names and reminder
+  settings. See the comments in `.env.example`.
+
+Setting up the Resend account (domain, API key, webhook) is in the
+[root README](../README.md#email-with-resend).
+
+Make sure the latest CI run on `main` has finished first, so its images
+exist. If `deploy.sh` says it "couldn't pull", CI hasn't finished or the
+GHCR packages are private and the server isn't logged in.
+
+**Tunnel:** in Cloudflare Zero Trust (**Networks → Tunnels**), point the
+tunnel's public hostname at **`http://traefik:80`**. An existing tunnel
+token works unchanged: the tunnel doesn't care which machine runs it, as
+long as only one server does. Its connector should show as healthy.
+
+**After the first deploy:**
+- Open the site, `/api/v1/health/ready` and `/api/v1/health/worker`, and
+  log in to the admin.
+- On the admin **Wedding** tab, check both first names are set. Email
+  headers and sign-offs use them.
+- Add yourselves as a household before uploading the guest list, so you
+  get every email too.
+- Set up the monitors below.
 
 ## Day to day
 
@@ -250,7 +310,8 @@ Point an uptime monitor (e.g. UptimeRobot) at both of these:
 Both return `200` when healthy and `503` when not. In Resend's webhook
 settings, subscribe to `email.delivered`, `email.opened`, `email.clicked`,
 `email.bounced`, `email.complained`, `email.failed` and `email.suppressed`,
-so emails Resend can't deliver show up as failed on the dashboard.
+so emails Resend can't deliver show up as failed on the dashboard (see
+[Email with Resend](../README.md#email-with-resend)).
 
 ### Changing configuration
 
