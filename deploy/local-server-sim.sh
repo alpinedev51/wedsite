@@ -12,7 +12,8 @@
 # Two modes:
 #   ghcr   the real pipeline: git from GitHub, images CI pushed to GHCR.
 #          Push to main / run the CI workflow first. Needs the GHCR
-#          packages public (or `docker login ghcr.io`).
+#          packages public (or `docker login ghcr.io`). Uses this
+#          checkout's `origin` remote and IMAGE_REPO from its .env.
 #   local  no GitHub: git from this checkout's committed `main`, images
 #          built here (like CI would) and pushed to a throwaway registry
 #          on localhost:5000.
@@ -34,8 +35,12 @@ set -euo pipefail
 main() {
 	REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 	SIM_DIR="${SIM_DIR:-$HOME/wedsite-sim}"
-	GITHUB_URL="https://github.com/alpinedev51/wedsite.git"
-	GHCR_REPO="ghcr.io/alpinedev51/wedsite"
+	# ghcr mode: git from this checkout's `origin` remote, images from
+	# IMAGE_REPO in this checkout's .env (where CI pushes them,
+	# ghcr.io/<github-user>/<repo>).
+	GITHUB_URL="$(git -C "$REPO_DIR" remote get-url origin 2>/dev/null || true)"
+	GHCR_REPO=""
+	[ ! -f "$REPO_DIR/.env" ] || GHCR_REPO="$(env_get "$REPO_DIR/.env" IMAGE_REPO)"
 	REGISTRY_CONTAINER="wedsite-sim-registry"
 	REGISTRY_IMAGE="registry:3.0.0"
 	LOCAL_REPO="localhost:5000/wedsite"
@@ -82,7 +87,14 @@ sim_mode() { cat "$SIM_DIR/.deploy-sim-mode" 2>/dev/null || true; }
 cmd_setup() {
 	local mode="$1" origin repo port
 	case "$mode" in
-	ghcr) origin="$GITHUB_URL" repo="$GHCR_REPO" ;;
+	ghcr)
+		[ -n "$GITHUB_URL" ] || die "ghcr mode clones this checkout's origin remote, and there isn't one."
+		case "$GHCR_REPO" in
+		ghcr.io/*/*) ;;
+		*) die "ghcr mode pulls from IMAGE_REPO in $REPO_DIR/.env; set it to ghcr.io/<github-user>/<repo> (found: '${GHCR_REPO:-none}')." ;;
+		esac
+		origin="$GITHUB_URL" repo="$GHCR_REPO"
+		;;
 	local) origin="file://$REPO_DIR" repo="$LOCAL_REPO" ;;
 	*) die "mode must be ghcr or local" ;;
 	esac

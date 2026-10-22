@@ -105,8 +105,8 @@ services:
       # defaulted, because a wrong value here means real guests get a
       # broken/unreachable RSVP link and there's no good default to fall
       # back to (it has to match wherever ui-wed is actually reachable:
-      # your current LAN IP, or https://wed.austinkylieb.com later).
-      - PUBLIC_SITE_URL=${PUBLIC_SITE_URL:?Set PUBLIC_SITE_URL in .env to wherever ui-wed is actually reachable, e.g. https://192.168.50.9 or https://wed.austinkylieb.com}
+      # your current LAN IP, or your real domain later).
+      - PUBLIC_SITE_URL=${PUBLIC_SITE_URL:?Set PUBLIC_SITE_URL in .env to wherever ui-wed is actually reachable, e.g. https://192.168.1.10 or https://wedding.example.com}
       # Consumed by container_bootstrap.py above -- same variables
       # service-wed/scripts/bootstrap.sh reads, just from this root .env
       # instead. Leave ADMIN_EMAIL/ADMIN_PASSWORD/WEDDING_DATE/RSVP_DEADLINE
@@ -145,11 +145,11 @@ services:
     labels:
       - "traefik.enable=true"
       # No Host() matcher, deliberately: this box is reached by a LAN IP for
-      # now and a real domain (wed.austinkylieb.com) later, and PathPrefix
+      # now and a real domain later, and PathPrefix
       # alone is enough to disambiguate from ui-wed's catch-all below since
       # Traefik prioritizes routers by rule specificity -- so this keeps
       # working unchanged when the hostname changes. Add
-      # "&& Host(`wed.austinkylieb.com`)" back here once that's live if you
+      # "&& Host(`<your domain>`)" back here once that's live if you
       # want to also reject traffic that isn't on the expected domain.
       - "traefik.http.routers.service-wed.rule=PathPrefix(`/api`)"
       - "traefik.http.routers.service-wed.entrypoints=websecure"

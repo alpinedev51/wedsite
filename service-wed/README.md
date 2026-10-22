@@ -106,7 +106,7 @@ Postgres/Redis directly. See [step 2](#2-run-migrations)/[step
 | `CORS_ALLOW_ORIGINS` | `http://localhost:3000,http://localhost:5173` | API | Comma-separated list of allowed frontend origins. Not needed in production, where the frontend and API share one origin |
 | `CLIENT_IP_HEADER` | unset | API | Header holding the real visitor IP, used for per-visitor rate limits. Production sets `CF-Connecting-IP` (Cloudflare). Leave unset when nothing trusted sets it, or a client could fake its IP |
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` | unset | API (first boot) | Seed the one admin account if none exists yet (see note below) |
-| `WEDDING_DATE` / `RSVP_DEADLINE` / `RSVP_OPENS_AT` | unset | API (first boot) | Seed the wedding config. **Durango local time**, e.g. `2027-09-04` or `2027-06-28T23:59:59`; a value with `Z` or an offset is taken as that exact instant |
+| `WEDDING_DATE` / `RSVP_DEADLINE` / `RSVP_OPENS_AT` | unset | API (first boot) | Seed the wedding config. **venue local time**, e.g. `2030-06-15` or `2030-05-01T23:59:59`; a value with `Z` or an offset is taken as that exact instant |
 | `VENUE_NAME` / `VENUE_ADDRESS` / `VENUE_CITY` / `BRIDE_FNAME` / `GROOM_FNAME` | unset | API (first boot) | Optional wedding config fields |
 | `REMINDER_CAP` / `REMINDER_INTERVAL_DAYS` | `2` / `7` | API (first boot) | Automatic reminder limits (see [step 11](#11-reminders-automatic)) |
 
@@ -260,8 +260,8 @@ curl -s -b cookies.txt -X PUT http://localhost:8000/api/v1/admin/wedding \
     "venue_name": "Willow Creek Barn",
     "venue_address": "123 Countryside Rd, Nowhere, USA",
     "venue_city": "Nowhere",
-    "bride_first_name": "Kylie",
-    "groom_first_name": "Austin",
+    "bride_first_name": "Jane",
+    "groom_first_name": "John",
     "reminder_cap": 2,
     "reminder_interval_days": 7
   }'
@@ -271,8 +271,8 @@ Notes:
 - `wedding_date` and `rsvp_deadline` are required; `rsvp_deadline` must not
   be after `wedding_date`, and `rsvp_opens_at` (optional) must be before
   `rsvp_deadline` — both are validated and return `422` if violated.
-- Datetimes **without** a `Z`/offset are read as Durango (venue) local time,
-  e.g. `"2027-06-28T23:59:59"` is the end of June 28 at the venue
+- Datetimes **without** a `Z`/offset are read as venue local time,
+  e.g. `"2030-05-01T23:59:59"` is the end of May 1 at the venue
   (`config/venue.py`). With `Z` or an offset, they're exact instants. Everything
   is stored in UTC.
 - `venue_*`, `bride_first_name` and `groom_first_name` are optional.
@@ -496,7 +496,7 @@ otherwise nothing is sent, but the response is identical either way.
 ### 11. Reminders (automatic)
 
 The `worker` container runs `evaluate_reminders` once a day at 09:00
-**Durango time** (`WorkerSettings.timezone`, so it doesn't depend on the
+**venue time** (`WorkerSettings.timezone`, so it doesn't depend on the
 container's UTC clock). If any households are due, it creates and fans out a
 `REMINDER` campaign to just those households, in one step (no separate
 create/fan-out call needed, unlike the manual campaigns above). Nothing for

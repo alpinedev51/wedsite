@@ -48,12 +48,12 @@ class WorkerSettings:
         # at second 0" -- exactly what dispatch_due_emails needs: pick up
         # anything newly due as soon as reasonably possible.
         cron(dispatch_due_emails),
-        # Once a day at 09:00 Durango time (see timezone below): decide
+        # Once a day at 09:00 venue time (see timezone below): decide
         # who's due a reminder.
         cron(evaluate_reminders, hour=9, minute=0),
     ]
 
-    # Cron hours above are Durango wall-clock time. arq defaults to the
+    # Cron hours above are venue wall-clock time. arq defaults to the
     # system timezone, which is UTC in the container -- hour=9 would fire
     # at 3am at the venue and reminder emails would go out then.
     timezone = VENUE_TZ

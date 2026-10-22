@@ -151,7 +151,7 @@ services:
       - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-wedding_db_user}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@db:5432/${POSTGRES_DB:-wedding_db}
       - REDIS_URL=redis://redis:6379/0
       - RESEND_WEBHOOK_SECRET=${RESEND_WEBHOOK_SECRET:-}
-      - PUBLIC_SITE_URL=${PUBLIC_SITE_URL:?Set PUBLIC_SITE_URL in .env to wherever ui-wed is actually reachable, e.g. https://192.168.50.9 or https://wed.austinkylieb.com}
+      - PUBLIC_SITE_URL=${PUBLIC_SITE_URL:?Set PUBLIC_SITE_URL in .env to wherever ui-wed is actually reachable, e.g. https://192.168.1.10 or https://wedding.example.com}
       - ADMIN_EMAIL=${ADMIN_EMAIL:-}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-}
       - WEDDING_DATE=${WEDDING_DATE:-}

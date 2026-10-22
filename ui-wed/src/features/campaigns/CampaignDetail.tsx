@@ -138,7 +138,7 @@ function CampaignDetail({
               className="flex flex-col gap-3 border-t border-walnut/15 pt-4"
             >
               <label className="flex flex-col gap-1 text-sm text-ink">
-                Reschedule (Durango time)
+                Reschedule (venue time)
                 <input
                   type="datetime-local"
                   step={1}

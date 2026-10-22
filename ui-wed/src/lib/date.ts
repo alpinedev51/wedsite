@@ -3,8 +3,8 @@
 //
 // Why this is needed: the backend stores wedding_date as a UTC instant, and
 // the raw Date getters (getDate(), toLocaleDateString(), ...) resolve against
-// the *viewer's* timezone. An admin in Durango saving midnight on Sept 4
-// stores 2027-09-04T06:00:00Z; a guest reading that in Hawaii would see
+// the *viewer's* timezone. An admin at the venue saving midnight on June 15
+// stores 2030-06-15T06:00:00Z; a guest reading that in Hawaii would see
 // getDate() === 3 and the site would tell them the wrong day. Pinning every
 // display to the venue's zone fixes that for all viewers at once.
 //
@@ -151,11 +151,11 @@ function venueOffsetMs(date: Date): number {
   return asIfUtc - Math.floor(date.getTime() / 1000) * 1000;
 }
 
-/** Turns a bare wall-clock string ("2027-09-04T00:00:00", no offset) into the
+/** Turns a bare wall-clock string ("2030-06-15T00:00:00", no offset) into the
  * instant at which the *venue's* clock reads that time. A time that occurs
  * twice (fall-back) resolves to the first, daylight-time occurrence.
  *
- * Needed because `new Date("2027-09-04T00:00:00")` resolves against whatever
+ * Needed because `new Date("2030-06-15T00:00:00")` resolves against whatever
  * timezone the viewer's browser is in, so the same build of the site would
  * disagree with itself about the wedding date and time from city to city.
  * Used for the VITE_* / hardcoded fallback values in config/wedding.ts; the
@@ -165,8 +165,8 @@ export function civilToInstant(civil: string): Date {
   // Already a real instant ("...Z" or "...-06:00") -- respect it as given
   // rather than reinterpreting it as venue wall-clock time.
   if (/(Z|[+-]\d{2}:?\d{2})$/i.test(value)) return new Date(value);
-  // Date-only ("2027-09-04") means midnight at the venue. Spelled out because
-  // "2027-09-04Z" isn't a format every browser parses.
+  // Date-only ("2030-06-15") means midnight at the venue. Spelled out because
+  // "2030-06-15Z" isn't a format every browser parses.
   const wallClock = /^\d{4}-\d{2}-\d{2}$/.test(value)
     ? `${value}T00:00:00`
     : value;
@@ -195,7 +195,7 @@ function readsAsWallClock(instant: Date, naive: Date): boolean {
 // <input type="datetime-local"> holds a wall-clock time with no timezone,
 // and the backend wants/returns UTC ISO strings. Both helpers use the
 // venue's clock, not the admin's browser, so the admin form means the same
-// thing as the .env dates (Durango time) wherever the admin is browsing from.
+// thing as the .env dates (venue time) wherever the admin is browsing from.
 
 /** UTC ISO string -> "YYYY-MM-DDTHH:MM" in venue time, with ":SS" added
  * when the seconds aren't zero (so re-saving a 23:59:59 deadline keeps it).

@@ -52,8 +52,8 @@ class WeddingUpsertRequest(BaseModel):
     bride_first_name: str | None = None
     groom_first_name: str | None = None
 
-    # A date or time with no timezone ("2027-09-04", "2027-06-28T23:59:59")
-    # means Durango time -- see config/venue.py. Applies to every way a
+    # A date or time with no timezone ("2030-06-15", "2030-05-01T23:59:59")
+    # means venue time -- see config/venue.py. Applies to every way a
     # wedding config comes in: the admin API, bootstrap.sh, and the
     # container bootstrap's .env seeding.
     @field_validator("wedding_date", "rsvp_deadline", "rsvp_opens_at")

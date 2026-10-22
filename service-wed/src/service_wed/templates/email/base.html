@@ -16,7 +16,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{% block title %}Austin &amp; Kylie{% endblock %}</title>
+    <title>{% block title %}{{ couple_names }}{% endblock %}</title>
     <style>
       @media only screen and (max-width: 480px) {
         .container {
@@ -56,7 +56,7 @@
                 <p
                   style="margin: 0; font-size: 14px; letter-spacing: 2px; text-transform: uppercase; color: #97a586;"
                 >
-                  Austin &amp; Kylie
+                  {{ couple_names }}
                 </p>
               </td>
             </tr>
@@ -71,7 +71,7 @@
                 style="padding: 24px; border-top: 1px solid #e5dccc;"
               >
                 <p style="margin: 0; font-size: 12px; color: #8a7a68;">
-                  {% block footer %}With love, Austin &amp; Kylie{% endblock %}
+                  {% block footer %}With love{% if couple_names %}, {{ couple_names }}{% endif %}{% endblock %}
                 </p>
               </td>
             </tr>

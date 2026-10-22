@@ -121,7 +121,7 @@ preflight() {
 	repo_host="${repo_host%%/*}"
 	case "$repo_host" in
 	*.* | *:*) ;;
-	*) die "IMAGE_REPO must be the registry path CI pushes to, e.g. ghcr.io/alpinedev51/wedsite" ;;
+	*) die "IMAGE_REPO must be the registry path CI pushes to, e.g. ghcr.io/<github-user>/<repo>" ;;
 	esac
 	case "$(env_get PUBLIC_SITE_URL)" in
 	https://*) ;;

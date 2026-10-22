@@ -46,7 +46,7 @@ class DashboardService:
             # (not datetimes) avoids an off-by-one from time-of-day alone
             # (e.g. wedding at 3pm tomorrow vs. now at 4pm today).
             # Both sides as venue calendar dates -- UTC dates would roll
-            # over at 6 PM Durango time and count a day early each evening.
+            # over in the evening, venue time, and count a day early each evening.
             days_until_wedding = (
                 venue_date(wedding.wedding_date) - venue_date(now)
             ).days
