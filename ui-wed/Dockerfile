@@ -34,7 +34,7 @@ RUN npm run build
 
 # Unprivileged variant: nginx runs as a non-root user and listens on 8080
 # (ports below 1024 need root). Same nginx otherwise. 1.30.x = stable line.
-FROM nginxinc/nginx-unprivileged:1.30.6-alpine AS runner
+FROM nginxinc/nginx-unprivileged:1.31.7-alpine AS runner
 
 COPY --from=builder /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
