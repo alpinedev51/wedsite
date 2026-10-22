@@ -1,7 +1,7 @@
 # Deploying
 
 ```
-git push (main) ──► GitHub Actions ──► ghcr.io/alpinedev51/wedsite/{service-wed,ui-wed}:sha-<commit>
+git push (main) ──► GitHub Actions ──► ghcr.io/<github-user>/<repo>/{service-wed,ui-wed}:sha-<commit>
                     secret scan,                         │
                     build images                         │ docker pull
                                                          ▼
@@ -36,7 +36,7 @@ Only creating the server differs: **[Hetzner](#option-a-hetzner)** or
 2. **Build:** `service-wed` and `ui-wed`, for `linux/amd64`. The worker runs
    the `service-wed` image, so there's no third image. ui-wed's fallback text
    comes from GitHub repository variables (below).
-3. **Push:** to `ghcr.io/alpinedev51/wedsite/<image>`, tagged
+3. **Push:** to `ghcr.io/<github-user>/<repo>/<image>`, tagged
    `sha-<full commit sha>` and `latest`. The run summary prints the deploy
    command.
 4. **Deploy (CD):** manual, on purpose. Nothing reaches guests until you run
@@ -85,7 +85,7 @@ answers.
    the site. The server then needs no GitHub credentials.
    *If you'd rather keep them private:* create a classic personal access token
    with only `read:packages`, then run this on the server:
-   `echo <token> | docker login ghcr.io -u alpinedev51 --password-stdin`.
+   `echo <token> | docker login ghcr.io -u <github-user> --password-stdin`.
 
 ## Choose a host
 
@@ -121,8 +121,9 @@ the instance cost by roughly a third and fits the time until the wedding.
   (shared vCPU, x86).
 - SSH key: yours. (Add it under Security → SSH Keys first.)
 - Firewall: the one from step 1.
-- **Cloud config:** paste `deploy/cloud-init.yml`. To use Tailscale, put a
-  one-time auth key in it first.
+- **Cloud config:** paste `deploy/cloud-init.yml`, after setting `REPO` in
+  it to your GitHub repo (`<github-user>/<repo>`). To use Tailscale, put a
+  one-time auth key in it too.
 - Optional: enable **Backups** (daily server images, 7 kept).
 
 Then continue with [Both hosts: configure and deploy](#both-hosts-configure-and-deploy).
@@ -171,7 +172,7 @@ resource doesn't surprise you.
   - Metadata version: **V2 only**.
   - Termination protection: **enable**.
   - **User data:** paste `deploy/cloud-init.yml`, the same file Hetzner
-    uses.
+    uses, after setting `REPO` in it to your GitHub repo.
 
 The setup script picks up the key AWS installed for the `ubuntu` user and
 gives it to `wedsite` as well. `ubuntu` stays as AWS's default admin
@@ -206,7 +207,7 @@ sudo -iu wedsite                                          # ...then, after SSM
 **Configure and deploy:**
 
 ```bash
-nano /opt/wedsite/.env           # every runtime value; IMAGE_REPO=ghcr.io/alpinedev51/wedsite
+nano /opt/wedsite/.env           # every runtime value; IMAGE_REPO=ghcr.io/<github-user>/<repo>
 /opt/wedsite/deploy/deploy.sh
 ```
 

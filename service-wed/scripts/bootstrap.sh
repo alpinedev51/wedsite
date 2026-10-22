@@ -9,8 +9,8 @@
 #
 # Required env vars (set in .env or export before running):
 #   ADMIN_EMAIL, ADMIN_PASSWORD   -- the one admin account this app has
-#   WEDDING_DATE, RSVP_DEADLINE   -- Durango local time, e.g. 2027-09-04 or
-#                                    2027-06-28T23:59:59 (see .env.example)
+#   WEDDING_DATE, RSVP_DEADLINE   -- venue local time, e.g. 2030-06-15 or
+#                                    2030-05-01T23:59:59 (see .env.example)
 #   POSTGRES_PASSWORD             -- needed by docker-compose.yml itself
 #
 # Optional env vars (sensible defaults if unset):

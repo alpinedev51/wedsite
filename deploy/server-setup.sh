@@ -4,14 +4,14 @@
 # Run as root. Safe to re-run: every step checks what's already there.
 #
 # Normally run on first boot by deploy/cloud-init.yml. By hand:
-#   curl -fsSL https://raw.githubusercontent.com/alpinedev51/wedsite/main/deploy/server-setup.sh -o setup.sh
-#   sudo bash setup.sh
+#   curl -fsSL https://raw.githubusercontent.com/<github-user>/<repo>/main/deploy/server-setup.sh -o setup.sh
+#   sudo REPO_URL=https://github.com/<github-user>/<repo>.git bash setup.sh
 #
 # What it does:
 #   - installs security updates, Docker Engine + compose plugin, git, curl
 #   - Docker: rotated logs, containers survive a Docker upgrade (live-restore)
 #   - 2 GB swap (the CPX11 has 2 GB RAM)
-#   - automatic security updates, rebooting at 09:00 UTC (3am Durango) when needed
+#   - automatic security updates, rebooting at 09:00 UTC (night-time in US time zones) when needed
 #   - a non-root admin user ($DEPLOY_USER) with your SSH key, docker + sudo
 #   - SSH: keys only, no root login (only once the admin user has a key)
 #   - host firewall (ufw): deny all incoming except SSH. The provider's
@@ -20,13 +20,13 @@
 #   - optional Tailscale, for SSH without any open port
 #   - /opt/wedsite: sparse checkout + .env (from .env.example, chmod 600)
 #
-# Settings (environment variables, all optional):
+# Settings (environment variables; only REPO_URL is required):
 #   DEPLOY_USER        admin user to create             (default: wedsite)
 #   SSH_PUBKEY         public key for that user         (default: the keys
 #                      the provider installed -- root's on Hetzner, the
 #                      `ubuntu` user's on AWS)
 #   TAILSCALE_AUTHKEY  join your tailnet with Tailscale SSH (default: skip)
-#   REPO_URL           git repo                         (default: GitHub wedsite)
+#   REPO_URL           git repo to clone, e.g. https://github.com/<github-user>/<repo>.git
 #   APP_DIR            where the app lives              (default: /opt/wedsite)
 
 set -euo pipefail
@@ -35,11 +35,14 @@ main() {
 	DEPLOY_USER="${DEPLOY_USER:-wedsite}"
 	SSH_PUBKEY="${SSH_PUBKEY:-}"
 	TAILSCALE_AUTHKEY="${TAILSCALE_AUTHKEY:-}"
-	REPO_URL="${REPO_URL:-https://github.com/alpinedev51/wedsite.git}"
+	REPO_URL="${REPO_URL:-}"
 	APP_DIR="${APP_DIR:-/opt/wedsite}"
 	export DEBIAN_FRONTEND=noninteractive
 
 	[ "$(id -u)" -eq 0 ] || die "run as root (sudo bash $0)."
+	case "$REPO_URL" in
+	"" | *"<"*) die "set REPO_URL to your repo, e.g. REPO_URL=https://github.com/<github-user>/<repo>.git" ;;
+	esac
 	# shellcheck source=/dev/null
 	. /etc/os-release
 	[ "${ID:-}" = ubuntu ] || die "this script is for Ubuntu (found: ${ID:-unknown})."
@@ -139,7 +142,7 @@ APT::Periodic::Unattended-Upgrade "1";
 APT::Periodic::AutocleanInterval "7";
 EOF
 	# Ubuntu's defaults cover security updates. Add Docker's repo, and
-	# reboot for kernel updates at 09:00 UTC = 3am in Durango (containers
+	# reboot for kernel updates at 09:00 UTC, night-time in the US (containers
 	# come back on their own: restart: unless-stopped).
 	write_if_changed /etc/apt/apt.conf.d/52wedsite-unattended-upgrades <<'EOF' || true
 Unattended-Upgrade::Origins-Pattern {

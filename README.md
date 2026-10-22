@@ -61,7 +61,7 @@ or suppressed addresses) show as **failed** on the dashboard. If the Resend
 account is blocked for a while (daily quota used up, bad API key), emails
 wait and go out once that's fixed.
 
-**Automatic reminders** run every day at 09:00 Durango time. A household gets
+**Automatic reminders** run every day at 09:00 venue time. A household gets
 one only if all of these are true:
 - RSVPs are open (after `RSVP_OPENS_AT`, before `RSVP_DEADLINE`);
 - it was sent the RSVP invitation email;
@@ -98,7 +98,7 @@ are skipped. The HTML comes from `service-wed/src/service_wed/templates/email/`.
 ### One-time setup in Resend
 
 1. **Create an account** at resend.com.
-2. **Add your domain** (**Domains → Add domain**, e.g. `austinkylieb.com`).
+2. **Add your domain** (**Domains → Add domain**, e.g. `example.com`).
    Resend lists a few DNS records: a DKIM `TXT` record (proves the email
    really comes from you), plus an `MX` and an SPF `TXT` record on a `send.`
    subdomain (where bounce reports go). Add them in Cloudflare **DNS** as
@@ -108,13 +108,13 @@ are skipped. The HTML comes from `service-wed/src/service_wed/templates/email/`.
    delivery to Gmail and Yahoo.
 3. **Create an API key** (**API Keys**): permission **Sending access**,
    limited to your domain. It's shown once; it goes in `RESEND_API_KEY`.
-4. **Pick the from-address**, e.g. `Austin & Kylie <hello@austinkylieb.com>`,
+4. **Pick the from-address**, e.g. `Your Names <hello@example.com>`,
    for `RESEND_FROM_ADDRESS`. It must be on the verified domain. Resend
    only sends: guests who hit **Reply** write to this address, so use one
    that reaches a real inbox (Cloudflare Email Routing can forward it), or
    replies are lost.
 5. **Add the webhook** (**Webhooks → Add endpoint**):
-   - URL: `https://wed.austinkylieb.com/api/v1/webhooks/resend`
+   - URL: `https://<your-site-domain>/api/v1/webhooks/resend`
    - Events: `email.delivered`, `email.opened`, `email.clicked`,
      `email.bounced`, `email.complained`, `email.failed`, `email.suppressed`
    - Copy its **signing secret** (`whsec_...`) into `RESEND_WEBHOOK_SECRET`.
@@ -240,9 +240,9 @@ email worker).
 | `service-wed/.env` | `service-wed/docker-compose.yml`, `service-wed/scripts/bootstrap.sh` | `service-wed/.env.example` |
 | `ui-wed/.env.local` | `npm run dev` only (Vite `VITE_*` values) | `ui-wed/.env.example` |
 
-All three are gitignored. Wedding dates in all of them are **Durango (venue)
-local time**, e.g. `WEDDING_DATE=2027-09-04` or
-`RSVP_DEADLINE=2027-06-28T23:59:59`; see the note in `.env.example`.
+All three are gitignored. Wedding dates in all of them are **venue
+local time**, e.g. `WEDDING_DATE=2030-06-15` or
+`RSVP_DEADLINE=2030-05-01T23:59:59`; see the note in `.env.example`.
 
 ## Running locally
 

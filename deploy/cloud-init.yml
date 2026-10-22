@@ -5,7 +5,8 @@
 # It runs deploy/server-setup.sh on first boot; see that file for what it
 # does. Progress: /var/log/wedsite-setup.log on the server.
 #
-# Before pasting, optionally fill in TAILSCALE_AUTHKEY below to reach the
+# Before pasting, set REPO below to your GitHub repo (<github-user>/<repo>),
+# and optionally fill in TAILSCALE_AUTHKEY below to reach the
 # server over Tailscale (then port 22 can stay closed). Use a ONE-TIME,
 # short-expiry key: anything in cloud config stays readable from inside
 # the server (the provider's metadata service). Leave it empty to use plain
@@ -18,5 +19,7 @@ runcmd:
     - -c
     - |
       set -euo pipefail
-      curl -fsSL --retry 5 https://raw.githubusercontent.com/alpinedev51/wedsite/main/deploy/server-setup.sh -o /root/server-setup.sh
-      TAILSCALE_AUTHKEY='' bash /root/server-setup.sh >/var/log/wedsite-setup.log 2>&1
+      REPO='<github-user>/<repo>'
+      case "$REPO" in *"<"*) echo "cloud-init: set REPO before pasting" >/var/log/wedsite-setup.log; exit 1 ;; esac
+      curl -fsSL --retry 5 "https://raw.githubusercontent.com/$REPO/main/deploy/server-setup.sh" -o /root/server-setup.sh
+      REPO_URL="https://github.com/$REPO.git" TAILSCALE_AUTHKEY='' bash /root/server-setup.sh >/var/log/wedsite-setup.log 2>&1

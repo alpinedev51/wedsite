@@ -63,13 +63,20 @@ def build_household_email_context(
     # pre-formatted, not as raw datetime objects.
     if wedding is not None:
         context.update(
-            # Venue-local, not UTC: an end-of-day deadline in Durango is
+            # Venue-local, not UTC: an end-of-day deadline at the venue is
             # already the next day in UTC (see config/venue.py).
             wedding_date=format_venue_date(wedding.wedding_date),
             rsvp_deadline=format_venue_date(wedding.rsvp_deadline),
             venue_name=wedding.venue_name,
             venue_address=wedding.venue_address,
         )
+        # The email header and sign-off ("With love, ..."), from the names
+        # on the admin Wedding tab. Left out if either is missing; the
+        # templates then just say "With love".
+        if wedding.groom_first_name and wedding.bride_first_name:
+            context["couple_names"] = (
+                f"{wedding.groom_first_name} & {wedding.bride_first_name}"
+            )
     return context
 
 
