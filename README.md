@@ -1,20 +1,84 @@
 # :star: wedsite
 
-A full-stack wedding website for one wedding: event details, photos, things to
-do, magic-link RSVPs, and an admin area for the guest list and email campaigns
-(save the date, invitations, reminders, final details, thank-yous).
+A full-stack wedding website for one wedding. Guests get the event details,
+photos, travel and things to do, and RSVP through a private link emailed to
+their household. The couple gets an admin area to manage the guest list, send
+email campaigns (save the date, invitations, final details, thank-yous), and
+track RSVPs. Reminders to RSVP go out automatically.
 
 | Package | What | Stack |
 |---|---|---|
 | [`ui-wed`](ui-wed/README.md) | Public site + admin UI | Vite, React 19, TypeScript, Tailwind; served by nginx |
 | [`service-wed`](service-wed/README.md) | API + background worker | FastAPI, SQLAlchemy (async), Alembic, PostgreSQL 18, Redis + arq, Resend |
 
+## How it works
+
+### For guests
+
+1. Each household gets an RSVP invitation email with a private link
+   (`/rsvp/<token>`). The link is the only "login": anyone who has it can
+   view and change that household's RSVP.
+2. On that page they answer for everyone in the household: attending,
+   declining or "Not Sure Yet", plus meal choice, dietary notes, a message
+   to the couple and a song request. A confirmation email follows.
+3. They can come back and change their answers until the RSVP deadline. The
+   form opens with what they entered last time.
+4. Lost the link? **RSVP** in the menu leads to `/find-invitation`, where
+   entering a name and the email on file sends the link again.
+
+The rest of the site (Our Story, Wedding Party, Things To Do, Travel, Photos,
+Registry) is public. Before `RSVP_OPENS_AT`, RSVP pages show "Coming Soon".
+
+### For the couple
+
+The admin area is at `/admin`. In production it sits behind Cloudflare Access
+as well as the admin password. It has four tabs: **Dashboard**, **Guests**,
+**Campaigns** and **Wedding**.
+
+A typical timeline:
+
+| When | Do this | Where |
+|---|---|---|
+| Once | Check the dates, venue and reminder settings | **Wedding** tab |
+| Once, then whenever it changes | Upload the guest list CSV (one row per guest). Re-uploading adds and updates without duplicating anyone (it never removes guests). Tip: add yourselves as a household, so you receive every email too | **Guests** tab ([CSV format](service-wed/README.md#6-build-and-upload-the-guest-list)) |
+| Months before | Save the Date campaign | **Campaigns** tab |
+| When RSVPs open | RSVP Invite campaign: the email with each household's private link | **Campaigns** tab |
+| Until the deadline | Nothing: reminders are automatic (below). Watch responses and delivery problems | **Dashboard** tab |
+| Weeks before | Final Details campaign | **Campaigns** tab |
+| After | Thank You campaign. Download the guest list with RSVPs for the caterer and seating | **Campaigns** tab, **Guests** tab |
+
+A campaign is created as a **draft** with a send time (**New Campaign** →
+**Create Draft**). **Fan Out Now** locks it in: it creates one email per
+household with an email address, and they go out at the scheduled time.
+Nothing is sent while it's still a draft.
+
+### Emails behind the scenes
+
+The worker container sends every email through Resend. It checks for emails
+that are due every minute, sends at most a few per second, and retries
+temporary failures by itself. Emails Resend can't deliver (bounces, invalid
+or suppressed addresses) show as **failed** on the dashboard. If the Resend
+account is blocked for a while (daily quota used up, bad API key), emails
+wait and go out once that's fixed.
+
+**Automatic reminders** run every day at 09:00 Durango time. A household gets
+one only if all of these are true:
+- RSVPs are open (after `RSVP_OPENS_AT`, before `RSVP_DEADLINE`);
+- it was sent the RSVP invitation email;
+- someone in it hasn't answered, or answered "Not Sure Yet";
+- it has had fewer than `reminder_cap` reminders, and at least
+  `reminder_interval_days` have passed since its invitation or last reminder.
+
+Both settings are on the **Wedding** tab. Uploading a guest list never sends
+anything by itself. Details: [service-wed README, step 11](service-wed/README.md#11-reminders-automatic).
+
 ## Deploying
 
-Production runs on a single small server (Hetzner or AWS) behind a Cloudflare
-Tunnel. GitHub Actions scans for secrets and builds the images, and
-`deploy/deploy.sh` on the server deploys a chosen commit. Setup, the CI/CD
-pipeline, both hosting options, and how to test it all locally are in
+Production runs on a single small server (currently AWS EC2; Hetzner also
+works) behind a Cloudflare Tunnel. GitHub Actions scans for secrets, runs the
+lint checks and tests, and builds the images; `deploy/deploy.sh` on the server
+deploys a chosen commit. Setup, the CI/CD pipeline, both hosting options,
+monitoring and how to test it all locally are in
 **[deploy/README.md](deploy/README.md)**.
 
 ## Repository layout
@@ -34,7 +98,9 @@ pipeline, both hosting options, and how to test it all locally are in
 
 Production request path: `browser → Cloudflare → tunnel (cloudflared) →
 Traefik → /api/* to service-wed, everything else to ui-wed`. The worker sends
-email; Postgres and Redis sit on an internal network.
+email; Postgres and Redis sit on an internal network. Health checks:
+`/api/v1/health/ready` (API and database) and `/api/v1/health/worker` (the
+email worker).
 
 ## Environment files
 
@@ -83,12 +149,11 @@ no CORS setup is needed. To call the API cross-origin instead, as
 `ui-wed/.env.example` does, copy it to `.env.local`. The API already allows
 `http://localhost:5173` (`CORS_ALLOW_ORIGINS`).
 
-**Try the admin area:** go to `http://localhost:5173/admin`. It redirects to
-`/admin/login`, then to the dashboard at `/admin/admin_dashboard`, which has
-**Dashboard**, **Guests**, **Campaigns** and **Wedding** tabs. On the
-**Guests** tab you can download and upload the guest list CSV (format:
-[service-wed README, step 6](service-wed/README.md#6-build-and-upload-the-guest-list)).
-**Log out** revokes the session on the server.
+**Try the admin area:** go to `http://localhost:5173/admin` and log in with
+`ADMIN_EMAIL`/`ADMIN_PASSWORD` (see [How it works](#for-the-couple)). With
+no `RESEND_API_KEY` set, the worker prints emails to its log instead of
+sending them (`docker compose logs worker`), so local testing never emails
+anyone.
 
 ### Option 2: the production stack, locally
 
@@ -121,10 +186,14 @@ afterwards. Ports can be changed with `HTTPS_PORT`, `TRAEFIK_DASHBOARD_PORT`,
 
 ## Checks
 
+The same checks CI runs, from the repo root:
+
 ```bash
-cd service-wed && uv run ruff check src && uv run mypy src
-cd ui-wed && npm run lint && npm run build     # build also type-checks (tsc -b)
+(cd service-wed && uv run ruff check src tests && uv run ruff format --check src tests \
+  && uv run mypy src && uv run pytest -q)
+(cd ui-wed && npm run lint && npm run format:check && npm run build)   # build also type-checks
 ```
 
-There's no automated test suite yet. Changes are checked against a running
-stack; see [service-wed README → Testing](service-wed/README.md#testing).
+`service-wed/tests/` covers the email rules (reminders, sending, retries) and
+needs no database. Everything else is checked against a running stack; see
+[service-wed README → Testing](service-wed/README.md#testing).
