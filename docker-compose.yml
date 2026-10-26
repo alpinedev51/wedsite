@@ -16,7 +16,7 @@ x-logging: &logging
 
 services:
   cloudflared:
-    image: cloudflare/cloudflared:2026.10.3
+    image: cloudflare/cloudflared:2026.10.4
     container_name: wedding_tunnel
     restart: unless-stopped
     command: tunnel --no-autoupdate run
