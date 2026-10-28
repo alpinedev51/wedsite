@@ -30,6 +30,13 @@ class SQLAlchemyGuestRepository(GuestRepository):
         await self.session.flush()
         return guest
 
+    async def delete(self, guest: Guest) -> None:
+        # The ORM cascade removes a loaded rsvp_response too; the database
+        # cascade covers one that isn't loaded. email_messages.guest_id is
+        # SET NULL, so past emails are kept.
+        await self.session.delete(guest)
+        await self.session.flush()
+
     async def count_by_rsvp_status(self) -> dict[RsvpStatus | None, int]:
         # LEFT JOIN so guests with no RsvpResponse row still get counted --
         # grouping over a nullable joined column puts them under a None key.

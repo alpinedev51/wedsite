@@ -20,6 +20,7 @@ export interface HouseholdAdminView {
   display_name: string;
   contact_email: string | null;
   invite_token: string;
+  plus_ones_allowed: number;
   guests: GuestAdminView[];
 }
 

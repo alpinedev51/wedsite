@@ -17,11 +17,13 @@ from service_wed.ports.uow import UnitOfWorkPort
 # type free text (dietary notes, song requests, messages), so a guest could
 # plant e.g. =HYPERLINK(...) in the file the couple opens. A leading ' makes
 # the app show the text as-is (OWASP's "CSV injection" advice).
-_FORMULA_PREFIXES = ("=", "+", "-", "@", "\t", "\r")
+# Also read by the import (services/guest_list.py), which strips this
+# guard back off when an export is re-uploaded.
+FORMULA_PREFIXES = ("=", "+", "-", "@", "\t", "\r")
 
 
 def _safe_cell(value: str) -> str:
-    return "'" + value if value.startswith(_FORMULA_PREFIXES) else value
+    return "'" + value if value.startswith(FORMULA_PREFIXES) else value
 
 
 _CSV_HEADER = [
@@ -29,11 +31,15 @@ _CSV_HEADER = [
     "ContactEmail",
     "GuestName",
     "IsPlusOne",
+    # Per household (repeated on each of its rows); the import reads it back.
+    "PlusOnesAllowed",
     "RsvpStatus",
     "MealChoice",
     "DietaryNotes",
     "SongRequest",
     "MessageToCouple",
+    "HouseholdId",
+    "GuestId",
 ]
 
 
@@ -60,11 +66,14 @@ class ExportService:
                         household.contact_email or "",
                         guest.full_name,
                         "true" if guest.is_plus_one else "false",
+                        str(household.plus_ones_allowed),
                         guest.rsvp_status.value if guest.rsvp_status else "",
                         guest.meal_choice or "",
                         guest.dietary_notes or "",
                         household.song_request or "",
                         household.message_to_couple or "",
+                        str(household.id),
+                        str(guest.id),
                     ]
                 )
         return buffer.getvalue()

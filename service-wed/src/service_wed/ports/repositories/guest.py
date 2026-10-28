@@ -16,6 +16,10 @@ class GuestRepository(Protocol):
         """Add a guest to an existing household."""
         ...
 
+    async def delete(self, guest: Guest) -> None:
+        """Remove a guest and (by cascade) their RSVP answer."""
+        ...
+
     async def count_by_rsvp_status(self) -> dict[RsvpStatus | None, int]:
         """Count every guest, grouped by RSVP status. A `None` key means the
         guest has no RsvpResponse row yet (their household hasn't submitted

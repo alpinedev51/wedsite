@@ -26,6 +26,10 @@ class InvitationResponse(BaseModel):
 
     id: uuid.UUID
     display_name: str
+    # How many guests this household may bring. When above 0, its guests
+    # with is_plus_one are the ones it brought, edited in the form's
+    # "Bringing a guest?" section instead of as invited guests.
+    plus_ones_allowed: int = 0
     guests: list[InvitationGuestDetail]
     # Returned so the RSVP form can pre-fill an edit: the submit replaces
     # these (and each guest's dietary_notes), so a form that started blank

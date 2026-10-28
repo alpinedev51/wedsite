@@ -21,6 +21,10 @@ export interface InvitationGuestDetail {
 export interface InvitationResponse {
   id: string;
   display_name: string;
+  // How many guests the household may bring. When above 0, guests with
+  // is_plus_one are ones the household brought (edited in the form's
+  // "Bringing a guest?" section, not shown as invited guests).
+  plus_ones_allowed: number;
   guests: InvitationGuestDetail[];
   message_to_couple: string | null;
   song_request: string | null;
@@ -34,8 +38,20 @@ export interface GuestRsvpSubmission {
   dietary_notes: string | null;
 }
 
+// A guest the household is bringing; always attending. guest_id is set when
+// editing one already saved, null for a new one.
+export interface PlusOneSubmission {
+  guest_id: string | null;
+  full_name: string;
+  meal_choice: string | null;
+  dietary_notes: string | null;
+}
+
 export interface HouseholdRsvpSubmitRequest {
   responses: GuestRsvpSubmission[];
+  // The household's full list of plus-ones: saved ones left out are
+  // removed. Omit it to leave them unchanged.
+  plus_ones?: PlusOneSubmission[];
   message_to_couple: string | null;
   song_request: string | null;
 }

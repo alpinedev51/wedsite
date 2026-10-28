@@ -142,7 +142,13 @@ function GuestListSection() {
           Headers must be exactly:{" "}
           <code>HouseholdName, ContactEmail, GuestName, IsPlusOne</code>.
           Re-uploading is safe &mdash; guests are matched and updated by name
-          within a household, not duplicated.
+          within a household, not duplicated. To rename a household or guest,
+          use Download CSV, edit the names, and upload that file back (keep its
+          ID columns). Leaving ContactEmail blank on every row of a household
+          removes its saved email. Optional <code>PlusOnesAllowed</code> column:
+          how many guests a household may bring (e.g. 1). Their RSVP page then
+          asks for each guest&rsquo;s name, meal and dietary notes, and adds
+          them to the household as a plus-one.
         </p>
         <input
           type="file"
@@ -192,7 +198,18 @@ function GuestListSection() {
                       {household.contact_email ?? "—"}
                     </td>
                     <td className="py-2 pr-4">
-                      {household.guests.map((g) => g.full_name).join(", ")}
+                      {household.guests
+                        .map((g) =>
+                          g.is_plus_one
+                            ? `${g.full_name} (plus-one)`
+                            : g.full_name,
+                        )
+                        .join(", ")}
+                      {household.plus_ones_allowed > 0 && (
+                        <span className="block text-xs text-ink/60">
+                          May bring {household.plus_ones_allowed}
+                        </span>
+                      )}
                     </td>
                   </tr>
                 ))}
