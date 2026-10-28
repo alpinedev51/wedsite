@@ -23,6 +23,7 @@ class HouseholdAdminView(BaseModel):
     display_name: str
     contact_email: EmailStr | None
     invite_token: str
+    plus_ones_allowed: int = 0
     guests: list[GuestAdminView]
 
     model_config = ConfigDict(from_attributes=True)

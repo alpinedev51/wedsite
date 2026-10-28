@@ -323,6 +323,18 @@ Row rules (`services/guest_list.py`):
 - Every guest in a household always has the household's contact email as
   their own `email` field (there's no separate per-guest email column in
   the CSV format).
+- **Optional `PlusOnesAllowed` column**: how many guests a household may
+  bring (`0`–`10`, or `yes`/`no` for 1/0). The last value in a household's
+  rows wins; blank on every row means 0; a file without the column leaves
+  allowances as they are. When it's above 0, the household's RSVP page asks
+  "Bringing a guest?" (shown once someone in it is attending) and saves each
+  guest as a plus-one in that household (`IsPlusOne=true`, attending, with
+  meal and dietary notes). Whoever has the RSVP link edits or removes them
+  later; plus-ones get no link or allowance of their own. Lowering the
+  allowance never deletes a guest -- the import warns instead.
+- `IsPlusOne` on its own (with `PlusOnesAllowed` 0) still works the old way:
+  list a placeholder like "Guest of Ann" and the household answers for them
+  like any other guest.
 
 Upload it:
 

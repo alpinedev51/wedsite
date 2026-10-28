@@ -22,6 +22,8 @@ function RsvpPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  // Bumped after each save to remount RsvpForm on the reloaded invitation.
+  const [formVersion, setFormVersion] = useState(0);
 
   useEffect(() => {
     // No synchronous setState here for the !token case (react-hooks/
@@ -48,6 +50,16 @@ function RsvpPage() {
     if (!token) return;
     await submitRsvp(token, payload);
     setSaved(true);
+    // Reload so a plus-one added just now comes back with its saved ID
+    // (a second submit then edits them instead of adding them again).
+    // If the reload fails, the form keeps what was typed; the backend
+    // also matches a resubmitted plus-one by name.
+    try {
+      setInvitation(await getInvitation(token));
+      setFormVersion((v) => v + 1);
+    } catch {
+      // The save itself succeeded; nothing to report.
+    }
   }
 
   if (!token) {
@@ -86,7 +98,11 @@ function RsvpPage() {
         )}
 
         {invitation && (
-          <RsvpForm invitation={invitation} onSubmit={handleSubmit} />
+          <RsvpForm
+            key={formVersion}
+            invitation={invitation}
+            onSubmit={handleSubmit}
+          />
         )}
       </Container>
     </Section>
