@@ -185,7 +185,11 @@ class DeliveryService:
 
         try:
             provider_message_id = await self.email_sender.send(**send_args)
-        except Exception as exc:
+        # Deliberately broad: any failure from the provider call (SDK error,
+        # network, timeout, bug in a sender) must be recorded as a failed
+        # attempt so the message is retried or marked FAILED, never left
+        # stuck in SENDING. _record_failure handles EmailSendError specially.
+        except Exception as exc:  # noqa: BLE001
             await self._record_failure(message_id, attempt, blocked_since, exc)
             return
 
@@ -209,7 +213,7 @@ class DeliveryService:
         should run again; otherwise the message ends up SCHEDULED (quota) or
         FAILED."""
         error = f"attempt {attempt}: {exc}"
-        now = dt.datetime.now(dt.timezone.utc)
+        now = dt.datetime.now(dt.UTC)
 
         if isinstance(exc, EmailSendError) and exc.account_blocked:
             if (

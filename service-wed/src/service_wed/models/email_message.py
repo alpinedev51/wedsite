@@ -13,9 +13,9 @@ from service_wed.models.base import Base, Timestamps, UUIDPrimaryKey, str_enum
 
 if TYPE_CHECKING:
     from service_wed.models.campaign import Campaign
-    from service_wed.models.household import Household
     from service_wed.models.email_event import EmailEvent
     from service_wed.models.guest import Guest
+    from service_wed.models.household import Household
 
 
 class EmailMessage(UUIDPrimaryKey, Timestamps, Base):

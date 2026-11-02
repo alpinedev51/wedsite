@@ -6,11 +6,11 @@ import csv
 import io
 
 import pytest
+from test_guest_import import _household, _import
 
 from service_wed.domain.errors import ValidationError
 from service_wed.services.exports import ExportService
 from service_wed.services.guest_list import GuestListService
-from test_guest_import import _household, _import
 
 A_HEADER = "HouseholdName,ContactEmail,GuestName,PhysicalAddress,IsPlusOne\n"
 

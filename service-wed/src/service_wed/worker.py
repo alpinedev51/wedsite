@@ -6,7 +6,7 @@ below (functions, cron_jobs, redis_settings, on_startup, on_shutdown) are
 arq's contract, not something this codebase invented.
 """
 
-from typing import Any
+from typing import Any, ClassVar
 
 from arq.cron import cron
 from arq.worker import func
@@ -34,7 +34,7 @@ async def shutdown(ctx: dict[str, Any]) -> None:
 class WorkerSettings:
     # Registered so they're invokable by name via enqueue_job, in addition
     # to however cron_jobs below triggers them.
-    functions = [
+    functions: ClassVar[list[Any]] = [
         # send_one() itself stops at MAX_SEND_ATTEMPTS and marks the message
         # FAILED. arq's own cap sits a little above that, because a job
         # interrupted by a worker restart also counts as a try in arq.
@@ -43,7 +43,7 @@ class WorkerSettings:
         evaluate_reminders,
     ]
 
-    cron_jobs = [
+    cron_jobs: ClassVar[list[Any]] = [
         # No hour/minute given -> arq's croniter default is "every minute,
         # at second 0" -- exactly what dispatch_due_emails needs: pick up
         # anything newly due as soon as reasonably possible.

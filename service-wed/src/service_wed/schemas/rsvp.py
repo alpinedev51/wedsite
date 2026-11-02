@@ -1,5 +1,7 @@
 import uuid
+
 from pydantic import BaseModel, Field, field_validator
+
 from service_wed.domain.value_objects import RsvpStatus
 
 

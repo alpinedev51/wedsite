@@ -44,7 +44,7 @@ class _EmailRepo:
         self.invited_ids = invited_ids
 
     async def get_invitation_sent_at(self, household_ids):
-        now = dt.datetime.now(dt.timezone.utc)
+        now = dt.datetime.now(dt.UTC)
         return {hid: now for hid in household_ids if hid in self.invited_ids}
 
 
@@ -66,7 +66,7 @@ async def test_manual_reminder_campaign_skips_households_never_invited():
         type=CampaignType.REMINDER,
         subject="Reminder",
         template_key="reminder",
-        scheduled_for=dt.datetime.now(dt.timezone.utc),
+        scheduled_for=dt.datetime.now(dt.UTC),
     )
     messages = await CampaignService(uow)._build_email_messages(campaign)
     assert [m.recipient for m in messages] == ["alpha@example.com"]
@@ -85,7 +85,7 @@ def test_failed_and_suppressed_webhooks_mark_the_email_failed():
 
 
 def test_csv_from_excel_with_byte_order_mark_keeps_first_column_name():
-    text = _decode_csv("﻿HouseholdName,ContactEmail\n".encode("utf-8"))
+    text = _decode_csv("﻿HouseholdName,ContactEmail\n".encode())
     assert text.startswith("HouseholdName,")
 
 
@@ -176,7 +176,7 @@ async def test_unmatched_webhook_is_retried_only_while_recent(
     app.include_router(webhooks.router)
     app.dependency_overrides[get_delivery_service] = lambda: _UnmatchedDelivery()
 
-    created = (dt.datetime.now(dt.timezone.utc) - age).isoformat()
+    created = (dt.datetime.now(dt.UTC) - age).isoformat()
     body = {
         "type": "email.suppressed",
         "created_at": created,

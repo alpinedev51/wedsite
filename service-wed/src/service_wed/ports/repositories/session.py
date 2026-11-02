@@ -1,7 +1,6 @@
-from typing import Protocol
-
 import datetime as dt
 import uuid
+from typing import Protocol
 
 from service_wed.models.admin_session import AdminSession
 

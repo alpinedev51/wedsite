@@ -95,8 +95,8 @@ async def seed_wedding(container: AppContainer) -> None:
         venue_city=_env_or_none("VENUE_CITY"),
         bride_first_name=_env_or_none("BRIDE_FNAME"),
         groom_first_name=_env_or_none("GROOM_FNAME"),
-        reminder_cap=int(os.environ.get("REMINDER_CAP", 2)),
-        reminder_interval_days=int(os.environ.get("REMINDER_INTERVAL_DAYS", 7)),
+        reminder_cap=int(os.environ.get("REMINDER_CAP", "2")),
+        reminder_interval_days=int(os.environ.get("REMINDER_INTERVAL_DAYS", "7")),
     )
     await container.new_wedding_service().upsert(request)
     print("bootstrap: seeded wedding config.")

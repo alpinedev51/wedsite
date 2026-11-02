@@ -53,7 +53,7 @@ class AuthService:
 
             # 2. Hash it before storing in the database
             token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
-            expires_at = dt.datetime.now(dt.timezone.utc) + dt.timedelta(days=7)
+            expires_at = dt.datetime.now(dt.UTC) + dt.timedelta(days=7)
 
             # 3. Store the hash
             await self.uow.admin_session_repo.create(

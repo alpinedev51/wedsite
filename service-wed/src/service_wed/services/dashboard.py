@@ -41,7 +41,7 @@ class DashboardService:
 
         days_until_wedding = 0
         if wedding is not None:
-            now = dt.datetime.now(dt.timezone.utc)
+            now = dt.datetime.now(dt.UTC)
             # Whole calendar days, not a raw timedelta -- comparing dates
             # (not datetimes) avoids an off-by-one from time-of-day alone
             # (e.g. wedding at 3pm tomorrow vs. now at 4pm today).

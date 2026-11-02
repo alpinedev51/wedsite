@@ -6,9 +6,9 @@ Lifecycle:  create() -> DRAFT (freely editable, nothing sent yet)
 """
 
 from __future__ import annotations
+
 import datetime as dt
 import uuid
-
 
 from service_wed.config.settings import settings
 from service_wed.config.venue import format_venue_date
@@ -26,8 +26,8 @@ from service_wed.models.household import Household
 from service_wed.models.wedding import Wedding
 from service_wed.ports.uow import UnitOfWorkPort
 from service_wed.schemas.campaign import (
-    CampaignCreateRequest,
     CampaignAdminView,
+    CampaignCreateRequest,
     CampaignDetailView,
 )
 from service_wed.schemas.common import Page
@@ -112,7 +112,7 @@ class CampaignService:
         if not template_exists(request.template_key):
             raise ValidationError(f"Unknown email template: {request.template_key}")
 
-        now = dt.datetime.now(dt.timezone.utc)
+        now = dt.datetime.now(dt.UTC)
         _ensure_future(request.scheduled_for, now=now)
 
         async with self.uow:
@@ -175,7 +175,7 @@ class CampaignService:
                 raise ConflictError(
                     f"Campaign {campaign_id} is {campaign.status}; only DRAFT campaigns can be rescheduled."
                 )
-            now = dt.datetime.now(dt.timezone.utc)
+            now = dt.datetime.now(dt.UTC)
             _ensure_future(scheduled_for, now=now)
 
             campaign.scheduled_for = scheduled_for

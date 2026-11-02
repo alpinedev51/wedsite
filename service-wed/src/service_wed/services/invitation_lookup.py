@@ -7,8 +7,8 @@ from service_wed.domain.value_objects import EmailStatus, EmailType
 from service_wed.models.email_message import EmailMessage
 from service_wed.models.household import Household
 from service_wed.ports.uow import UnitOfWorkPort
-from service_wed.schemas.invitation import InvitationResponse, MagicLinkRecoveryRequest
 from service_wed.schemas.common import SuccessResponse
+from service_wed.schemas.invitation import InvitationResponse, MagicLinkRecoveryRequest
 from service_wed.services.campaigns import build_household_email_context
 
 _MAGIC_LINK_RECOVERY_SUBJECT = "Your Wedding RSVP Link"
@@ -58,7 +58,7 @@ class InvitationService:
             ]
 
             if matches:
-                now = dt.datetime.now(dt.timezone.utc)
+                now = dt.datetime.now(dt.UTC)
                 wedding = await self.uow.wedding_repo.get()
                 messages = [
                     EmailMessage(

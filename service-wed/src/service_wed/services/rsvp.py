@@ -30,7 +30,7 @@ class RsvpService:
             if not household:
                 raise NotFoundError("Invalid invitation token.")
 
-            now = dt.datetime.now(dt.timezone.utc)
+            now = dt.datetime.now(dt.UTC)
             wedding = await self.uow.wedding_repo.get()
             if wedding:
                 window = rsvp_window(

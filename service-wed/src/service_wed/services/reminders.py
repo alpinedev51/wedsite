@@ -38,7 +38,7 @@ class ReminderService:
             if wedding is None:
                 raise NotFoundError("Wedding configuration has not been set up.")
 
-            now = dt.datetime.now(dt.timezone.utc)
+            now = dt.datetime.now(dt.UTC)
             window = rsvp_window(
                 opens_at=wedding.rsvp_opens_at,
                 deadline=wedding.rsvp_deadline,

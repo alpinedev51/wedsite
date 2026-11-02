@@ -11,12 +11,11 @@ from __future__ import annotations
 import datetime as dt
 import uuid
 from enum import StrEnum
-from typing import Any
+from typing import Any, ClassVar
 
 from sqlalchemy import DateTime, Enum, MetaData, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-
 
 # Stable names for indexes/constraints -> deterministic Alembic autogenerate.
 NAMING_CONVENTION = {
@@ -46,7 +45,7 @@ def str_enum(enum_cls: type[StrEnum], name: str) -> Enum:
 class Base(DeclarativeBase):
     metadata = MetaData(naming_convention=NAMING_CONVENTION)
 
-    type_annotation_map = {
+    type_annotation_map: ClassVar[dict[Any, Any]] = {
         dict[str, Any]: JSONB,
     }
 

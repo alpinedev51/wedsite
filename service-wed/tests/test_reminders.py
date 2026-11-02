@@ -6,7 +6,7 @@ from service_wed.domain.rsvp_window import RsvpWindow, rsvp_window
 from service_wed.ports.repositories.email_message import ReminderStats
 from service_wed.services.reminders import ReminderService
 
-NOW = dt.datetime(2027, 5, 15, 15, 0, tzinfo=dt.timezone.utc)
+NOW = dt.datetime(2027, 5, 15, 15, 0, tzinfo=dt.UTC)
 WEEK = dt.timedelta(days=7)
 
 
@@ -58,8 +58,8 @@ def test_reminder_a_week_after_an_afternoon_invitation_is_due_on_day_7():
 def test_dst_change_does_not_delay_the_weekly_reminder():
     # 09:00 venue time on Mon 2027-03-15 (after the Mar 14 DST change) is
     # only 6 days 23 hours after 09:00 on Mon 2027-03-08.
-    now = dt.datetime(2027, 3, 15, 15, 0, tzinfo=dt.timezone.utc)  # 09:00 MDT
-    last = dt.datetime(2027, 3, 8, 16, 0, tzinfo=dt.timezone.utc)  # 09:00 MST
+    now = dt.datetime(2027, 3, 15, 15, 0, tzinfo=dt.UTC)  # 09:00 MDT
+    last = dt.datetime(2027, 3, 8, 16, 0, tzinfo=dt.UTC)  # 09:00 MST
     stats = ReminderStats(reminder_count=1, last_scheduled_for=last)
     assert is_due(invited_at=now - dt.timedelta(days=30), stats=stats, now=now) is True
 

@@ -13,9 +13,9 @@ from service_wed.adapters.email.resend import ResendEmailSender, _to_send_error
 from service_wed.domain.value_objects import EmailStatus
 from service_wed.ports.email_sender import EmailSendError
 from service_wed.services.delivery import (
-    MAX_SEND_ATTEMPTS,
     ACCOUNT_BLOCKED_GIVE_UP_AFTER,
     ACCOUNT_BLOCKED_RETRY_DELAY,
+    MAX_SEND_ATTEMPTS,
     DeliveryService,
     RetryLater,
     retry_delay,
@@ -54,7 +54,7 @@ class FakeRepo:
         m.scheduled_for = scheduled_for
         m.last_error = last_error
         if m.send_blocked_since is None:
-            m.send_blocked_since = dt.datetime.now(dt.timezone.utc)
+            m.send_blocked_since = dt.datetime.now(dt.UTC)
 
 
 class FakeUow:
@@ -91,7 +91,7 @@ class FakeSender:
 
 
 def make_message(attempts=0, status=EmailStatus.SENDING, blocked_for=None):
-    now = dt.datetime.now(dt.timezone.utc)
+    now = dt.datetime.now(dt.UTC)
     return SimpleNamespace(
         id=uuid.uuid4(),
         # Created long ago on purpose: the give-up clock must not use this.
@@ -182,7 +182,7 @@ async def test_quota_used_up_reschedules_without_using_an_attempt():
     sender = FakeSender(
         EmailSendError("daily quota", retryable=True, account_blocked=True)
     )
-    before = dt.datetime.now(dt.timezone.utc)
+    before = dt.datetime.now(dt.UTC)
     await service(message, sender).send_one(message.id)  # no RetryLater
     # Not FAILED even on the last attempt: it goes out once the quota resets.
     assert message.status == EmailStatus.SCHEDULED

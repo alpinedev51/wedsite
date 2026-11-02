@@ -12,7 +12,6 @@ from service_wed.ports.repositories.email_message import (
     ReminderStats,
 )
 
-
 # A message still SENDING this long after its last update has lost its job
 # (e.g. Redis restarted while the job was queued). claim_due picks it up
 # again. Comfortably longer than the longest gap between attempts

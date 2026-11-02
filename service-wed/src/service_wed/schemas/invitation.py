@@ -1,5 +1,7 @@
 import uuid
+
 from pydantic import BaseModel, ConfigDict, EmailStr
+
 from service_wed.domain.value_objects import RsvpStatus
 
 
