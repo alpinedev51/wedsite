@@ -205,7 +205,13 @@ class SQLAlchemyEmailMessageRepository(EmailMessageRepository):
             .group_by(EmailMessage.household_id)
         )
         result = await self.session.execute(stmt)
-        return {household_id: sent_at for household_id, sent_at in result.all()}
+        # sent_at is never None here (filtered above); the check narrows the
+        # type for mypy, since the column itself is nullable.
+        return {
+            household_id: sent_at
+            for household_id, sent_at in result.all()
+            if sent_at is not None
+        }
 
     async def count_by_status(
         self, campaign_id: uuid.UUID | None = None
