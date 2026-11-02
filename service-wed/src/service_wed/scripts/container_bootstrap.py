@@ -16,9 +16,9 @@ the DB directly through this app's own service layer instead of going
 through bootstrap.sh's login-then-curl-itself dance, which only works once
 uvicorn is already listening -- here, uvicorn hasn't started yet.
 
-Deliberately doesn't replicate bootstrap.sh's step 6 (upload a blank guest
-list) -- an empty CSV import is a genuine no-op (nothing to dedupe/insert),
-so there's nothing worth automating there.
+Deliberately doesn't replicate bootstrap.sh's step 6 (a check that the
+guest list import endpoint answers) -- it imports nothing (a CSV with no
+guests is rejected), so there's nothing worth automating here.
 """
 
 from __future__ import annotations

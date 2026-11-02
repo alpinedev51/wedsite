@@ -22,6 +22,7 @@ class HouseholdAdminView(BaseModel):
     id: uuid.UUID
     display_name: str
     contact_email: EmailStr | None
+    physical_address: str | None = None
     invite_token: str
     plus_ones_allowed: int = 0
     guests: list[GuestAdminView]

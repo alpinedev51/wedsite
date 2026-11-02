@@ -30,6 +30,8 @@ _CSV_HEADER = [
     "HouseholdName",
     "ContactEmail",
     "GuestName",
+    # Per household, like ContactEmail; for the couple's mailing list only.
+    "PhysicalAddress",
     "IsPlusOne",
     # Per household (repeated on each of its rows); the import reads it back.
     "PlusOnesAllowed",
@@ -65,6 +67,7 @@ class ExportService:
                         household.display_name,
                         household.contact_email or "",
                         guest.full_name,
+                        household.physical_address or "",
                         "true" if guest.is_plus_one else "false",
                         str(household.plus_ones_allowed),
                         guest.rsvp_status.value if guest.rsvp_status else "",
