@@ -19,6 +19,10 @@ from service_wed.services.exports import FORMULA_PREFIXES
 _REQUIRED_COLUMNS = ("HouseholdName", "ContactEmail", "GuestName", "IsPlusOne")
 _ID_COLUMNS = ("HouseholdId", "GuestId")
 _PLUS_ONES_COLUMN = "PlusOnesAllowed"
+_ADDRESS_COLUMN = "PhysicalAddress"
+# Several lines of street/city/country fit easily; much longer is almost
+# surely a pasted cell from the wrong column.
+_MAX_ADDRESS_LENGTH = 500
 # Plenty for a wedding; also the RSVP request's cap on plus-ones.
 _MAX_PLUS_ONES = 10
 
@@ -43,6 +47,8 @@ class _CleanedGuestRow:
     household_name_given: bool = True
     # None = the cell is blank or the file has no PlusOnesAllowed column.
     plus_ones_allowed: int | None = None
+    # None = the cell is blank or the file has no PhysicalAddress column.
+    physical_address: str | None = None
 
 
 @dataclass
@@ -97,6 +103,16 @@ def _is_blank_row(row: dict) -> bool:
     return True
 
 
+def _line_breaks(row: dict) -> int:
+    """How many line breaks the row's cells contain. A row with more cells
+    than headers keeps the extras in a list."""
+    count = 0
+    for value in row.values():
+        for cell in value if isinstance(value, list) else [value]:
+            count += (cell or "").count("\n")
+    return count
+
+
 def _parse_id(
     row: dict, column: str, line_number: int, errors: list[str]
 ) -> uuid.UUID | None:
@@ -137,15 +153,36 @@ def _parse_plus_ones_allowed(
     return None
 
 
+def _parse_address(
+    row: dict, line_number: int, guest_name: str, errors: list[str]
+) -> str | None:
+    """The mailing address, tidied: each line trimmed, blank lines dropped,
+    Windows line breaks made plain. Blank = not given on this row."""
+    raw = _cell(row, _ADDRESS_COLUMN)
+    lines = [line.strip() for line in raw.splitlines()]
+    address = "\n".join(line for line in lines if line)
+    if not address:
+        return None
+    if len(address) > _MAX_ADDRESS_LENGTH:
+        errors.append(
+            f"Row {line_number} ({guest_name}): PhysicalAddress is "
+            f"{len(address)} characters long; the limit is {_MAX_ADDRESS_LENGTH}. "
+            "Check that the cell holds only the address."
+        )
+        return None
+    return address
+
+
 def _parse_rows(
     text_data: str,
-) -> tuple[list[_CleanedGuestRow], list[str], bool]:
+) -> tuple[list[_CleanedGuestRow], list[str], bool, bool]:
     """Check every row before anything touches the database. Problems that
     would put bad data in (no guest name, an invalid email or ID) are
     collected from the whole file and raised together, so nothing is
     imported until the file is clean. Softer problems come back as
-    warnings. Also returns whether the file has a PlusOnesAllowed column
-    (older files don't, and then allowances are left as they are)."""
+    warnings. Also returns whether the file has the PlusOnesAllowed and
+    PhysicalAddress columns (older files don't, and then those values are
+    left as they are)."""
     reader = csv.DictReader(io.StringIO(text_data))
     if reader.fieldnames is None:
         raise ValidationError("The file is empty.")
@@ -158,14 +195,19 @@ def _parse_rows(
             f"Headers must be: {', '.join(_REQUIRED_COLUMNS)}."
         )
     has_plus_ones_column = _PLUS_ONES_COLUMN in reader.fieldnames
+    has_address_column = _ADDRESS_COLUMN in reader.fieldnames
 
     cleaned_rows: list[_CleanedGuestRow] = []
     errors: list[str] = []
     warnings: list[str] = []
+    # Messages name rows the way a spreadsheet numbers them (header = row
+    # 1). reader.line_num counts file lines, and a cell that spans several
+    # lines (a multi-line PhysicalAddress) is still one spreadsheet row, so
+    # those extra lines are subtracted.
+    lines_inside_cells = 0
     for row in reader:
-        # reader.line_num is the file line this row ended on, so it stays
-        # right even when a quoted cell spans several lines.
-        line_number = reader.line_num
+        lines_inside_cells += _line_breaks(row)
+        line_number = reader.line_num - lines_inside_cells
         if _is_blank_row(row):
             continue
 
@@ -212,6 +254,11 @@ def _parse_rows(
             if has_plus_ones_column
             else None
         )
+        physical_address = (
+            _parse_address(row, line_number, guest_name, errors)
+            if has_address_column
+            else None
+        )
 
         # A blank HouseholdName means this guest IS their own household
         # (unless the row has a HouseholdId, see household_name_given).
@@ -228,6 +275,7 @@ def _parse_rows(
                 guest_id=guest_id,
                 household_name_given=bool(given_household_name),
                 plus_ones_allowed=plus_ones_allowed,
+                physical_address=physical_address,
             )
         )
 
@@ -237,7 +285,7 @@ def _parse_rows(
         )
     if not cleaned_rows:
         raise ValidationError("The file has a header row but no guests.")
-    return cleaned_rows, warnings, has_plus_ones_column
+    return cleaned_rows, warnings, has_plus_ones_column, has_address_column
 
 
 class GuestListService:
@@ -273,8 +321,8 @@ class GuestListService:
         """
         Expects a CSV with headers:
         HouseholdName, ContactEmail, GuestName, IsPlusOne
-        and optionally HouseholdId, GuestId (written by the export) and
-        PlusOnesAllowed.
+        and optionally PhysicalAddress, PlusOnesAllowed, and HouseholdId,
+        GuestId (written by the export). Column order doesn't matter.
 
         Matching rows to what's already stored:
         - A row with a HouseholdId belongs to that household. If the row's
@@ -297,13 +345,21 @@ class GuestListService:
         number given in its rows wins (warning if they disagree); all rows
         blank = 0. Lowering it never removes a guest someone already added.
 
+        PhysicalAddress, per household (only if the file has the column): a
+        mailing address the couple keeps here; the site doesn't use it. If
+        rows disagree, an address that differs from the saved one wins (it's
+        the one just edited), else the last one; with a warning either way.
+        All rows blank removes the saved address, with a warning.
+
         Rows are checked before anything is saved: a blank GuestName or an
         invalid email or ID anywhere stops the whole import, listing every
         such row. Fully blank rows are skipped. IsPlusOne accepts
         true/false, yes/no, y/n, 1/0 or blank (= false).
         """
         text_data = _decode_csv(file_bytes)
-        cleaned_rows, warnings, has_plus_ones_column = _parse_rows(text_data)
+        cleaned_rows, warnings, has_plus_ones_column, has_address_column = _parse_rows(
+            text_data
+        )
 
         async with self.uow:
             plans = await self._plan(cleaned_rows, warnings)
@@ -311,7 +367,11 @@ class GuestListService:
             emails_removed: set[uuid.UUID] = set()
             for plan in plans:
                 household = await self._apply(
-                    plan, warnings, emails_removed, has_plus_ones_column
+                    plan,
+                    warnings,
+                    emails_removed,
+                    has_plus_ones_column,
+                    has_address_column,
                 )
                 touched[household.id] = household
 
@@ -513,9 +573,10 @@ class GuestListService:
         warnings: list[str],
         emails_removed: set[uuid.UUID],
         has_plus_ones_column: bool,
+        has_address_column: bool,
     ) -> Household:
-        """Write one household: create or rename it, settle its email and
-        plus-one allowance, then update/add its guests."""
+        """Write one household: create or rename it, settle its email,
+        address and plus-one allowance, then update/add its guests."""
         email = _settle_email(plan, warnings)
         plus_ones_allowed = (
             _settle_plus_ones_allowed(plan, warnings) if has_plus_ones_column else None
@@ -602,6 +663,8 @@ class GuestListService:
             _set_plus_ones_allowed(
                 household, plus_ones_allowed, existing_guests, warnings
             )
+        if has_address_column:
+            _set_address(household, plan, warnings)
         return household
 
 
@@ -648,6 +711,47 @@ def _settle_plus_ones_allowed(plan: _HouseholdPlan, warnings: list[str]) -> int:
             f"{listed}. Used the last one, {given[-1][0]}."
         )
     return given[-1][0]
+
+
+def _set_address(
+    household: Household, plan: _HouseholdPlan, warnings: list[str]
+) -> None:
+    """Save the household's mailing address from its rows.
+
+    A household's address is repeated on each of its rows in the export, so
+    an admin who edits it in one row leaves the old one in the others.
+    "Last row wins" would then quietly keep the old address, so when rows
+    disagree, an address that differs from the saved one wins."""
+    saved = household.physical_address
+    given = [
+        (r.physical_address, r.line_number) for r in plan.rows if r.physical_address
+    ]
+    if not given:
+        if saved:
+            household.physical_address = None
+            warnings.append(
+                f"Removed the saved PhysicalAddress from {_q(household.display_name)}, "
+                "since none of its rows has one."
+            )
+        return
+
+    chosen, chosen_line = given[-1]
+    if len({address for address, _ in given}) > 1:
+        edited = [(a, line) for a, line in given if a != saved]
+        if saved and edited:
+            chosen, chosen_line = edited[-1]
+            why = "the one that differs from the saved address"
+        else:
+            why = "the last one"
+        rows = ", ".join(str(line) for _, line in given)
+        warnings.append(
+            f"Household {_q(household.display_name)} has different PhysicalAddresses "
+            f"on rows {rows}. Used {why}, from row {chosen_line}: "
+            f"{_q(chosen.replace(chr(10), ', '))}. Give every row of a household "
+            "the same address to avoid this."
+        )
+    if chosen != saved:
+        household.physical_address = chosen
 
 
 def _set_plus_ones_allowed(

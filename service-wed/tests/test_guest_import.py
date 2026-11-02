@@ -30,6 +30,7 @@ class _Households:
             contact_email=contact_email,
             invite_token=invite_token,
             plus_ones_allowed=0,
+            physical_address=None,
             guests=[],
         )
         self.rows.append(household)
@@ -598,10 +599,21 @@ async def test_windows_line_endings_quotes_and_multiline_cells():
 
 
 @pytest.mark.asyncio
-async def test_error_row_numbers_count_multiline_cells():
-    text = HEADER + '"Two\nLines",a@example.com,Ann,false\nX,bad,Bob,false\n'
+async def test_error_row_numbers_match_the_spreadsheet():
+    """A cell spanning two lines is still one spreadsheet row, so Bob is
+    row 3 (as Excel/Sheets show it), not file line 4."""
+    text = (
+        HEADER
+        + '"Two\nLines",a@example.com,Ann,false\n'
+        + '"Three\r\nLines\r\nHere",a@example.com,Cy,false\n'
+        + "X,bad,Bob,false\n"
+    )
     with pytest.raises(ValidationError, match="Row 4 \\(Bob\\)"):
         await _import(text)
+    with pytest.raises(ValidationError, match="Row 3 \\(Bob\\)"):
+        await _import(
+            HEADER + '"Two\nLines",a@example.com,Ann,false\nX,bad,Bob,false\n'
+        )
 
 
 @pytest.mark.asyncio

@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Bootstraps a fresh environment end-to-end: brings up the docker compose
 # stack, runs migrations, registers the one admin account, logs in, seeds
-# the wedding config, and uploads a blank (headers-only) guest list.
+# the wedding config, and checks the guest list import endpoint (it
+# uploads no guests).
 #
 # Covers README.md's "Usage" steps 1-6; everything from step 7 on (reviewing
 # the real guest list, sending campaigns, guests RSVPing, ...) is deliberate
@@ -206,9 +207,14 @@ api_call PUT /api/v1/admin/wedding "$WEDDING_BODY"
 echo
 
 # ---------------------------------------------------------------------------
-# 6. Upload a blank (headers-only) guest list
+# 6. Check the guest list import endpoint
 # ---------------------------------------------------------------------------
-echo "==> [6/6] Uploading a blank guest list..."
+# Sends a headers-only CSV. The import rejects a file with no guests (HTTP
+# 400, "The file has a header row but no guests."), so that answer means the
+# endpoint is up and accepts this admin's session, and nothing was imported.
+# (This step used to expect a 2xx for the same file; the import has refused
+# empty files since the CSV checks were added.)
+echo "==> [6/6] Checking the guest list import endpoint..."
 printf 'HouseholdName,ContactEmail,GuestName,IsPlusOne\n' > "$BLANK_CSV"
 
 IMPORT_RESPONSE="$(curl -s -w '\n%{http_code}' -b "$COOKIE_JAR" -c "$COOKIE_JAR" \
@@ -216,11 +222,12 @@ IMPORT_RESPONSE="$(curl -s -w '\n%{http_code}' -b "$COOKIE_JAR" -c "$COOKIE_JAR"
   -F "file=@$BLANK_CSV;type=text/csv")"
 IMPORT_STATUS="$(printf '%s' "$IMPORT_RESPONSE" | tail -n1)"
 IMPORT_BODY="$(printf '%s' "$IMPORT_RESPONSE" | sed '$d')"
-if [[ ! "$IMPORT_STATUS" =~ ^2 ]]; then
-  echo "ERROR: guest list import failed (HTTP $IMPORT_STATUS): $IMPORT_BODY" >&2
+if [[ "$IMPORT_STATUS" == "400" && "$IMPORT_BODY" == *"no guests"* ]]; then
+  echo "    Import endpoint ready (no guests uploaded)."
+else
+  echo "ERROR: guest list import check failed (HTTP $IMPORT_STATUS): $IMPORT_BODY" >&2
   exit 1
 fi
-echo "$IMPORT_BODY"
 
 echo
 echo "==> Done. $ADMIN_EMAIL can log in at POST $API_BASE_URL/api/v1/auth/login."

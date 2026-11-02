@@ -393,9 +393,10 @@ async def test_export_includes_plus_ones_allowed_and_round_trips():
     uow.household_repo.list_all_with_guests = list_all_with_guests
     csv_text = await ExportService(uow).export_guests_csv()
     header, ann_row, abe_row = csv_text.strip().splitlines()
-    assert header.split(",")[4] == "PlusOnesAllowed"
-    assert ann_row.split(",")[4] == "1"
-    assert abe_row.split(",")[3:5] == ["true", "1"]
+    # PhysicalAddress (column 4) sits before IsPlusOne and PlusOnesAllowed.
+    assert header.split(",")[5] == "PlusOnesAllowed"
+    assert ann_row.split(",")[5] == "1"
+    assert abe_row.split(",")[4:6] == ["true", "1"]
 
     result = await GuestListService(uow).import_csv(csv_text.encode())
     assert result.warnings == []

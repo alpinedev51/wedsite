@@ -28,6 +28,11 @@ class Household(UUIDPrimaryKey, Timestamps, Base):
         SmallInteger, default=0, server_default=text("0")
     )
 
+    # Mailing address for paper invitations/letters. Only the admin sets it
+    # (CSV PhysicalAddress column); the site itself never sends anything to
+    # it and guests never see it. Free text, may span several lines.
+    physical_address: Mapped[str | None] = mapped_column(Text)
+
     # Household-level RSVP extras. rsvp_submitted_at/updated_at are a deliberate
     # denormalization: an aggregate over the guests' responses, read on every
     # Find-Your-Invitation / dashboard hit.

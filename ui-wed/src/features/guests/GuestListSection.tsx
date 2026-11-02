@@ -139,16 +139,30 @@ function GuestListSection() {
       >
         <h2 className="text-xl">Upload guest list</h2>
         <p className="text-sm text-ink/70">
-          Headers must be exactly:{" "}
+          Required headers:{" "}
           <code>HouseholdName, ContactEmail, GuestName, IsPlusOne</code>.
           Re-uploading is safe &mdash; guests are matched and updated by name
           within a household, not duplicated. To rename a household or guest,
           use Download CSV, edit the names, and upload that file back (keep its
           ID columns). Leaving ContactEmail blank on every row of a household
-          removes its saved email. Optional <code>PlusOnesAllowed</code> column:
-          how many guests a household may bring (e.g. 1). Their RSVP page then
-          asks for each guest&rsquo;s name, meal and dietary notes, and adds
-          them to the household as a plus-one.
+          removes its saved email.
+        </p>
+        <p className="text-sm text-ink/70">
+          Optional <code>PhysicalAddress</code> column: the household&rsquo;s
+          mailing address, for your own records (guests never see it). Put the
+          same address on each of the household&rsquo;s rows; leaving it blank
+          on all of them removes the saved address. Optional{" "}
+          <code>PlusOnesAllowed</code> column: how many guests a household may
+          bring (e.g. 1). Their RSVP page then asks for each guest&rsquo;s name,
+          meal and dietary notes, and adds them to the household as a plus-one.
+        </p>
+        <p className="text-sm text-ink/70">
+          Rows with the same HouseholdName are one household. For two different
+          families with the same name, give each its own name, e.g. &ldquo;John
+          &amp; Mary Smith&rdquo; and &ldquo;Dave &amp; Sue Smith&rdquo;. Guests
+          see this name (&ldquo;Dear &hellip;&rdquo; in emails and on their RSVP
+          page). Don&rsquo;t type your own HouseholdId or GuestId; the site
+          creates those.
         </p>
         <input
           type="file"
@@ -187,6 +201,7 @@ function GuestListSection() {
                 <tr className="border-b border-walnut/20 font-utility uppercase tracking-wider text-ink/70">
                   <th className="py-2 pr-4">Household</th>
                   <th className="py-2 pr-4">Contact Email</th>
+                  <th className="py-2 pr-4">Address</th>
                   <th className="py-2 pr-4">Guests</th>
                 </tr>
               </thead>
@@ -196,6 +211,9 @@ function GuestListSection() {
                     <td className="py-2 pr-4">{household.display_name}</td>
                     <td className="py-2 pr-4">
                       {household.contact_email ?? "—"}
+                    </td>
+                    <td className="whitespace-pre-line py-2 pr-4">
+                      {household.physical_address ?? "—"}
                     </td>
                     <td className="py-2 pr-4">
                       {household.guests

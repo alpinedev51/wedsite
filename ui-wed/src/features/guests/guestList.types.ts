@@ -19,6 +19,7 @@ export interface HouseholdAdminView {
   id: string;
   display_name: string;
   contact_email: string | null;
+  physical_address: string | null;
   invite_token: string;
   plus_ones_allowed: number;
   guests: GuestAdminView[];

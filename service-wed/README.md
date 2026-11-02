@@ -127,8 +127,9 @@ before you do.
 > the optional wedding fields), but only if they don't already exist, so
 > it's safe on every restart. Set those in `.env` before `docker compose up`
 > and you can skip straight to [step 6](#6-build-and-upload-the-guest-list).
-> [`scripts/bootstrap.sh`](scripts/bootstrap.sh) automates steps 1–6
-> (including uploading a blank guest list). Unlike the first-boot seeding,
+> [`scripts/bootstrap.sh`](scripts/bootstrap.sh) automates steps 1–5 and
+> checks that the guest list import works (it uploads no guests; step 6 is
+> yours). Unlike the first-boot seeding,
 > it re-applies `.env`'s admin password and wedding values on every run, so
 > use it to push `.env` changes to an existing stack. It needs only
 > `docker`, `curl` and `python3` on the host; the database steps run inside
@@ -294,20 +295,24 @@ internal delivery-tuning knobs, not something a guest needs. It 404s with a
 
 ### 6. Build and upload the guest list
 
-The CSV needs exactly these headers:
+The CSV needs these headers (in any order); `PhysicalAddress` and
+`PlusOnesAllowed` are optional:
 
 ```csv
-HouseholdName,ContactEmail,GuestName,IsPlusOne
-The Bartons,bartons@example.com,Alice Barton,false
-The Bartons,,Bob Barton,false
-,,Solo Sam,false
-,grandma@example.com,Grandma Betty,false
+HouseholdName,ContactEmail,GuestName,PhysicalAddress,IsPlusOne
+The Bartons,bartons@example.com,Alice Barton,"12 Oak St, Denver, CO 80202",false
+The Bartons,,Bob Barton,"12 Oak St, Denver, CO 80202",false
+,,Solo Sam,,false
+,grandma@example.com,Grandma Betty,,false
 ```
 
 Row rules (`services/guest_list.py`):
 
 - **`GuestName` is always required.** There's no fallback — a blank one is a
-  hard error and rejects that row.
+  hard error that rejects the whole file (nothing is imported; the error
+  lists every bad row). Invalid emails, bad `PlusOnesAllowed` values,
+  over-long addresses and made-up IDs are handled the same way, and so is a
+  file with a header row but no guests.
 - **`HouseholdName` may be blank.** A guest with no household given becomes
   their own one-person household, named after themselves.
 - **`ContactEmail` may be blank.** Households are matched/merged **by name**,
@@ -316,10 +321,11 @@ Row rules (`services/guest_list.py`):
   inherits that household's email once one exists for it (the example
   above: Bob Barton has no email of his own but ends up sharing
   `bartons@example.com` because Alice's row, same household, provided it).
-- **A row with both `ContactEmail` and `HouseholdName` blank** is still
-  imported (as its own no-email household), but flagged back as a
-  *warning*, not an error — the import doesn't fail, but you should go
-  fix that guest's info before sending anything.
+- **A household with no `ContactEmail` on any of its rows** is still
+  imported, but flagged back as a *warning*, not an error — the import
+  doesn't fail, but that household won't get any emails until you add one.
+- Messages name rows the way a spreadsheet numbers them (header = row 1),
+  even when a cell, like a multi-line address, spans several lines.
 - Every guest in a household always has the household's contact email as
   their own `email` field (there's no separate per-guest email column in
   the CSV format).
@@ -335,6 +341,22 @@ Row rules (`services/guest_list.py`):
 - `IsPlusOne` on its own (with `PlusOnesAllowed` 0) still works the old way:
   list a placeholder like "Guest of Ann" and the household answers for them
   like any other guest.
+- **Optional `PhysicalAddress` column** (4th in the export): the
+  household's mailing address, for the couple's own records -- guests
+  never see it and the site sends nothing there. Stored once per household
+  (`households.physical_address`) and repeated on each of its rows in the
+  export. A cell may span several lines. If a household's rows disagree, an
+  address that differs from the saved one wins (the export repeats the old
+  one on every row, so editing just one row still works), otherwise the
+  last; either way the import warns. Blank on every row removes the saved
+  address (with a warning); a file without the column leaves addresses as
+  they are. Over 500 characters rejects the file.
+- **Two different households with the same name**: rows with the same
+  `HouseholdName` are always one household, and two households can't share
+  a name, so give each a distinct one ("John & Mary Smith" / "Dave & Sue
+  Smith"). Guests see it -- emails open with "Dear {HouseholdName}," and
+  it heads their RSVP page. `HouseholdId`/`GuestId` can't be used for this:
+  they only come from the export, and a made-up one rejects the file.
 
 Upload it:
 
@@ -346,9 +368,9 @@ curl -s -b cookies.txt -X POST http://localhost:8000/api/v1/admin/households/imp
 ```json
 {
   "success": true,
-  "message": "Guest list imported successfully. 1 row(s) need attention -- see warnings.",
+  "message": "Guest list imported successfully. 1 thing(s) need attention -- see warnings.",
   "warnings": [
-    "Row 4 (Solo Sam): no ContactEmail and no HouseholdName -- imported as their own household with no contact email, so they won't receive any campaign emails until one is added."
+    "Household \"Solo Sam\" has no ContactEmail, so it won't get the invitation, reminders, or RSVP confirmation. Add an email and upload again, or send them their RSVP link yourself."
   ]
 }
 ```
@@ -617,10 +639,16 @@ docker compose down -v
 
 ## Testing
 
-There is currently **no automated test suite** (no `pytest` tests exist yet,
-despite `pytest`/`pytest-asyncio` being dev dependencies) — everything below
-is manual verification against a running stack, which is also how this app
-has actually been exercised so far.
+Unit tests cover the CSV import (`tests/test_guest_import.py`), plus-ones
+(`tests/test_plus_ones.py`), the PhysicalAddress column
+(`tests/test_physical_address.py`) and assorted fixes; they use in-memory
+stand-ins for the database, so they need no running stack:
+
+```bash
+uv run pytest
+```
+
+Everything below is manual verification against a running stack.
 
 ### Static checks
 
@@ -901,10 +929,10 @@ Worth knowing before you rely on these:
   directly) for real delivery state, not the campaign's own `status` field.
   There's also no way to cancel a campaign once fanned out short of editing
   the database directly.
-- **CSV import: conflicting emails for one household.** If two rows for the
-  same `HouseholdName` give different `ContactEmail`s, the first one wins,
-  and the second is dropped without a warning.
-- **No automated test suite.** See [Testing](#testing) — everything is
-  manual verification against a running stack right now.
+- **Only part of the code has automated tests.** See [Testing](#testing):
+  the CSV import, plus-ones and addresses have unit tests; the rest is
+  checked by hand against a running stack.
+- **No way to delete a guest or household** from the admin UI or the CSV
+  (re-uploading never removes anyone); that takes a database edit.
 - **No self-service admin registration**, by design — see
   [step 3](#3-seed-the-admin-account).
