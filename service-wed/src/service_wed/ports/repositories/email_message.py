@@ -1,6 +1,6 @@
 import datetime as dt
 import uuid
-from typing import Protocol, NamedTuple
+from typing import NamedTuple, Protocol
 
 from service_wed.domain.value_objects import (
     EmailStatus,

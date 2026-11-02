@@ -43,7 +43,7 @@ async def get_household(
 @router.post("/import", status_code=http_status.HTTP_200_OK)
 async def import_guest_list(
     guest_list_service: Annotated[GuestListService, Depends(get_guest_list_service)],
-    file: UploadFile = File(...),
+    file: Annotated[UploadFile, File()],
 ) -> GuestImportResponse:
     file_bytes = await file.read()
     return await guest_list_service.import_csv(file_bytes)

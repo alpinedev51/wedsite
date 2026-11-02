@@ -40,7 +40,7 @@ async def require_admin(
         if session is None:
             raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid session.")
 
-        now = dt.datetime.now(dt.timezone.utc)
+        now = dt.datetime.now(dt.UTC)
         if session.revoked_at is not None or session.expires_at <= now:
             raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Session expired.")
 

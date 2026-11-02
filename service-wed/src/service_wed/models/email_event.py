@@ -8,7 +8,7 @@ from sqlalchemy import DateTime, ForeignKey, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from service_wed.domain.value_objects import EmailEventType
-from service_wed.models.base import Base, UUIDPrimaryKey, Timestamps, str_enum
+from service_wed.models.base import Base, Timestamps, UUIDPrimaryKey, str_enum
 
 if TYPE_CHECKING:
     from service_wed.models.email_message import EmailMessage

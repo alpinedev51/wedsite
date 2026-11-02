@@ -518,7 +518,7 @@ async def test_case_only_rename_of_household_and_guest():
         ID_HEADER + f"SMITHS,s@example.com,ann smith,false,{hid},{ann}\n", uow
     )
     household = _household(uow, "SMITHS")
-    assert [g.full_name for g in household.guests][0] == "ann smith"
+    assert household.guests[0].full_name == "ann smith"
     assert len(household.guests) == 2
     assert result.warnings == []
 

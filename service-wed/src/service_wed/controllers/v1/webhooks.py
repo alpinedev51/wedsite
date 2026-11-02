@@ -21,8 +21,8 @@ retried webhooks more precisely than this composite key does.
 """
 
 import base64
-import datetime as dt
 import binascii
+import datetime as dt
 import hashlib
 import hmac
 import logging
@@ -178,7 +178,5 @@ async def resend_webhook(
 
 def _is_recent(occurred_at: dt.datetime) -> bool:
     if occurred_at.tzinfo is None:  # Resend sends UTC; be safe if it's unmarked
-        occurred_at = occurred_at.replace(tzinfo=dt.timezone.utc)
-    return (
-        dt.datetime.now(dt.timezone.utc) - occurred_at < _UNMATCHED_EVENT_RETRY_WINDOW
-    )
+        occurred_at = occurred_at.replace(tzinfo=dt.UTC)
+    return dt.datetime.now(dt.UTC) - occurred_at < _UNMATCHED_EVENT_RETRY_WINDOW

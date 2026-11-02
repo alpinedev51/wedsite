@@ -1,7 +1,9 @@
 import datetime as dt
 import uuid
+
 from pydantic import BaseModel, ConfigDict, Field
-from service_wed.domain.value_objects import CampaignType, CampaignStatus
+
+from service_wed.domain.value_objects import CampaignStatus, CampaignType
 from service_wed.schemas.dashboard import DeliveryStatsResponse
 
 

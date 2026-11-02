@@ -1,6 +1,5 @@
 # pagination, error envelope, shared types
 import uuid
-from typing import Generic, TypeVar
 
 from pydantic import BaseModel
 
@@ -14,10 +13,7 @@ class IdResponse(BaseModel):
     id: uuid.UUID
 
 
-T = TypeVar("T")
-
-
-class Page(BaseModel, Generic[T]):
+class Page[T](BaseModel):
     """Generic offset/limit page envelope for admin list endpoints.
 
     `total` is the full row count regardless of `limit`/`offset`, so the

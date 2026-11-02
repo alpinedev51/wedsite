@@ -30,7 +30,7 @@ def as_venue_time(value: dt.datetime) -> dt.datetime:
     Mirrors ui-wed's civilToInstant, which reads such values the same way."""
     if value.tzinfo is None:
         value = value.replace(tzinfo=VENUE_TZ)
-    return value.astimezone(dt.timezone.utc)
+    return value.astimezone(dt.UTC)
 
 
 def venue_date(instant: dt.datetime) -> dt.date:

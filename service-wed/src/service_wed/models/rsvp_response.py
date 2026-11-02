@@ -7,7 +7,7 @@ from sqlalchemy import ForeignKey, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from service_wed.domain.value_objects import RsvpStatus
-from service_wed.models.base import UUIDPrimaryKey, Timestamps, Base, str_enum
+from service_wed.models.base import Base, Timestamps, UUIDPrimaryKey, str_enum
 
 if TYPE_CHECKING:
     from service_wed.models.guest import Guest

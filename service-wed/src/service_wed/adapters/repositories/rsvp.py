@@ -4,9 +4,9 @@ from sqlalchemy import func
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from service_wed.domain.value_objects import RsvpStatus
 from service_wed.models.rsvp_response import RsvpResponse
 from service_wed.ports.repositories.rsvp import RsvpRepository
-from service_wed.domain.value_objects import RsvpStatus
 
 
 class SQLAlchemyRsvpRepository(RsvpRepository):
@@ -29,10 +29,10 @@ class SQLAlchemyRsvpRepository(RsvpRepository):
 
         upsert = stmt.on_conflict_do_update(
             index_elements=["guest_id"],
-            set_=dict(
-                status=stmt.excluded.status,
-                meal_choice=stmt.excluded.meal_choice,
-                dietary_notes=stmt.excluded.dietary_notes,
+            set_={
+                "status": stmt.excluded.status,
+                "meal_choice": stmt.excluded.meal_choice,
+                "dietary_notes": stmt.excluded.dietary_notes,
                 # BUGFIX: Timestamps.updated_at's onupdate=func.now() is a
                 # client-side column default; it is not guaranteed to be
                 # merged into an INSERT ... ON CONFLICT DO UPDATE's SET
@@ -42,8 +42,8 @@ class SQLAlchemyRsvpRepository(RsvpRepository):
                 # in sync the same way -- it was redundant with created_at/
                 # updated_at, which already capture "first submitted" and
                 # "last changed"; see models/rsvp_response.py.)
-                updated_at=func.now(),
-            ),
+                "updated_at": func.now(),
+            },
         ).returning(RsvpResponse)
 
         result = await self.session.execute(upsert)

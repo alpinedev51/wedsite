@@ -7,6 +7,8 @@ from types import SimpleNamespace
 
 import pytest
 from pydantic import ValidationError as PydanticValidationError
+from test_guest_import import _household, _import
+from test_guest_import import _Uow as _ImportUow
 
 from service_wed.domain.errors import ValidationError
 from service_wed.domain.value_objects import RsvpStatus
@@ -14,8 +16,6 @@ from service_wed.schemas.rsvp import HouseholdRsvpSubmitRequest
 from service_wed.services.exports import ExportService
 from service_wed.services.guest_list import GuestListService
 from service_wed.services.rsvp import RsvpService
-
-from test_guest_import import _Uow as _ImportUow, _household, _import
 
 TOKEN = "tok"
 

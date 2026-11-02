@@ -714,11 +714,22 @@ docker run -d --rm --name webhook-test --network service-wed_default \
 ```python
 # compute a matching signature
 import base64, hashlib, hmac, json
+
 secret = "whsec_MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAw"
 secret_bytes = base64.b64decode(secret.removeprefix("whsec_"))
-body = json.dumps({"type": "email.bounced", "created_at": "2026-01-01T00:00:00Z", "data": {"email_id": "<a real provider_message_id>"}})
+body = json.dumps(
+    {
+        "type": "email.bounced",
+        "created_at": "2026-01-01T00:00:00Z",
+        "data": {"email_id": "<a real provider_message_id>"},
+    }
+)
 msg_id, timestamp = "msg_test_1", "1751846400"
-sig = base64.b64encode(hmac.new(secret_bytes, f"{msg_id}.{timestamp}.{body}".encode(), hashlib.sha256).digest()).decode()
+sig = base64.b64encode(
+    hmac.new(
+        secret_bytes, f"{msg_id}.{timestamp}.{body}".encode(), hashlib.sha256
+    ).digest()
+).decode()
 ```
 ```bash
 # valid signature -> 200, and flips that EmailMessage to `failed`

@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from arq.connections import ArqRedis
-from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, AsyncSession
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
 from service_wed.adapters.db import async_session_maker, engine
 from service_wed.adapters.email.console import ConsoleEmailSender
