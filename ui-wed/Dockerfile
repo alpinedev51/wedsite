@@ -1,6 +1,6 @@
 # Multi-stage build: compile the Vite app, then serve the static output with
 # nginx -- mirrors service-wed's own builder/runner Dockerfile pattern.
-FROM node:24.22.0-alpine AS builder
+FROM node:24.22.2-alpine AS builder
 
 WORKDIR /app
 
