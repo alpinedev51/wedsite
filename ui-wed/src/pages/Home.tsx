@@ -66,7 +66,7 @@ function Home() {
             RSVP
           </ButtonLink>
           <Floral
-            name="divider-05"
+            name="divider-02"
             className="mt-6 w-60 text-ochre-deep/65 sm:w-80"
           />
 

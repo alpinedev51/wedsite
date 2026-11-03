@@ -1,17 +1,8 @@
 import { apiFetch } from "../lib/api";
+import type { Schemas } from "../types";
 
-// Mirrors service-wed/src/service_wed/schemas/wedding.py::WeddingPublicView.
-// All datetimes are ISO strings (UTC) over the wire.
-export interface WeddingPublicView {
-  wedding_date: string;
-  venue_name: string | null;
-  venue_address: string | null;
-  venue_city: string | null;
-  bride_first_name: string | null;
-  groom_first_name: string | null;
-  rsvp_opens_at: string | null;
-  rsvp_deadline: string;
-}
+// All datetimes are UTC ISO strings over the wire.
+export type WeddingPublicView = Schemas["WeddingPublicView"];
 
 // Unauthenticated -- backs the public site's countdown/venue/RSVP display.
 // 404s (as an ApiError with code "not_found") until the couple has saved a

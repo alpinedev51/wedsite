@@ -25,6 +25,7 @@ needs `DEBUG=true` for the admin cookie (see the backend README's
 | `npm run preview`                 | serve the built `dist/`                             |
 | `npm run lint`                    | ESLint                                              |
 | `npm run format` / `format:check` | Prettier                                            |
+| `npm run gen:api`                 | regenerate API types from service-wed (see below)   |
 
 ## Routes
 
@@ -35,6 +36,11 @@ needs `DEBUG=true` for the admin cookie (see the backend README's
 | `/find-invitation`                                                                      | lost-link recovery by name + email (`/rsvp` redirects here)        |
 | `/admin/login`                                                                          | admin sign-in                                                      |
 | `/admin/admin_dashboard`                                                                | Dashboard, Guests (CSV import/export), Campaigns, Wedding settings |
+
+API request/response types are generated from service-wed's OpenAPI schema
+into `src/lib/api.schema.ts` (don't edit it by hand). After changing a backend
+schema, run `npm run gen:api` (needs `uv` and `../service-wed`; no server) and
+commit the result; `tsc` then flags any frontend code the change breaks.
 
 All API calls go through `src/lib/api.ts` (`credentials: "include"`, one
 error type for both backend error shapes).

@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "gen:api": "sh scripts/gen-api-types.sh"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",

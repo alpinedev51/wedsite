@@ -14,8 +14,6 @@ import FindInvitationPage from "./features/invitation/FindInvitationPage";
 import RsvpGate from "./features/rsvp/RsvpGate";
 import { AuthProvider } from "./features/auth/AuthContext";
 import RequireAdmin from "./features/auth/RequireAdmin";
-import LoginPage from "./features/auth/LoginPage";
-import AdminPage from "./features/admin/AdminPage";
 
 export const router = createBrowserRouter([
   {
@@ -64,8 +62,10 @@ export const router = createBrowserRouter([
       },
     ],
   },
-  // Admin subtree: deliberately outside the public `/` Layout (no couple
-  // nav/footer chrome here). AuthProvider is scoped to just this subtree so
+  // Admin subtree: its pages are lazy-loaded (`lazy:` below), so their code
+  // is a separate file only downloaded on /admin/* -- guests never load it.
+  // Deliberately outside the public `/` Layout (no couple nav/footer chrome
+  // here). AuthProvider is scoped to just this subtree so
   // its mount-time session probe (see AuthContext) only fires when an admin
   // route is actually visited, not on every public-page load. `/admin/login`
   // sits outside RequireAdmin (it must be reachable while logged out);
@@ -76,18 +76,30 @@ export const router = createBrowserRouter([
     // Without this, a crash in an admin page shows React Router's raw
     // stack-trace screen.
     errorElement: <ErrorPage />,
+    // Shown while a lazy admin page downloads on a first visit to /admin/*.
+    HydrateFallback: () => null,
     element: (
       <AuthProvider>
         <Outlet />
       </AuthProvider>
     ),
     children: [
-      { path: "login", element: <LoginPage /> },
+      {
+        path: "login",
+        lazy: async () => ({
+          Component: (await import("./features/auth/LoginPage")).default,
+        }),
+      },
       {
         element: <RequireAdmin />,
         children: [
           { index: true, element: <Navigate to="admin_dashboard" replace /> },
-          { path: "admin_dashboard", element: <AdminPage /> },
+          {
+            path: "admin_dashboard",
+            lazy: async () => ({
+              Component: (await import("./features/admin/AdminPage")).default,
+            }),
+          },
         ],
       },
     ],

@@ -1,5 +1,7 @@
 import { MaskedSvg } from "./MaskedSvg";
 import arrangement10 from "@/assets/decor/flowers/arrangement-10.svg";
+import divider02 from "@/assets/decor/flowers/divider-02.svg";
+import divider04 from "@/assets/decor/flowers/divider-04.svg";
 import divider05 from "@/assets/decor/flowers/divider-05.svg";
 import divider10 from "@/assets/decor/flowers/divider-10.svg";
 import element08 from "@/assets/decor/flowers/element-08.svg";
@@ -22,6 +24,8 @@ const florals = {
   // A spray of flowers: blooms at the lower left, stems reaching up-right.
   "arrangement-10": { src: arrangement10, ratio: 707.07 / 424.31 },
   // A horizontal garland for between sections or under headings.
+  "divider-02": { src: divider02, ratio: 654.462 / 155.506 },
+  "divider-04": { src: divider04, ratio: 607.271 / 125.317 },
   "divider-05": { src: divider05, ratio: 661.27 / 127.69 },
   // A plain leafy vine; stays crisp small (used under the active nav link).
   "divider-10": { src: divider10, ratio: 505.56 / 90.66 },
