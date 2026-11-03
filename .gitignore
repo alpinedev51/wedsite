@@ -13,6 +13,13 @@ dist/
 .DS_Store
 .idea/
 .vscode/
+# Claude Code's per-machine settings (shared settings.json stays committable)
+.claude/settings.local.json
+# LibreOffice/OpenOffice lock files, created while a CSV or doc is open
+.~lock.*#
 
 # Server-side deploy state (deploy/deploy.sh): history + pre-deploy DB dumps
 .deploy/
+
+# Hand-run test files (CSV imports with real emails) -- local only
+service-wed/tests/manual/

@@ -1,3 +1,5 @@
+// Not used anywhere right now (replaced by the floral SVGs in Floral.tsx).
+// Kept for possible reuse as decoration.
 interface ColumbineSprigProps {
   className?: string;
 }

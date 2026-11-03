@@ -92,5 +92,21 @@ domain (fonts, scripts, images) needs an update there too.
 (`--font-script`), Fraunces (`--font-display`), EB Garamond (`--font-body`),
 Jost (`--font-utility`). The feel is classic, with modern touches.
 
-**Signature:** a hand-drawn eucalyptus sprig (SVG line art) framing the hero
-corners. The decor components are in `src/components/decor/`.
+**Signature:** hand-drawn floral line art: sprays in the top and footer
+corners of every page, sprigs beside the names, and flowers, dividers and
+edge sprays through the home and Our Story pages. The decor components are in
+`src/components/decor/`.
+
+**Floral decor:** line-art SVGs live in `src/assets/decor/flowers/` and are
+drawn with `<Floral name="..." />` (`src/components/decor/Floral.tsx`), which
+paints them in the surrounding text colour (e.g. `text-sage2/60`) and takes
+`flipX` / `flipY` for mirrored corners. To add one, drop the SVG in that
+folder and list it in `Floral.tsx` with its viewBox width / height. Run new
+files through SVGO first; the originals are often 2-3x bigger than needed.
+
+**Monogram:** the site shows the couple's monogram on the home page and in the
+footer via `SiteMonogram`. To use your own artwork, save it as
+`src/assets/decor/monogram.svg`; it's drawn in the surrounding text colour
+(pass `recolor={false}` to keep a multi-colour SVG's own colours). With no
+file there, `SiteMonogram` falls back to `Monogram`, which builds one from the
+couple's initials in the wedding config.

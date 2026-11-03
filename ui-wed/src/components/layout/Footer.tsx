@@ -1,6 +1,7 @@
 import { useWeddingConfig } from "../../config/WeddingConfigContext";
 import { formatShortDate } from "../../lib/date";
-import { Monogram } from "../decor/Monogram";
+import { SiteMonogram } from "../decor/SiteMonogram";
+import { Floral } from "../decor/Floral";
 import Container from "../ui/Container";
 
 function Footer() {
@@ -8,8 +9,19 @@ function Footer() {
 
   return (
     <footer className="relative overflow-hidden border-t border-walnut/15 bg-clay/8 py-5">
+      {/* The same corner sprays as the top of the home page, the right way up
+          here, so the page opens and closes with flowers. */}
+      <Floral
+        name="side-design-01"
+        className="absolute bottom-0 left-0 w-24 text-sage2/55 sm:w-36 lg:w-48"
+      />
+      <Floral
+        name="side-design-01"
+        flipX
+        className="absolute right-0 bottom-0 w-24 text-sage2/55 sm:w-36 lg:w-48"
+      />
       <Container className="relative flex flex-col items-center gap-2 text-center">
-        <Monogram className="h-12 w-12 text-walnut/70" />
+        <SiteMonogram className="h-12 w-12 text-walnut/70" />
         <p className="font-script text-2xl text-walnut">
           {wedding.coupleNames}
         </p>

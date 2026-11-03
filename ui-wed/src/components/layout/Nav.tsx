@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { navLinks } from "../../config/nav";
+import { Floral } from "../decor/Floral";
 import Container from "../ui/Container";
 import { isOverlayOpen } from "../../hooks/useModalBehavior";
 
@@ -42,13 +43,12 @@ function Nav() {
   }, [isOpen]);
 
   const linkClasses = (isActive: boolean) =>
-    // The active page gets a *darker* colour plus an underline. It used to get
-    // text-clay (2.76:1 on linen) while every inactive link was text-ink
-    // (11.7:1), which made the page you were on the hardest one to read.
-    `inline-block border-b-2 pb-0.5 font-utility text-sm uppercase tracking-wider transition-colors ${
-      isActive
-        ? "border-walnut/70 text-walnut"
-        : "border-transparent text-ink hover:text-walnut"
+    // The active page gets a *darker* colour plus a leafy underline (below).
+    // It used to get text-clay (2.76:1 on linen) while every inactive link was
+    // text-ink (11.7:1), which made the page you were on the hardest one to
+    // read.
+    `relative inline-block pb-0.5 font-utility text-sm uppercase tracking-wider transition-colors ${
+      isActive ? "text-walnut" : "text-ink hover:text-walnut"
     }`;
 
   return (
@@ -78,7 +78,19 @@ function Nav() {
                   end={link.to === "/"}
                   className={({ isActive }) => linkClasses(isActive)}
                 >
-                  {link.label}
+                  {({ isActive }) => (
+                    <>
+                      {link.label}
+                      {/* Positioned below the text rather than in the flow,
+                          so switching pages doesn't nudge the row. */}
+                      {isActive && (
+                        <Floral
+                          name="divider-10"
+                          className="absolute top-full left-1/2 mt-0.5 w-20 -translate-x-1/2 text-walnut/85"
+                        />
+                      )}
+                    </>
+                  )}
                 </NavLink>
               </li>
             ),
