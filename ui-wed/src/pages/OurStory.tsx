@@ -24,7 +24,7 @@ function OurStory() {
           <Eyebrow>Our Story</Eyebrow>
           <PageHeading>How It All Began</PageHeading>
           <Floral
-            name="divider-05"
+            name="divider-04"
             className="mt-2 w-56 text-ochre-deep/65 sm:w-72"
           />
         </div>

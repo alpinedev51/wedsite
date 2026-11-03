@@ -1,5 +1,13 @@
-// Generic offset/limit page envelope shared by every admin list endpoint --
-// mirrors service-wed/src/service_wed/schemas/common.py::Page.
+// API types shared across features. The request/response types come from
+// lib/api.schema.ts, generated from service-wed's OpenAPI schema
+// (`npm run gen:api`) -- don't edit that file by hand.
+import type { components } from "../lib/api.schema";
+
+export type Schemas = components["schemas"];
+
+// Offset/limit page envelope of every admin list endpoint. Written as a
+// generic here because the schema has one copy per item type
+// (Page_HouseholdAdminView_, ...), all with this shape.
 export interface Page<T> {
   items: T[];
   total: number;
@@ -7,9 +15,4 @@ export interface Page<T> {
   offset: number;
 }
 
-// Mirrors schemas/common.py::SuccessResponse -- the generic {success,
-// message} shape returned by auth (login/logout) and rsvp (submit) alike.
-export interface SuccessResponse {
-  success: boolean;
-  message?: string | null;
-}
+export type SuccessResponse = Schemas["SuccessResponse"];

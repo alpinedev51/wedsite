@@ -65,6 +65,8 @@ function WeddingSettingsSection() {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  // Bumped by "Try again" to re-run the load effect.
+  const [loadAttempt, setLoadAttempt] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -87,7 +89,13 @@ function WeddingSettingsSection() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [loadAttempt]);
+
+  function retryLoad() {
+    setLoadError(null);
+    setLoading(true);
+    setLoadAttempt((n) => n + 1);
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -123,6 +131,22 @@ function WeddingSettingsSection() {
     return <p className="text-sm text-ink/70">Loading…</p>;
   }
 
+  // Saving replaces the whole wedding row, so a form that never loaded the
+  // saved values must not be shown: saving it would blank them out.
+  if (loadError) {
+    return (
+      <div className="flex flex-col gap-4 rounded-2xl border border-walnut/12 bg-linen/60 p-6">
+        <h2 className="text-xl">Wedding Schedule</h2>
+        <p className="text-sm text-terracotta">
+          Couldn&rsquo;t load the saved settings: {loadError}
+        </p>
+        <Button variant="secondary" onClick={retryLoad} className="w-fit">
+          Try again
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-4 rounded-2xl border border-walnut/12 bg-linen/60 p-6">
       <h2 className="text-xl">Wedding Schedule</h2>
@@ -132,7 +156,6 @@ function WeddingSettingsSection() {
           public site's countdown/RSVP window live.
         </p>
       )}
-      {loadError && <p className="text-sm text-terracotta">{loadError}</p>}
 
       <form
         onSubmit={handleSubmit}
