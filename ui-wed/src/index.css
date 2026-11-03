@@ -117,6 +117,11 @@
 @layer base {
   html {
     @apply scroll-smooth;
+    /* Always keep room for the vertical scrollbar. Without it, pages short
+       enough not to scroll (Wedding Party, RSVP) are ~15px wider than the
+       rest, so the centred banner, nav and content jump sideways when you
+       switch pages. */
+    scrollbar-gutter: stable;
   }
   body {
     @apply bg-linen text-ink font-body antialiased;

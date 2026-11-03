@@ -9,3 +9,10 @@ dist
 # deployment relies on (see src/config/env.ts).
 .env.local
 .env.*.local
+# The rest of the env files never belong in an image either: .env holds this
+# couple's real values for `npm run dev` (production gets them as build
+# args), and dated backups like .env.local.backup-* slip past the patterns
+# above.
+.env
+.env.*
+!.env.example

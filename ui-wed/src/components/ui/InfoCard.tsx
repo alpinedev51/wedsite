@@ -8,6 +8,7 @@ function InfoCard({
   href,
   to,
   className = "",
+  decor,
 }: {
   icon?: ReactNode;
   title: string;
@@ -15,15 +16,19 @@ function InfoCard({
   href?: string;
   to?: string;
   className?: string;
+  /** Background flourish, e.g. an absolutely positioned Floral. Drawn behind
+   * the text. */
+  decor?: ReactNode;
 }) {
   const content = (
     <div
-      className={`flex h-full flex-col gap-3 rounded-2xl border border-walnut/12 bg-linen/60 p-6 text-left shadow-sm transition-colors hover:border-walnut/25 hover:bg-linen ${className}`}
+      className={`relative flex h-full flex-col gap-3 rounded-2xl border border-walnut/12 bg-linen/60 p-6 text-left shadow-sm transition-colors hover:border-walnut/25 hover:bg-linen ${className}`}
     >
-      {icon && <div className="h-8 w-8 text-clay">{icon}</div>}
-      <h3 className="font-display text-lg text-walnut">{title}</h3>
+      {decor}
+      {icon && <div className="relative h-8 w-8 text-clay">{icon}</div>}
+      <h3 className="relative font-display text-lg text-walnut">{title}</h3>
       {description && (
-        <p className="font-body text-sm text-ink/70">{description}</p>
+        <p className="relative font-body text-sm text-ink/70">{description}</p>
       )}
     </div>
   );

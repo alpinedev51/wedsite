@@ -5,3 +5,11 @@ __pycache__
 .ruff_cache
 *.egg-info
 .git
+.mypy_cache
+.claude
+# Secrets and their dated backups. The Dockerfile only copies named paths,
+# so these never reached the image -- this keeps them out of the build
+# context (sent to the Docker daemon, or a remote builder) as well.
+.env
+.env.*
+!.env.example

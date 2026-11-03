@@ -2,7 +2,8 @@ import Countdown from "../components/Countdown";
 import ScrollHero from "../components/home/ScrollHero";
 import HeroTagline from "../components/home/HeroTagline";
 import WeddingInfoHub from "../components/home/WeddingInfoHub";
-import { Monogram } from "../components/decor/Monogram";
+import { SiteMonogram } from "../components/decor/SiteMonogram";
+import { Floral } from "../components/decor/Floral";
 import Eyebrow from "../components/ui/Eyebrow";
 import { ButtonLink } from "../components/ui/Button";
 import { useWeddingConfig } from "../config/WeddingConfigContext";
@@ -36,6 +37,17 @@ function Home() {
           aria-hidden="true"
           className="hub-frost-fade-top pointer-events-none absolute inset-x-0 -top-[6dvh] z-10 h-[6dvh] bg-linen backdrop-blur-[3px]"
         />
+        {/* Flowers trailing down both edges, where there's room beside the
+            centred column (lg and up). */}
+        <Floral
+          name="side-design-04"
+          flipX
+          className="absolute top-6 left-0 hidden h-[30rem] text-tan/45 lg:block xl:h-[34rem]"
+        />
+        <Floral
+          name="side-design-04"
+          className="absolute top-6 right-0 hidden h-[30rem] text-tan/45 lg:block xl:h-[34rem]"
+        />
         <div className="relative z-20 flex flex-col items-center gap-3">
           <Eyebrow className="text-xl">Celebrate with us</Eyebrow>
           {/* text-ink/75 (5.5:1), not text-walnut/75 (3.4:1) -- this is
@@ -53,6 +65,10 @@ function Home() {
           <ButtonLink to="/rsvp" className="mt-1">
             RSVP
           </ButtonLink>
+          <Floral
+            name="divider-05"
+            className="mt-6 w-60 text-ochre-deep/65 sm:w-80"
+          />
 
           {/* The countdown is the most affecting thing on the page; it was
               rendered at the small size while the lg variant went unused.
@@ -64,7 +80,7 @@ function Home() {
             heading={<Eyebrow className="text-lg mt-0">Counting down</Eyebrow>}
           />
           <div className="flex justify-center pt-6 pb-2 sm:pt-10 sm:pb-4">
-            <Monogram className="h-28 w-28 text-walnut/70 sm:h-36 sm:w-36 lg:h-44 lg:w-44" />
+            <SiteMonogram className="h-28 w-28 text-walnut/70 sm:h-36 sm:w-36 lg:h-44 lg:w-44" />
           </div>
         </div>
       </div>
