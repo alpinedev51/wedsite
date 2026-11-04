@@ -12,7 +12,7 @@ import ErrorPage from "./pages/ErrorPage";
 import RsvpPage from "./features/rsvp/RsvpPage";
 import FindInvitationPage from "./features/invitation/FindInvitationPage";
 import RsvpGate from "./features/rsvp/RsvpGate";
-import { AuthProvider } from "./features/auth/AuthContext";
+import { AuthProvider } from "./features/auth/AuthProvider";
 import RequireAdmin from "./features/auth/RequireAdmin";
 
 export const router = createBrowserRouter([
@@ -66,7 +66,7 @@ export const router = createBrowserRouter([
   // is a separate file only downloaded on /admin/* -- guests never load it.
   // Deliberately outside the public `/` Layout (no couple nav/footer chrome
   // here). AuthProvider is scoped to just this subtree so
-  // its mount-time session probe (see AuthContext) only fires when an admin
+  // its mount-time session probe (see AuthProvider) only fires when an admin
   // route is actually visited, not on every public-page load. `/admin/login`
   // sits outside RequireAdmin (it must be reachable while logged out);
   // everything else is nested under it so new admin pages just need adding

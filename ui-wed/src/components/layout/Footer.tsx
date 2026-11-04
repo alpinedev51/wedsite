@@ -1,4 +1,4 @@
-import { useWeddingConfig } from "../../config/WeddingConfigContext";
+import { useWeddingConfig } from "../../config/useWeddingConfig";
 import { formatShortDate } from "../../lib/date";
 import { SiteMonogram } from "../decor/SiteMonogram";
 import { Floral } from "../decor/Floral";

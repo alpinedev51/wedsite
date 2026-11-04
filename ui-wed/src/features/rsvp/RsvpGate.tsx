@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import Section from "../../components/ui/Section";
 import ComingSoon from "../../pages/ComingSoon";
-import { useWeddingConfig } from "../../config/WeddingConfigContext";
+import { useWeddingConfig } from "../../config/useWeddingConfig";
 import { formatLongDate } from "../../lib/date";
 
 // Wraps the RSVP pages: before the wedding's RSVP opening time (set in the

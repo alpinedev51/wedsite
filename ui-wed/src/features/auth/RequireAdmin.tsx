@@ -1,7 +1,7 @@
 import { Navigate, Outlet } from "react-router-dom";
 import Section from "../../components/ui/Section";
 import Container from "../../components/ui/Container";
-import { useAuth } from "./AuthContext";
+import { useAuth } from "./useAuth";
 
 // Route guard for everything under /admin except /admin/login. Nest any
 // new admin-only route under this element in router.tsx to get the same
