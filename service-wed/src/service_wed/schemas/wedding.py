@@ -18,6 +18,8 @@ class WeddingPublicView(BaseModel):
     venue_name: str | None
     venue_address: str | None
     venue_city: str | None
+    venue_latitude: float | None
+    venue_longitude: float | None
     bride_first_name: str | None
     groom_first_name: str | None
     rsvp_opens_at: dt.datetime | None
@@ -49,6 +51,9 @@ class WeddingUpsertRequest(BaseModel):
     venue_name: str | None = None
     venue_address: str | None = None
     venue_city: str | None = None
+    # Decimal degrees, e.g. 37.2753 / -107.8801. West longitudes are negative.
+    venue_latitude: float | None = Field(default=None, ge=-90, le=90)
+    venue_longitude: float | None = Field(default=None, ge=-180, le=180)
     bride_first_name: str | None = None
     groom_first_name: str | None = None
 
@@ -67,4 +72,6 @@ class WeddingUpsertRequest(BaseModel):
             raise ValueError("rsvp_deadline must not be after wedding_date.")
         if self.rsvp_opens_at is not None and self.rsvp_opens_at >= self.rsvp_deadline:
             raise ValueError("rsvp_opens_at must be before rsvp_deadline.")
+        if (self.venue_latitude is None) != (self.venue_longitude is None):
+            raise ValueError("venue_latitude and venue_longitude must be set together.")
         return self

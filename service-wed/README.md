@@ -108,6 +108,7 @@ Postgres/Redis directly. See [step 2](#2-run-migrations)/[step
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` | unset | API (first boot) | Seed the one admin account if none exists yet (see note below) |
 | `WEDDING_DATE` / `RSVP_DEADLINE` / `RSVP_OPENS_AT` | unset | API (first boot) | Seed the wedding config. **venue local time**, e.g. `2030-06-15` or `2030-05-01T23:59:59`; a value with `Z` or an offset is taken as that exact instant |
 | `VENUE_NAME` / `VENUE_ADDRESS` / `VENUE_CITY` / `BRIDE_FNAME` / `GROOM_FNAME` | unset | API (first boot) | Optional wedding config fields |
+| `VENUE_LATITUDE` / `VENUE_LONGITUDE` | unset | API (first boot) | Optional. Decimal degrees for the Travel page map pin; set both or neither |
 | `REMINDER_CAP` / `REMINDER_INTERVAL_DAYS` | `2` / `7` | API (first boot) | Automatic reminder limits (see [step 11](#11-reminders-automatic)) |
 
 ---

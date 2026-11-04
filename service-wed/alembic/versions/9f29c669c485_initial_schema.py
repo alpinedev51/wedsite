@@ -110,6 +110,8 @@ def upgrade() -> None:
         sa.Column("venue_name", sa.Text(), nullable=True),
         sa.Column("venue_address", sa.Text(), nullable=True),
         sa.Column("venue_city", sa.Text(), nullable=True),
+        sa.Column("venue_latitude", sa.Float(), nullable=True),
+        sa.Column("venue_longitude", sa.Float(), nullable=True),
         sa.Column("bride_first_name", sa.Text(), nullable=True),
         sa.Column("groom_first_name", sa.Text(), nullable=True),
         sa.Column(

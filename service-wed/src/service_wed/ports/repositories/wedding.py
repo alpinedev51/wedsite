@@ -22,6 +22,8 @@ class WeddingRepository(Protocol):
         venue_name: str | None,
         venue_address: str | None,
         venue_city: str | None,
+        venue_latitude: float | None,
+        venue_longitude: float | None,
         bride_first_name: str | None,
         groom_first_name: str | None,
     ) -> Wedding:

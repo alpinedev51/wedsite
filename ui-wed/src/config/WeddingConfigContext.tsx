@@ -73,6 +73,13 @@ export function WeddingConfigProvider({ children }: { children: ReactNode }) {
           location: {
             venue: data.venue_name ?? fallbackWedding.location.venue,
             city: data.venue_city ?? fallbackWedding.location.city,
+            coordinates:
+              data.venue_latitude != null && data.venue_longitude != null
+                ? {
+                    latitude: data.venue_latitude,
+                    longitude: data.venue_longitude,
+                  }
+                : fallbackWedding.location.coordinates,
           },
           rsvpDeadline: liveDateOr(
             data.rsvp_deadline,

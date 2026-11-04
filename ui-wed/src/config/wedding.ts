@@ -27,6 +27,33 @@ function buildTimeDate(value: string | undefined, placeholder: string): Date {
   return civilToInstant(placeholder);
 }
 
+export interface Coordinates {
+  latitude: number;
+  longitude: number;
+}
+
+// Both VITE_VENUE_LATITUDE and VITE_VENUE_LONGITUDE, as numbers in range, or
+// null (the Travel page then skips its map).
+function buildTimeCoordinates(
+  lat: string | undefined,
+  lng: string | undefined,
+): Coordinates | null {
+  if (!lat || !lng) return null;
+  const latitude = Number(lat);
+  const longitude = Number(lng);
+  if (
+    Number.isFinite(latitude) &&
+    Number.isFinite(longitude) &&
+    Math.abs(latitude) <= 90 &&
+    Math.abs(longitude) <= 180
+  ) {
+    return { latitude, longitude };
+  }
+  // eslint-disable-next-line no-console -- the only signal a bad build gives.
+  console.warn(`Unusable build-time venue coordinates "${lat}", "${lng}".`);
+  return null;
+}
+
 export const wedding = {
   coupleNames: import.meta.env.VITE_COUPLE_NAMES || "Mister & Missus",
   brideFirstName: import.meta.env.VITE_BRIDE_FNAME || "Missus",
@@ -45,6 +72,10 @@ export const wedding = {
   location: {
     venue: import.meta.env.VITE_VENUE_NAME || "Pretty Venue",
     city: import.meta.env.VITE_VENUE_CITY || "Small Town, USA",
+    coordinates: buildTimeCoordinates(
+      import.meta.env.VITE_VENUE_LATITUDE,
+      import.meta.env.VITE_VENUE_LONGITUDE,
+    ),
   },
   rsvpDeadline: buildTimeDate(
     import.meta.env.VITE_RSVP_DEADLINE,
