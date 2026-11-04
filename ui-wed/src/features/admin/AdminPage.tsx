@@ -4,7 +4,7 @@ import Container from "../../components/ui/Container";
 import Section from "../../components/ui/Section";
 import Eyebrow from "../../components/ui/Eyebrow";
 import { Button } from "../../components/ui/Button";
-import { useAuth } from "../auth/AuthContext";
+import { useAuth } from "../auth/useAuth";
 import { logout as logoutRequest } from "../auth/auth.api";
 import CampaignsSection from "../campaigns/CampaignsSection";
 import DashboardSection from "../dashboard/DashboardSection";

@@ -1,26 +1,6 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-  type ReactNode,
-} from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { apiFetch, ApiError } from "../../lib/api";
-
-// "checking" is the initial state while the mount-time probe (below) is in
-// flight -- RequireAdmin shows a loading state for it instead of redirecting,
-// so a page reload doesn't briefly flash the login screen for an already
-// logged-in admin.
-type AuthStatus = "checking" | "authenticated" | "anonymous";
-
-interface AuthContextValue {
-  status: AuthStatus;
-  markAuthenticated: () => void;
-  markAnonymous: () => void;
-}
-
-const AuthContext = createContext<AuthContextValue | null>(null);
+import { AuthContext, type AuthStatus } from "./useAuth";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>("checking");
@@ -55,10 +35,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth(): AuthContextValue {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used within an AuthProvider");
-  return ctx;
 }

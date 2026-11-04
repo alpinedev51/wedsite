@@ -1,15 +1,28 @@
+import { lazy, Suspense, useEffect } from "react";
 import Container from "../components/ui/Container";
 import Section from "../components/ui/Section";
 import Eyebrow from "../components/ui/Eyebrow";
 import PageHeading from "../components/ui/PageHeading";
 import MiniCalendar from "../components/ui/MiniCalendar";
-import UsMap from "../components/travel/UsMap";
-import { useWeddingConfig } from "../config/WeddingConfigContext";
+import QuietErrorBoundary from "../components/ui/QuietErrorBoundary";
+import { useWeddingConfig } from "../config/useWeddingConfig";
 import { Floral } from "../components/decor/Floral";
 import { formatLongDate, getWeddingDateParts } from "../lib/date";
 
+// Lazy so the map outline (~15KB) only downloads on this page. The rest of
+// the page renders straight away and the map fills in once it arrives.
+const loadUsMap = () => import("../components/travel/UsMap");
+const UsMap = lazy(loadUsMap);
+
 function Travel() {
   const { wedding } = useWeddingConfig();
+
+  // Start downloading the map now, alongside the wedding config fetch,
+  // rather than only once that answers. (The browser fetches it just once.)
+  // A failure here is handled where the map renders, so it's ignored.
+  useEffect(() => {
+    loadUsMap().catch(() => {});
+  }, []);
 
   // Resolved in the venue's timezone, not the viewer's. Calling
   // wedding.date.getDate() here would circle the wrong square for any guest
@@ -57,15 +70,20 @@ function Travel() {
           className="mt-2 w-56 text-ochre-deep/65 sm:w-72"
         />
 
-
-        {/* Skipped until venue coordinates are set (admin Wedding tab, or
-            VITE_VENUE_LATITUDE/LONGITUDE as the build-time fallback). */}
+        {/* Only when there are venue coordinates (see
+            WeddingConfigProvider for where they come from). If the map's
+            code fails to download, the map is left out rather than the
+            whole page showing an error. */}
         {wedding.location.coordinates && (
-          <UsMap
-            label={wedding.location.city}
-            coordinates={wedding.location.coordinates}
-            className="max-w-2xl"
-          />
+          <QuietErrorBoundary>
+            <Suspense fallback={null}>
+              <UsMap
+                label={wedding.location.city}
+                coordinates={wedding.location.coordinates}
+                className="max-w-2xl"
+              />
+            </Suspense>
+          </QuietErrorBoundary>
         )}
       </Container>
     </Section>

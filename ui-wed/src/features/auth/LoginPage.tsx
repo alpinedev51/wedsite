@@ -6,7 +6,7 @@ import Eyebrow from "../../components/ui/Eyebrow";
 import { Button } from "../../components/ui/Button";
 import { ApiError } from "../../lib/api";
 import { login } from "./auth.api";
-import { useAuth } from "./AuthContext";
+import { useAuth } from "./useAuth";
 
 function LoginPage() {
   const [email, setEmail] = useState("");

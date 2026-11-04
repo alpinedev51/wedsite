@@ -50,7 +50,7 @@ error type for both backend error shapes).
 Wedding details come from **two places**:
 
 1. **Live, from the API:** `GET /api/v1/wedding` (`src/config/wedding.api.ts`,
-   `WeddingConfigContext`). This is the source of truth; edit the values in the
+   `WeddingConfigProvider`). This is the source of truth; edit the values in the
    admin Wedding tab.
 2. **Built in, as fallback:** `VITE_COUPLE_NAMES`, `VITE_BRIDE_FNAME`,
    `VITE_GROOM_FNAME`, `VITE_WEDDING_DATE`, `VITE_VENUE_NAME`,

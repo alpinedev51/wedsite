@@ -6,7 +6,7 @@ import { SiteMonogram } from "../components/decor/SiteMonogram";
 import { Floral } from "../components/decor/Floral";
 import Eyebrow from "../components/ui/Eyebrow";
 import { ButtonLink } from "../components/ui/Button";
-import { useWeddingConfig } from "../config/WeddingConfigContext";
+import { useWeddingConfig } from "../config/useWeddingConfig";
 import { ceremonyTime, formatLongDate } from "../lib/date";
 // 2400px-wide re-encodes (~330-400 KB) of the camera originals, which were
 // 2-5 MB each -- far too heavy for an above-the-fold image on a phone. The

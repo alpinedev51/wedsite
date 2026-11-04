@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { useWeddingConfig } from "@/config/WeddingConfigContext";
+import { useWeddingConfig } from "@/config/useWeddingConfig";
 import { Floral } from "@/components/decor/Floral";
 
 // The sprigs either side of the names, leaning outward. Only from md up --

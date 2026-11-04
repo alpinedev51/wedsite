@@ -4,7 +4,7 @@ import type { AdminLoginRequest, SuccessResponse } from "./auth.types";
 // Neither call returns a token -- the backend sets/clears the session as an
 // httponly cookie on the response, which `apiFetch`'s `credentials: "include"`
 // already handles. Callers just need to react to success/failure (see
-// AuthContext.markAuthenticated/markAnonymous).
+// AuthProvider's markAuthenticated/markAnonymous).
 export function login(payload: AdminLoginRequest): Promise<SuccessResponse> {
   return apiFetch<SuccessResponse>("/auth/login", {
     method: "POST",

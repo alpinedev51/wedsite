@@ -169,9 +169,13 @@ function Registry() {
           />
         </div>
 
-        <p className="max-w-md font-body text-sm text-ink/60 italic">
-          Both links open in a new tab.
-        </p>
+        {(registry.knotUrl || registry.etsyUrl) && (
+          <p className="max-w-md font-body text-sm text-ink/60 italic">
+            {registry.knotUrl && registry.etsyUrl
+              ? "Both links open in a new tab."
+              : "The link opens in a new tab."}
+          </p>
+        )}
       </Container>
     </Section>
   );

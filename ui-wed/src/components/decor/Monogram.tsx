@@ -1,5 +1,5 @@
 import { useLayoutEffect, useState } from "react";
-import { useWeddingConfig } from "../../config/WeddingConfigContext";
+import { useWeddingConfig } from "../../config/useWeddingConfig";
 import { initialsFrom } from "../../lib/names";
 import {
   MONOGRAM_CENTER as C,

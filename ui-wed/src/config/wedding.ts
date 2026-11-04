@@ -1,7 +1,7 @@
 // Fallback wedding details -- levels 2 (VITE_* build-time env var) and 3
 // (hardcoded literal) of the config precedence chain. Level 1 is
 // service-wed's live `GET /wedding` DB row, fetched at runtime by
-// WeddingConfigContext (see src/context/WeddingConfigContext.tsx), which
+// WeddingConfigProvider (see src/config/WeddingConfigProvider.tsx), which
 // initializes from this module synchronously (so first paint never blocks
 // on the network) and overwrites these values once the fetch resolves.
 // This module's own values only remain in effect if that fetch fails
