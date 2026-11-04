@@ -48,6 +48,12 @@ def _env_datetime(name: str) -> dt.datetime | None:
     return dt.datetime.fromisoformat(value) if value else None
 
 
+def _env_float(name: str) -> float | None:
+    """VENUE_LATITUDE/VENUE_LONGITUDE, in decimal degrees."""
+    value = _env_or_none(name)
+    return float(value) if value else None
+
+
 async def seed_admin(container: AppContainer) -> None:
     email = _env_or_none("ADMIN_EMAIL")
     password = _env_or_none("ADMIN_PASSWORD")
@@ -93,6 +99,8 @@ async def seed_wedding(container: AppContainer) -> None:
         venue_name=_env_or_none("VENUE_NAME"),
         venue_address=_env_or_none("VENUE_ADDRESS"),
         venue_city=_env_or_none("VENUE_CITY"),
+        venue_latitude=_env_float("VENUE_LATITUDE"),
+        venue_longitude=_env_float("VENUE_LONGITUDE"),
         bride_first_name=_env_or_none("BRIDE_FNAME"),
         groom_first_name=_env_or_none("GROOM_FNAME"),
         reminder_cap=int(os.environ.get("REMINDER_CAP", "2")),

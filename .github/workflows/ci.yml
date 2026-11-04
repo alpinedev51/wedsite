@@ -145,7 +145,11 @@ jobs:
               VITE_WEDDING_DATE=${{ vars.WEDDING_DATE }}
               VITE_VENUE_NAME=${{ vars.VENUE_NAME }}
               VITE_VENUE_CITY=${{ vars.VENUE_CITY }}
+              VITE_VENUE_LATITUDE=${{ vars.VENUE_LATITUDE }}
+              VITE_VENUE_LONGITUDE=${{ vars.VENUE_LONGITUDE }}
               VITE_RSVP_DEADLINE=${{ vars.RSVP_DEADLINE }}
+              VITE_REGISTRY_KNOT_URL=${{ vars.REGISTRY_KNOT_URL }}
+              VITE_REGISTRY_ETSY_URL=${{ vars.REGISTRY_ETSY_URL }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

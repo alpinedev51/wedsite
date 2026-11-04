@@ -54,7 +54,8 @@ Wedding details come from **two places**:
    admin Wedding tab.
 2. **Built in, as fallback:** `VITE_COUPLE_NAMES`, `VITE_BRIDE_FNAME`,
    `VITE_GROOM_FNAME`, `VITE_WEDDING_DATE`, `VITE_VENUE_NAME`,
-   `VITE_VENUE_CITY`, `VITE_RSVP_DEADLINE`. These are shown until the API
+   `VITE_VENUE_CITY`, `VITE_VENUE_LATITUDE`, `VITE_VENUE_LONGITUDE`,
+   `VITE_RSVP_DEADLINE`. These are shown until the API
    answers, or if it can't, and fill the page `<title>` and meta tags. Unset
    ones use the placeholders in `src/config/wedding.ts`.
    - Locally: `.env.local`.

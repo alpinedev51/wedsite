@@ -18,44 +18,43 @@ function WeddingInfoHub() {
     flower: FloralName;
     flowerColor: string;
   }[] = [
-    {
-      title: "Date & Venue",
-      // The time is left out while the stored date still sits at midnight.
-      description: `${formatLongDate(wedding.date)} at ${
-        time ? `${time}, ` : ""
-      }${wedding.location.venue}, ${wedding.location.city}.`,
-      accent: "before:bg-sage bg-sage/8!",
-      flower: "element-21",
-      flowerColor: "text-sage/30",
-    },
-    {
-      title: "Travel",
-      description: "Hotel and directions info -- more details coming soon.",
-      to: "/travel",
-      accent: "before:bg-olive bg-olive/8!",
-      flower: "element-11",
-      flowerColor: "text-olive/25",
-    },
-    {
-      title: "Registry",
-      description: "Registry coming soon.",
-      to: "/registry",
-      accent: "before:bg-lightblue bg-lightblue/8!",
-      flower: "element-08",
-      flowerColor: "text-lightblue/45",
-    },
-    {
-      title: "RSVP",
-      description:
-        !rsvpOpen && wedding.rsvpOpensAt
-          ? `RSVPs open ${formatShortDate(wedding.rsvpOpensAt)}.`
-          : `Please respond by ${formatShortDate(wedding.rsvpDeadline)}.`,
-      to: "/rsvp",
-      accent: "before:bg-dusty bg-dusty/8!",
-      flower: "element-25",
-      flowerColor: "text-dusty/35",
-    },
-  ];
+      {
+        title: "Date & Venue",
+        // The time is left out while the stored date still sits at midnight.
+        description: `${formatLongDate(wedding.date)} at ${time ? `${time}, ` : ""
+          }${wedding.location.venue}, ${wedding.location.city}.`,
+        accent: "before:bg-sage bg-sage/8!",
+        flower: "element-21",
+        flowerColor: "text-sage/30",
+      },
+      {
+        title: "Travel",
+        description: "Hotel and directions info -- more details coming soon.",
+        to: "/travel",
+        accent: "before:bg-olive bg-olive/8!",
+        flower: "element-11",
+        flowerColor: "text-olive/25",
+      },
+      {
+        title: "Registry",
+        description: "Our honeymoon fund and gift registry.",
+        to: "/registry",
+        accent: "before:bg-lightblue bg-lightblue/8!",
+        flower: "element-08",
+        flowerColor: "text-lightblue/45",
+      },
+      {
+        title: "RSVP",
+        description:
+          !rsvpOpen && wedding.rsvpOpensAt
+            ? `RSVPs open ${formatShortDate(wedding.rsvpOpensAt)}.`
+            : `Please respond by ${formatShortDate(wedding.rsvpDeadline)}.`,
+        to: "/rsvp",
+        accent: "before:bg-dusty bg-dusty/8!",
+        flower: "element-25",
+        flowerColor: "text-dusty/35",
+      },
+    ];
 
   return (
     <Section

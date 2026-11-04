@@ -9,7 +9,7 @@ from __future__ import annotations
 import datetime as dt
 import uuid
 
-from sqlalchemy import DateTime, SmallInteger, Text, text
+from sqlalchemy import DateTime, Float, SmallInteger, Text, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from service_wed.models.base import Base, Timestamps
@@ -36,6 +36,10 @@ class Wedding(Timestamps, Base):
     venue_name: Mapped[str | None] = mapped_column(Text)
     venue_address: Mapped[str | None] = mapped_column(Text)
     venue_city: Mapped[str | None] = mapped_column(Text)
+    # Where the Travel page's map drops its pin. Both set or both null
+    # (enforced by WeddingUpsertRequest).
+    venue_latitude: Mapped[float | None] = mapped_column(Float)
+    venue_longitude: Mapped[float | None] = mapped_column(Float)
 
     bride_first_name: Mapped[str | None] = mapped_column(Text)
     groom_first_name: Mapped[str | None] = mapped_column(Text)

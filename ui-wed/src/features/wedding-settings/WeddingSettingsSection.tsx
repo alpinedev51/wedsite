@@ -14,6 +14,9 @@ interface FormState {
   venueName: string;
   venueAddress: string;
   venueCity: string;
+  // Kept as typed text so a half-typed "-107." isn't reformatted mid-edit.
+  venueLatitude: string;
+  venueLongitude: string;
   brideFirstName: string;
   groomFirstName: string;
 }
@@ -27,6 +30,8 @@ const BLANK_FORM: FormState = {
   venueName: "",
   venueAddress: "",
   venueCity: "",
+  venueLatitude: "",
+  venueLongitude: "",
   brideFirstName: "",
   groomFirstName: "",
 };
@@ -43,9 +48,17 @@ function toFormState(wedding: WeddingAdminView): FormState {
     venueName: wedding.venue_name ?? "",
     venueAddress: wedding.venue_address ?? "",
     venueCity: wedding.venue_city ?? "",
+    venueLatitude: wedding.venue_latitude?.toString() ?? "",
+    venueLongitude: wedding.venue_longitude?.toString() ?? "",
     brideFirstName: wedding.bride_first_name ?? "",
     groomFirstName: wedding.groom_first_name ?? "",
   };
+}
+
+// Blank means "not set". The inputs are type=number, so anything else is
+// already a valid number by the time it's submitted.
+function optionalNumber(value: string): number | null {
+  return value.trim() === "" ? null : Number(value);
 }
 
 // This form is the single source of truth for wedding_date/rsvp_deadline/
@@ -114,6 +127,8 @@ function WeddingSettingsSection() {
         venue_name: form.venueName || null,
         venue_address: form.venueAddress || null,
         venue_city: form.venueCity || null,
+        venue_latitude: optionalNumber(form.venueLatitude),
+        venue_longitude: optionalNumber(form.venueLongitude),
         bride_first_name: form.brideFirstName || null,
         groom_first_name: form.groomFirstName || null,
       });
@@ -259,6 +274,45 @@ function WeddingSettingsSection() {
             value={form.venueCity}
             onChange={(e) =>
               setForm((f) => ({ ...f, venueCity: e.target.value }))
+            }
+            className="rounded border border-walnut/30 bg-linen px-3 py-2"
+          />
+        </label>
+
+        <div />
+
+        <p className="text-xs text-ink/60 sm:col-span-2">
+          Map pin on the Travel page, in decimal degrees (west longitudes are
+          negative). Fill in both, or leave both blank to hide the map.
+        </p>
+
+        <label className="flex flex-col gap-1 text-sm text-ink">
+          Venue Latitude
+          <input
+            type="number"
+            step="any"
+            min={-90}
+            max={90}
+            placeholder="37.2753"
+            value={form.venueLatitude}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, venueLatitude: e.target.value }))
+            }
+            className="rounded border border-walnut/30 bg-linen px-3 py-2"
+          />
+        </label>
+
+        <label className="flex flex-col gap-1 text-sm text-ink">
+          Venue Longitude
+          <input
+            type="number"
+            step="any"
+            min={-180}
+            max={180}
+            placeholder="-107.8801"
+            value={form.venueLongitude}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, venueLongitude: e.target.value }))
             }
             className="rounded border border-walnut/30 bg-linen px-3 py-2"
           />

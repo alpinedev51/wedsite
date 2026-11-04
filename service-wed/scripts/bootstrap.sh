@@ -15,7 +15,8 @@
 #   POSTGRES_PASSWORD             -- needed by docker-compose.yml itself
 #
 # Optional env vars (sensible defaults if unset):
-#   RSVP_OPENS_AT, VENUE_NAME, VENUE_ADDRESS, VENUE_CITY
+#   RSVP_OPENS_AT, VENUE_NAME, VENUE_ADDRESS, VENUE_CITY, VENUE_LATITUDE,
+#   VENUE_LONGITUDE
 #   BRIDE_FNAME, GROOM_FNAME
 #   REMINDER_CAP (2), REMINDER_INTERVAL_DAYS (7)
 #   API_BASE_URL (http://localhost:8000)
@@ -83,6 +84,8 @@ RSVP_OPENS_AT="${RSVP_OPENS_AT:-}"
 VENUE_NAME="${VENUE_NAME:-}"
 VENUE_ADDRESS="${VENUE_ADDRESS:-}"
 VENUE_CITY="${VENUE_CITY:-}"
+VENUE_LATITUDE="${VENUE_LATITUDE:-}"
+VENUE_LONGITUDE="${VENUE_LONGITUDE:-}"
 BRIDE_FNAME="${BRIDE_FNAME:-}"
 GROOM_FNAME="${GROOM_FNAME:-}"
 REMINDER_CAP="${REMINDER_CAP:-2}"
@@ -197,6 +200,8 @@ print(json.dumps({
     "venue_name": env_or_none("VENUE_NAME"),
     "venue_address": env_or_none("VENUE_ADDRESS"),
     "venue_city": env_or_none("VENUE_CITY"),
+    "venue_latitude": env_or_none("VENUE_LATITUDE"),
+    "venue_longitude": env_or_none("VENUE_LONGITUDE"),
     "bride_first_name": env_or_none("BRIDE_FNAME"),
     "groom_first_name": env_or_none("GROOM_FNAME"),
     "reminder_cap": int(os.environ.get("REMINDER_CAP", 2)),

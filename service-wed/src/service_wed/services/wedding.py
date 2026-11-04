@@ -48,6 +48,8 @@ class WeddingService:
                 venue_name=request.venue_name,
                 venue_address=request.venue_address,
                 venue_city=request.venue_city,
+                venue_latitude=request.venue_latitude,
+                venue_longitude=request.venue_longitude,
                 bride_first_name=request.bride_first_name,
                 groom_first_name=request.groom_first_name,
             )

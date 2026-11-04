@@ -29,6 +29,8 @@ class SQLAlchemyWeddingRepository(WeddingRepository):
         venue_name: str | None,
         venue_address: str | None,
         venue_city: str | None,
+        venue_latitude: float | None,
+        venue_longitude: float | None,
         bride_first_name: str | None,
         groom_first_name: str | None,
     ) -> Wedding:
@@ -47,6 +49,8 @@ class SQLAlchemyWeddingRepository(WeddingRepository):
             "venue_name": venue_name,
             "venue_address": venue_address,
             "venue_city": venue_city,
+            "venue_latitude": venue_latitude,
+            "venue_longitude": venue_longitude,
             "bride_first_name": bride_first_name,
             "groom_first_name": groom_first_name,
         }

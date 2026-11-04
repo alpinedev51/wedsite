@@ -794,6 +794,10 @@ export interface components {
       venue_address: string | null;
       /** Venue City */
       venue_city: string | null;
+      /** Venue Latitude */
+      venue_latitude: number | null;
+      /** Venue Longitude */
+      venue_longitude: number | null;
       /** Bride First Name */
       bride_first_name: string | null;
       /** Groom First Name */
@@ -829,6 +833,10 @@ export interface components {
       venue_address: string | null;
       /** Venue City */
       venue_city: string | null;
+      /** Venue Latitude */
+      venue_latitude: number | null;
+      /** Venue Longitude */
+      venue_longitude: number | null;
       /** Bride First Name */
       bride_first_name: string | null;
       /** Groom First Name */
@@ -878,6 +886,10 @@ export interface components {
       venue_address?: string | null;
       /** Venue City */
       venue_city?: string | null;
+      /** Venue Latitude */
+      venue_latitude?: number | null;
+      /** Venue Longitude */
+      venue_longitude?: number | null;
       /** Bride First Name */
       bride_first_name?: string | null;
       /** Groom First Name */
