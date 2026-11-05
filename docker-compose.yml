@@ -257,6 +257,8 @@ services:
         VITE_RSVP_DEADLINE: ${RSVP_DEADLINE:-}
         VITE_REGISTRY_KNOT_URL: ${REGISTRY_KNOT_URL:-}
         VITE_REGISTRY_ETSY_URL: ${REGISTRY_ETSY_URL:-}
+        VITE_MAID_OF_HONOR: ${MAID_OF_HONOR:-}
+        VITE_BEST_MAN: ${BEST_MAN:-}
     container_name: ui-wed
     depends_on:
       - service-wed

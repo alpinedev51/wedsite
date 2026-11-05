@@ -169,7 +169,7 @@ cmd_publish() {
 	if [ -f "$REPO_DIR/ui-wed/src/config/milestones.json" ]; then
 		cp "$REPO_DIR/ui-wed/src/config/milestones.json" "$src/ui-wed/src/config/milestones.json"
 	fi
-	for key in COUPLE_NAMES BRIDE_FNAME GROOM_FNAME WEDDING_DATE VENUE_NAME VENUE_CITY VENUE_LATITUDE VENUE_LONGITUDE RSVP_DEADLINE REGISTRY_KNOT_URL REGISTRY_ETSY_URL; do
+	for key in COUPLE_NAMES BRIDE_FNAME GROOM_FNAME WEDDING_DATE VENUE_NAME VENUE_CITY VENUE_LATITUDE VENUE_LONGITUDE RSVP_DEADLINE REGISTRY_KNOT_URL REGISTRY_ETSY_URL MAID_OF_HONOR BEST_MAN; do
 		args+=(--build-arg "VITE_$key=$(env_get "$REPO_DIR/.env" "$key")")
 	done
 

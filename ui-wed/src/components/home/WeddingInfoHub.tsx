@@ -30,7 +30,7 @@ function WeddingInfoHub() {
     },
     {
       title: "Travel",
-      description: "Hotel and directions info -- more details coming soon.",
+      description: "Hotels and directions -- details coming soon.",
       to: "/travel",
       accent: "before:bg-olive bg-olive/8!",
       flower: "element-11",

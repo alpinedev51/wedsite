@@ -4,14 +4,14 @@ import Eyebrow from "../components/ui/Eyebrow";
 import PageHeading from "../components/ui/PageHeading";
 import Gallery from "../components/ui/Gallery";
 // 2400px web copies (~400-700 KB) of 6960px Lightroom exports (~6 MB each).
-import walkawayImg from "../assets/gatech_walkaway_web.jpg";
-import doorsImg from "../assets/ak_doors_web.jpg";
+import walkawayImg from "../assets/photos/gatech_walkaway_web.jpg";
+import doorsImg from "../assets/photos/ak_doors_web.jpg";
 
 // Gallery just needs an array of { src, alt } objects. `src` has to be
 // an *imported* image, not a plain string path — see the comment in
 // Home.tsx for why (Vite needs the import to bundle the file and turn
 // it into a real URL). To add more photos: drop the file in
-// src/assets/, import it at the top the same way as the ones above,
+// src/assets/photos/, import it at the top the same way as the ones above,
 // then add a new { src: ..., alt: ... } entry below.
 const photos = [
   { src: walkawayImg, alt: "Austin & Kylie" },

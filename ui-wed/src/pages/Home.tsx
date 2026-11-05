@@ -12,8 +12,8 @@ import { ceremonyTime, formatLongDate } from "../lib/date";
 // 2-5 MB each -- far too heavy for an above-the-fold image on a phone. The
 // originals aren't kept in the repo; re-encode from the source photos if a
 // different size is ever needed.
-import heroOneImg from "../assets/std_hero_1_web.jpg";
-import heroTwoImg from "../assets/std_hero_2_web.jpg";
+import heroOneImg from "../assets/hero/std_hero_1_web.jpg";
+import heroTwoImg from "../assets/hero/std_hero_2_web.jpg";
 
 function Home() {
   const { wedding } = useWeddingConfig();

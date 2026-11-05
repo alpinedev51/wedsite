@@ -123,7 +123,7 @@ function UsMap({
             />
             <ellipse
               cx={x}
-              cy={y}
+              cy={y + 4}
               rx="11"
               ry="4"
               fill="var(--color-brown)"

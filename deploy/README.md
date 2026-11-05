@@ -67,6 +67,7 @@ too, so security fixes arrive straight away instead of monthly.
 | `IMAGE_TAG` | server `.env`, **written by deploy.sh** | which build is running |
 | Frontend fallback text: `COUPLE_NAMES`, `BRIDE_FNAME`, `GROOM_FNAME`, `WEDDING_DATE`, `VENUE_NAME`, `VENUE_CITY`, `VENUE_LATITUDE`, `VENUE_LONGITUDE`, `RSVP_DEADLINE`, `REGISTRY_KNOT_URL`, `REGISTRY_ETSY_URL` | GitHub repo **variables** | baked into the ui-wed image by CI |
 | `MILESTONES_JSON` (optional: the real Our Story timeline) | GitHub repo variable | baked into ui-wed by CI |
+| Wedding Party names: `MAID_OF_HONOR`, `BEST_MAN` (photos are files in `ui-wed/src/assets/wedding-party/`) | GitHub repo variables | baked into ui-wed by CI |
 
 `WEDDING_DATE`, `VENUE_*` and the rest also live in the server `.env`, because
 service-wed uses them to seed the database on first boot. After that, the
