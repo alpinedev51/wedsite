@@ -28,6 +28,11 @@ function PersonCard({
 }) {
   return (
     <div className={`flex flex-col items-center text-center ${className}`}>
+      {role && (
+        <p className="relative z-10 mb-5 font-utility text-lg uppercase tracking-widest text-walnut">
+          {role}
+        </p>
+      )}
       <div className="relative mb-6">
         {/* The frame: a fine gold ring a little outside the photo. */}
         <span
@@ -57,15 +62,15 @@ function PersonCard({
           />
         )}
       </div>
-      <h3 className="font-display text-xl text-walnut sm:text-2xl">{name}</h3>
-      {/* text-walnut (5.8:1) rather than text-clay (2.76:1) -- 12px uppercase
-          tracked-out text is the last place to be spending contrast. */}
-      {role && (
-        <p className="mt-1 font-utility text-xs uppercase tracking-widest text-walnut">
-          {role}
-        </p>
+      {/* `relative` on the text below puts it on a layer above the spray,
+          so a spray that reaches down past the portrait never covers it
+          (coming after the spray, it draws on top). */}
+      <h3 className="relative font-display text-xl text-walnut sm:text-2xl">
+        {name}
+      </h3>
+      {blurb && (
+        <p className="relative mt-3 font-body text-sm text-ink/70">{blurb}</p>
       )}
-      {blurb && <p className="mt-3 font-body text-sm text-ink/70">{blurb}</p>}
     </div>
   );
 }
