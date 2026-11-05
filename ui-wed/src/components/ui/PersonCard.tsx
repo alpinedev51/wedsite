@@ -1,12 +1,15 @@
-import { Floral } from "../decor/Floral";
+import { Floral, type FloralName } from "../decor/Floral";
 
-// A floral spray tucked against the bottom of the portrait, on the given
-// side. Its blooms sit on the frame and the stems reach outward, so two
-// cards side by side mirror each other.
-const sprays = {
-  left: { flipX: true, position: "-left-14 sm:-left-24" },
-  right: { flipX: false, position: "-right-14 sm:-right-24" },
-};
+/** A floral spray tucked against the portrait's frame. */
+export interface Spray {
+  name: FloralName;
+  /** Mirror it left-to-right. */
+  flipX?: boolean;
+  /** Its colour, position and width, e.g. "-bottom-4 -left-14 w-28
+   * text-sage2/75". The caller sets them: the size and position depend on
+   * the artwork's shape. */
+  className: string;
+}
 
 function PersonCard({
   name,
@@ -20,7 +23,7 @@ function PersonCard({
   role?: string;
   photoSrc?: string;
   blurb?: string;
-  spray?: keyof typeof sprays;
+  spray?: Spray;
   className?: string;
 }) {
   return (
@@ -48,9 +51,9 @@ function PersonCard({
         </div>
         {spray && (
           <Floral
-            name="arrangement-10"
-            flipX={sprays[spray].flipX}
-            className={`absolute -bottom-4 w-28 text-sage2/60 sm:-bottom-5 sm:w-36 ${sprays[spray].position}`}
+            name={spray.name}
+            flipX={spray.flipX}
+            className={`absolute ${spray.className}`}
           />
         )}
       </div>
