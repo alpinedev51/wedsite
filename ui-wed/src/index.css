@@ -35,12 +35,9 @@
   --color-slate: #5c7088;
   --color-slate2: #36475c;
   --color-slate3: #717787;
+  --color-denim: #2e5585;
+  --color-navy: #1c3557;
   --color-ochre: #c8a24c;
-  /* ochre is only 2.13:1 on linen -- fine for purely decorative marks (the
-     timeline dots, the gradient hairline) but not for anything that carries
-     information. ochre-deep (3.55:1) clears the 3:1 bar for non-text
-     indicators and is used where the gold has a job to do, e.g. the ring
-     around the wedding day in MiniCalendar. */
   --color-ochre-deep: #9d7a28;
   --color-gold: #ffce00;
   --color-yellow: #fce300;

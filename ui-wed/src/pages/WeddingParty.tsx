@@ -2,18 +2,31 @@ import Container from "../components/ui/Container";
 import Section from "../components/ui/Section";
 import Eyebrow from "../components/ui/Eyebrow";
 import PageHeading from "../components/ui/PageHeading";
-import PersonCard from "../components/ui/PersonCard";
+import PersonCard, { type Spray } from "../components/ui/PersonCard";
 import { Floral } from "../components/decor/Floral";
-import { weddingParty } from "../config/weddingParty";
+import { weddingParty, type PartyMember } from "../config/weddingParty";
 
 // Same edge sprays as Our Story: wide screens only, where there's room
 // beside the cards.
 const edge =
-  "absolute top-1/2 hidden h-[min(28rem,90%)] -translate-y-1/2 text-sage/40 xl:block";
+  "absolute top-1/2 hidden h-[min(28rem,90%)] -translate-y-1/2 text-tan/40 xl:block";
 
-// The spray on each portrait faces outward from the pair, and stays on its
-// side even when only one of the two is set.
-const spraySide = { maidOfHonor: "left", bestMan: "right" } as const;
+// Each portrait's floral spray: the maid of honor's on the left, the best
+// man's on the right, so the pair faces outward (each stays on its side when
+// only one name is set). The two pieces are different shapes, hence the
+// different sizes and offsets.
+const sprays: Record<PartyMember["id"], Spray> = {
+  maidOfHonor: {
+    name: "arrangement-02",
+    className:
+      "-bottom-8 -rotate-90 -left-16 w-28 sm:-bottom-10 sm:-left-28 sm:w-40 text-denim/70",
+  },
+  bestMan: {
+    name: "arrangement-03",
+    className:
+      "-bottom-5 -rotate-45 -right-16 w-36 sm:-bottom-0 sm:-right-30 sm:w-52 text-ochre-deep/75",
+  },
+};
 
 function WeddingParty() {
   return (
@@ -27,7 +40,7 @@ function WeddingParty() {
           <PageHeading>The People Standing With Us</PageHeading>
           <Floral
             name="divider-02"
-            className="mt-2 w-56 text-sage2/60 sm:w-72"
+            className="mt-2 w-56 text-sage2/75 sm:w-72"
           />
           <p className="max-w-lg font-body text-lg text-ink/75">
             The friends and family who have shaped who we are, and who
@@ -44,7 +57,7 @@ function WeddingParty() {
                 name={person.name}
                 role={person.role}
                 photoSrc={person.photoSrc}
-                spray={spraySide[person.id]}
+                spray={sprays[person.id]}
                 className="w-52"
               />
             ))}

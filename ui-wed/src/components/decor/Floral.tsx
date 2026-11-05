@@ -1,4 +1,6 @@
 import { MaskedSvg } from "./MaskedSvg";
+import arrangement02 from "@/assets/decor/flowers/arrangement-02.svg";
+import arrangement03 from "@/assets/decor/flowers/arrangement-03.svg";
 import arrangement10 from "@/assets/decor/flowers/arrangement-10.svg";
 import divider02 from "@/assets/decor/flowers/divider-02.svg";
 import divider04 from "@/assets/decor/flowers/divider-04.svg";
@@ -21,7 +23,11 @@ import sideDesign04 from "@/assets/decor/flowers/side-design-04.svg";
 // viewBox width / height, so a Floral only needs a width (or a height).
 // To add one: drop the SVG in that folder, import it above and list it here.
 const florals = {
-  // A spray of flowers: blooms at the lower left, stems reaching up-right.
+  // Sprays of flowers. 02 is nearly square: blooms in the middle, leaves
+  // trailing lower-left, stems reaching up-right. 03 is a wide, fairly even
+  // bouquet. 10: blooms at the lower left, stems reaching up-right.
+  "arrangement-02": { src: arrangement02, ratio: 526.69 / 511.979 },
+  "arrangement-03": { src: arrangement03, ratio: 722.637 / 393.761 },
   "arrangement-10": { src: arrangement10, ratio: 707.07 / 424.31 },
   // A horizontal garland for between sections or under headings.
   "divider-02": { src: divider02, ratio: 654.462 / 155.506 },
