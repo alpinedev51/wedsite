@@ -12,9 +12,9 @@ const edge =
   "absolute top-1/2 hidden h-[min(28rem,90%)] -translate-y-1/2 text-tan/40 xl:block";
 
 // Each portrait's floral spray: the maid of honor's on the left, the best
-// man's on the right, so the pair faces outward (each stays on its side when
-// only one name is set). The two pieces are different shapes, hence the
-// different sizes and offsets.
+// man's on the right (each stays on its side when only one name is set).
+// Artwork, size, position, rotation and colour are all set per spray here;
+// the two pieces are different shapes, so they need different values.
 const sprays: Record<PartyMember["id"], Spray> = {
   maidOfHonor: {
     name: "arrangement-02",
