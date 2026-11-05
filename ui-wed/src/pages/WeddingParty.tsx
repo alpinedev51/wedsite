@@ -13,18 +13,20 @@ const edge =
 
 // Each portrait's floral spray: the maid of honor's on the left, the best
 // man's on the right (each stays on its side when only one name is set).
-// Artwork, size, position, rotation and colour are all set per spray here;
-// the two pieces are different shapes, so they need different values.
+// Artwork, size, position, rotation and colour are all set per spray here.
+// To keep the pair symmetrical, change both together.
 const sprays: Record<PartyMember["id"], Spray> = {
   maidOfHonor: {
-    name: "arrangement-02",
+    name: "element-40",
     className:
-      "-bottom-8 -rotate-90 -left-16 w-28 sm:-bottom-10 sm:-left-28 sm:w-40 text-denim/70",
+      "-bottom-3 -left-8 h-30 origin-bottom -rotate-16 text-denim/60 sm:-left-11 sm:h-30 sm:bottom-1",
   },
+  // The maid of honor's spray mirrored: same values, right side, flipped.
   bestMan: {
-    name: "arrangement-03",
+    name: "element-40",
+    flipX: true,
     className:
-      "-bottom-5 -rotate-45 -right-16 w-36 sm:-bottom-0 sm:-right-30 sm:w-52 text-ochre-deep/75",
+      "-bottom-3 -right-8 h-30 origin-bottom rotate-16 text-sage2/75 sm:-right-11 sm:h-30 sm:bottom-1",
   },
 };
 

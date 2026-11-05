@@ -13,6 +13,8 @@ import element21 from "@/assets/decor/flowers/element-21.svg";
 import element25 from "@/assets/decor/flowers/element-25.svg";
 import element33 from "@/assets/decor/flowers/element-33.svg";
 import element35 from "@/assets/decor/flowers/element-35.svg";
+import element36 from "@/assets/decor/flowers/element-36.svg";
+import element40 from "@/assets/decor/flowers/element-40.svg";
 import element43 from "@/assets/decor/flowers/element-43.svg";
 import element51 from "@/assets/decor/flowers/element-51.svg";
 import element75 from "@/assets/decor/flowers/element-75.svg";
@@ -43,6 +45,10 @@ const florals = {
   "element-25": { src: element25, ratio: 294.04 / 328.41 },
   "element-33": { src: element33, ratio: 225.52 / 576.77 },
   "element-35": { src: element35, ratio: 223.25 / 574.43 },
+  // A tall budding sprig, stem at the bottom left.
+  "element-36": { src: element36, ratio: 233.792 / 750.565 },
+  // A leafy branch, stem at the bottom right, leaning up-left.
+  "element-40": { src: element40, ratio: 540.146 / 857.268 },
   "element-43": { src: element43, ratio: 399.5 / 736.7 },
   "element-51": { src: element51, ratio: 290.74 / 634.86 },
   "element-75": { src: element75, ratio: 192.64 / 581.86 },
