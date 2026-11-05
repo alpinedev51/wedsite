@@ -26,8 +26,6 @@ function Home() {
         alt={wedding.coupleNames}
         priority
         overlay={<HeroTagline />}
-        // Puts the tagline on the grass in the bottom part of the photo.
-        // Raise the number to move it lower, lower it to move it up.
         overlayTopPct={80}
         maskFadeTopPct={10}
         maskFadeBottomPct={6}
@@ -37,8 +35,6 @@ function Home() {
           aria-hidden="true"
           className="hub-frost-fade-top pointer-events-none absolute inset-x-0 -top-[6dvh] z-10 h-[6dvh] bg-linen backdrop-blur-[3px]"
         />
-        {/* Flowers trailing down both edges, where there's room beside the
-            centred column (lg and up). */}
         <Floral
           name="side-design-04"
           flipX
@@ -56,7 +52,6 @@ function Home() {
             {formatLongDate(wedding.date)} &middot; {wedding.location.venue},{" "}
             {wedding.location.city}
           </p>
-          {/* Hidden until a real ceremony time is set -- see ceremonyTime. */}
           {time && (
             <p className="font-body text-base text-ink/75 sm:text-lg">
               Ceremony at {time}
@@ -70,10 +65,6 @@ function Home() {
             className="mt-6 w-60 text-ochre-deep/65 sm:w-80"
           />
 
-          {/* The countdown is the most affecting thing on the page; it was
-              rendered at the small size while the lg variant went unused.
-              The heading goes through Countdown so it disappears with the
-              digits once the wedding has passed. */}
           <Countdown
             target={wedding.date}
             size="lg"

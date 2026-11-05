@@ -82,13 +82,13 @@ function WeddingInfoHub() {
       <Floral
         name="arrangement-10"
         flipY
-        className="absolute top-0 left-0 w-24 text-olive/60 sm:w-60 lg:w-72"
+        className="absolute top-10 rotate-45 -left-20 w-24 text-olive/60 sm:w-60 lg:w-60"
       />
       <Floral
         name="arrangement-10"
         flipX
         flipY
-        className="absolute top-0 right-0 w-24 text-olive/60 sm:w-60 lg:w-72"
+        className="absolute top-10 -rotate-45 -right-20 w-24 text-olive/60 sm:w-60 lg:w-60"
       />
       <Floral
         name="element-43"
