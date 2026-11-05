@@ -51,7 +51,7 @@ function Travel() {
             </strong>
             .
           </p>
-          <p className="max-w-md font-body text-ink/65 italic">
+          <p className="max-w-md font-body text-xl text-ink/65 italic">
             More details on hotels and directions coming soon.
           </p>
         </div>

@@ -150,6 +150,8 @@ jobs:
               VITE_RSVP_DEADLINE=${{ vars.RSVP_DEADLINE }}
               VITE_REGISTRY_KNOT_URL=${{ vars.REGISTRY_KNOT_URL }}
               VITE_REGISTRY_ETSY_URL=${{ vars.REGISTRY_ETSY_URL }}
+              VITE_MAID_OF_HONOR=${{ vars.MAID_OF_HONOR }}
+              VITE_BEST_MAN=${{ vars.BEST_MAN }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
