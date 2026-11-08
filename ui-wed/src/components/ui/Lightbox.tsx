@@ -5,6 +5,22 @@ import { useModalBehavior } from "../../hooks/useModalBehavior";
 // Horizontal travel (px) before a touch counts as a swipe rather than a tap.
 const SWIPE_THRESHOLD = 50;
 
+/** How wide the photo is drawn below: as big as fits in the screen width
+ *  (minus the p-4 padding) and 85vh tall, keeping its shape. A browser that
+ *  can't parse this falls back to 100vw, which only over-fetches a bit. */
+function lightboxSizes({ width, height }: GalleryImage) {
+  if (!width || !height) return "100vw";
+  return `min(calc(100vw - 2rem), calc(85vh * ${(width / height).toFixed(3)}))`;
+}
+
+/** What preloading this photo would fetch, as one string, so the preload
+ *  effect below re-runs only when that changes. */
+function preloadKey(image: GalleryImage | null) {
+  return image
+    ? JSON.stringify([image.src, image.avifSrcSet ?? "", lightboxSizes(image)])
+    : "";
+}
+
 function Lightbox({
   images,
   index,
@@ -40,21 +56,31 @@ function Lightbox({
   }, [goPrev, goNext]);
 
   // Warm the neighbours so paging through a gallery doesn't flash a blank
-  // frame while the next full-size image downloads. Keyed on the two URLs,
-  // not the `images` array, so a parent that rebuilds its array each render
-  // doesn't re-run this.
+  // frame while the next full-size image downloads. Keyed on strings, not
+  // the `images` array, so a parent that rebuilds its array each render
+  // doesn't re-run this. Photos with an AVIF srcset preload the same size
+  // the <picture> below will pick.
   const hasNeighbours = images.length > 1;
-  const nextSrc = hasNeighbours ? images[(index + 1) % images.length].src : "";
-  const prevSrc = hasNeighbours
-    ? images[(index - 1 + images.length) % images.length].src
-    : "";
+  const nextKey = preloadKey(
+    hasNeighbours ? images[(index + 1) % images.length] : null,
+  );
+  const prevKey = preloadKey(
+    hasNeighbours ? images[(index - 1 + images.length) % images.length] : null,
+  );
   useEffect(() => {
-    for (const src of [nextSrc, prevSrc]) {
-      if (!src) continue;
+    for (const key of [nextKey, prevKey]) {
+      if (!key) continue;
+      const [src, srcSet, sizes] = JSON.parse(key) as string[];
       const preload = new Image();
-      preload.src = src;
+      if (srcSet) {
+        // sizes before srcset, so the first candidate chosen is the right one.
+        preload.sizes = sizes;
+        preload.srcset = srcSet;
+      } else {
+        preload.src = src;
+      }
     }
-  }, [nextSrc, prevSrc]);
+  }, [nextKey, prevKey]);
 
   const image = images[index];
 
@@ -150,13 +176,21 @@ function Lightbox({
         </>
       )}
 
-      <img
-        key={image.src}
-        src={image.src}
-        alt={image.alt ?? ""}
-        className="anim-panel max-h-[85vh] max-w-full rounded-lg object-contain"
-        onClick={(e) => e.stopPropagation()}
-      />
+      <picture key={image.src} className="contents">
+        {image.avifSrcSet && (
+          <source
+            type="image/avif"
+            srcSet={image.avifSrcSet}
+            sizes={lightboxSizes(image)}
+          />
+        )}
+        <img
+          src={image.src}
+          alt={image.alt ?? ""}
+          className="anim-panel max-h-[85vh] max-w-full rounded-lg object-contain"
+          onClick={(e) => e.stopPropagation()}
+        />
+      </picture>
 
       {/* Without this there's no sense of how far through a gallery you are. */}
       {images.length > 1 && (
