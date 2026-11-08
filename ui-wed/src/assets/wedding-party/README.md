@@ -12,4 +12,5 @@ With a name but no photo here, the card shows their initial instead.
 Any of `.jpg`, `.jpeg`, `.png`, `.webp` or `.avif` works, as long as the file
 name is exactly `maid_of_honor` or `best_man`. Photos are shown as a circle
 about 200px across, so a square crop around 600 x 600px (under ~150 KB) is
-plenty and keeps the page quick to load.
+plenty and keeps the page quick to load. (`maid_of_honor.jpg` is a 400px
+square, used as-is; swap in a larger crop if one turns up.)

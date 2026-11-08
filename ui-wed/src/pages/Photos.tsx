@@ -3,23 +3,13 @@ import Section from "../components/ui/Section";
 import Eyebrow from "../components/ui/Eyebrow";
 import PageHeading from "../components/ui/PageHeading";
 import Gallery from "../components/ui/Gallery";
-// 2400px web copies (~400-700 KB) of 6960px Lightroom exports (~6 MB each).
-import walkawayImg from "../assets/photos/gatech_walkaway_web.jpg";
-import doorsImg from "../assets/photos/ak_doors_web.jpg";
+import { photoSections } from "../config/photos";
 
-// Gallery just needs an array of { src, alt } objects. `src` has to be
-// an *imported* image, not a plain string path — see the comment in
-// Home.tsx for why (Vite needs the import to bundle the file and turn
-// it into a real URL). To add more photos: drop the file in
-// src/assets/photos/, import it at the top the same way as the ones above,
-// then add a new { src: ..., alt: ... } entry below.
-const photos = [
-  { src: walkawayImg, alt: "Austin & Kylie" },
-  {
-    src: doorsImg,
-    alt: "Austin & Kylie in graduation gowns in front of wooden doors",
-  },
-];
+// The photo list (sections, order, alt text) lives in src/config/photos.ts.
+// To add photos, see src/assets/photos/README.md.
+
+const sectionId = (title: string) =>
+  `photos-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
 
 function Photos() {
   return (
@@ -31,13 +21,22 @@ function Photos() {
         </div>
 
         {/*
-          Gallery renders the thumbnail grid and manages its own "which
-          photo is open" state internally (look at the useState call in
-          Gallery.tsx if you're curious) — clicking a thumbnail opens
-          the full-screen Lightbox automatically. We don't wire any of
-          that up here, we just hand it the photo list as a prop.
+          Each Gallery renders a thumbnail grid and manages its own "which
+          photo is open" state -- clicking a thumbnail opens the full-screen
+          Lightbox, which pages through that section's photos.
         */}
-        <Gallery images={photos} className="w-full" />
+        {photoSections.map((section) => (
+          <section
+            key={section.title}
+            aria-labelledby={sectionId(section.title)}
+            className="flex w-full flex-col items-center gap-6 pt-4"
+          >
+            <h2 id={sectionId(section.title)} className="text-2xl sm:text-3xl">
+              {section.title}
+            </h2>
+            <Gallery images={section.images} className="w-full" />
+          </section>
+        ))}
       </Container>
     </Section>
   );
