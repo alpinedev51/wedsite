@@ -54,6 +54,10 @@
 }
 
 @layer components {
+  /* The bottom fade eases out (drops quickly, then trails off) rather
+     than fading in a straight line: a straight fade leaves a dark photo
+     half-visible over the cream page for longer, which reads as a grey
+     band. */
   .hero-fade-mask {
     --fade-top-pct: 12%;
     --fade-bottom-pct: 12%;
@@ -62,6 +66,8 @@
       transparent 0,
       black var(--fade-top-pct),
       black calc(100% - var(--fade-bottom-pct)),
+      rgba(0, 0, 0, 0.55) calc(100% - var(--fade-bottom-pct) * 0.6),
+      rgba(0, 0, 0, 0.2) calc(100% - var(--fade-bottom-pct) * 0.3),
       transparent 100%
     );
     -webkit-mask-image: linear-gradient(
@@ -69,6 +75,8 @@
       transparent 0,
       black var(--fade-top-pct),
       black calc(100% - var(--fade-bottom-pct)),
+      rgba(0, 0, 0, 0.55) calc(100% - var(--fade-bottom-pct) * 0.6),
+      rgba(0, 0, 0, 0.2) calc(100% - var(--fade-bottom-pct) * 0.3),
       transparent 100%
     );
   }

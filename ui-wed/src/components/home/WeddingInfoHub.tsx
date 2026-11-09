@@ -5,6 +5,8 @@ import InfoCard from "../ui/InfoCard";
 import { Floral, type FloralName } from "../decor/Floral";
 import { useWeddingConfig } from "../../config/useWeddingConfig";
 import { ceremonyTime, formatLongDate, formatShortDate } from "../../lib/date";
+import { STAGGER } from "../../lib/motion";
+import { Reveal } from "../motion/Reveal";
 
 function WeddingInfoHub() {
   const { wedding, rsvpOpen } = useWeddingConfig();
@@ -112,27 +114,40 @@ function WeddingInfoHub() {
               aria-hidden="true"
               className="pointer-events-none absolute top-1/2 left-1/2 -z-10 h-56 w-screen -translate-x-1/2 -translate-y-1/2 bg-linear-to-b from-transparent via-sage-wash to-transparent sm:h-64"
             />
-            <Eyebrow>At A Glance</Eyebrow>
-            <h2 className="text-3xl sm:text-4xl">Quick Version</h2>
+            {/* The eyebrow and heading animate on their own, never this
+                wrapper: fading the wrapper would make it a new layer and
+                trap the band above inside it. */}
+            <Reveal>
+              <Eyebrow>At A Glance</Eyebrow>
+            </Reveal>
+            <Reveal delay={STAGGER}>
+              <h2 className="text-3xl sm:text-4xl">Quick Version</h2>
+            </Reveal>
           </div>
-          <Floral name="divider-05" className="w-48 text-clay/80 sm:w-60" />
+          <Reveal delay={STAGGER * 2} y={0}>
+            <Floral name="divider-05" className="w-48 text-clay/80 sm:w-60" />
+          </Reveal>
         </div>
 
         <div className="grid w-full grid-cols-1 gap-6 text-left sm:grid-cols-2 lg:grid-cols-4">
-          {cards.map((card) => (
-            <InfoCard
-              key={card.title}
-              title={card.title}
-              description={card.description}
-              to={card.to}
-              decor={
-                <Floral
-                  name={card.flower}
-                  className={`absolute -right-5 -bottom-7 w-24 ${card.flowerColor}`}
-                />
-              }
-              className={`relative overflow-hidden before:absolute before:inset-x-0 before:top-0 before:h-1.5 before:content-[''] ${card.accent}`}
-            />
+          {cards.map((card, i) => (
+            // Own Reveal per card: side by side on desktop they ripple in
+            // left to right; stacked on a phone each waits until it's on
+            // screen.
+            <Reveal key={card.title} delay={i * STAGGER} className="h-full">
+              <InfoCard
+                title={card.title}
+                description={card.description}
+                to={card.to}
+                decor={
+                  <Floral
+                    name={card.flower}
+                    className={`absolute -right-5 -bottom-7 w-24 transition-transform duration-500 ease-out group-hover:scale-110 group-hover:rotate-12 group-focus-visible:scale-110 group-focus-visible:rotate-12 ${card.flowerColor}`}
+                  />
+                }
+                className={`relative overflow-hidden before:absolute before:inset-x-0 before:top-0 before:h-1.5 before:transition-[height] before:duration-300 before:content-[''] group-hover:before:h-2.5 group-focus-visible:before:h-2.5 ${card.accent}`}
+              />
+            </Reveal>
           ))}
         </div>
       </Container>

@@ -7,31 +7,11 @@ import ActivityCard from "../components/ui/ActivityCard";
 import ActivityModal from "../components/ui/ActivityModal";
 import type { ActivityLink } from "../components/ui/ActivityModal";
 import type { GalleryImage } from "../components/ui/Gallery";
-// *_web.jpg files are 1600px re-encodes of originals that were up to 4 MB
-// each. Photos without a _web copy were already small enough to use as-is.
-import dgoTrain from "../assets/things-to-do/dgo_train_web.jpg";
-import dgoTrainFall from "../assets/things-to-do/dgo_train_fall.jpg";
-import chicagoBasin from "../assets/things-to-do/chicagobasin_web.jpg";
-import sanJuansWide from "../assets/things-to-do/sanjuans_wide.webp";
-import sanJuansPretty from "../assets/things-to-do/sanjuanspretty_web.jpg";
-import flyfishAnimas from "../assets/things-to-do/flyfish_animas.jpg";
-import flyfishDolores from "../assets/things-to-do/flyfish_dolores.jpg";
-import brownTrout from "../assets/things-to-do/browntrout.jpg";
-import dgoDowntown from "../assets/things-to-do/dgo_downtown_web.jpg";
-import eastAnimasClimb from "../assets/things-to-do/east_animas_climb.webp";
-import rockClimbDgo from "../assets/things-to-do/rockclimbdgo.jpg";
-import boulderTurtleLake from "../assets/things-to-do/boulderturtlelake_web.jpg";
-import purgMtb from "../assets/things-to-do/purg_mtb_web.jpg";
-import horseGulch from "../assets/things-to-do/horsegulch.jpg";
-import twinButtesMtb from "../assets/things-to-do/twinbuttesmtb.jpg";
-import engineerSummit from "../assets/things-to-do/engineersummit_web.jpg";
-import iceLakes from "../assets/things-to-do/icelakes_web.jpg";
-import mesaVerde from "../assets/things-to-do/mesaverde_dwellings.jpg";
-import mesaVerdeClose from "../assets/things-to-do/mesaverde_closeup.jpg";
-import mesaVerdeDwelling from "../assets/things-to-do/dweellingmesaverde_web.jpg";
-import animasRafting from "../assets/things-to-do/animas_rafting.jpg";
-import hotSprings from "../assets/things-to-do/hotsprings.jpg";
-import lakeNighthorse from "../assets/things-to-do/lakenighthorse.jpg";
+import { Reveal } from "../components/motion/Reveal";
+import { STAGGER } from "../lib/motion";
+import { useGridColumns } from "../hooks/useMediaQuery";
+// Photos by slug; see src/assets/things-to-do/README.md to add one.
+import { thingPhoto } from "../config/thingsToDoPhotos";
 
 interface Activity {
   title: string;
@@ -49,8 +29,8 @@ const activities: Activity[] = [
     details:
       "It's a real coal-fired steam train, and it climbs through the San Juans up to Silverton, an old mining town sitting at 9,318 feet up. Round trip takes most of a day, but it gets you into country you otherwise can't reach by car. You can even use it as a mode of transportation to get dropped off for a backpacking trip into the Chicago Basin. Tip: Trains sell out in summer, so book ahead if you're set on going.",
     photos: [
-      { src: dgoTrain, alt: "The Durango–Silverton steam train" },
-      { src: dgoTrainFall, alt: "The train climbing through fall colors" },
+      thingPhoto("dgo-train", "The Durango–Silverton steam train"),
+      thingPhoto("dgo-train-fall", "The train climbing through fall colors"),
     ],
   },
   {
@@ -60,9 +40,9 @@ const activities: Activity[] = [
     details:
       "There's a trail for whatever mood you're in with wildflowers in July and gold aspens by September. Hogsback is a quick and steep one right from downtown with good valley views. Engineer Mountain and the Ice Lake Trail are great popular ones for real alpine scenery and more of a half day adventure.",
     photos: [
-      { src: engineerSummit, alt: "The summit of Engineer Mountain" },
-      { src: iceLakes, alt: "Ice Lake Trail" },
-      { src: chicagoBasin, alt: "Chicago Basin, reachable by train drop-off" },
+      thingPhoto("engineersummit", "The summit of Engineer Mountain"),
+      thingPhoto("icelakes", "Ice Lake Trail"),
+      thingPhoto("chicagobasin", "Chicago Basin, reachable by train drop-off"),
     ],
   },
   {
@@ -72,8 +52,8 @@ const activities: Activity[] = [
     details:
       "We're right on the edge of one of the wildest ranges in the state: more designated wilderness than almost anywhere else in Colorado, between the Weminuche (the biggest in the state), South San Juan, Mount Sneffels, and Lizard Head areas. Fourteen of Colorado's fourteeners are back in there, including Mt. Sneffels (14,155 ft) and Uncompahgre Peak (14,316 ft). If you'd rather see it without leaving the car, the San Juan Skyway, which features the Million Dollar highway, loops through it.",
     photos: [
-      { src: sanJuansWide, alt: "The San Juan Mountains" },
-      { src: sanJuansPretty, alt: "The San Juan Mountains" },
+      thingPhoto("sanjuans-wide", "The San Juan Mountains"),
+      thingPhoto("sanjuanspretty", "The San Juan Mountains"),
     ],
   },
   {
@@ -83,9 +63,9 @@ const activities: Activity[] = [
     details:
       "The Animas runs Gold Medal water right through downtown, with wild rainbow, brown, and native Colorado River cutthroat in it. The Piedra and Dolores are favorites too, and the San Juan River tailwater below Navajo Dam, about 90 minutes south, is where people go for technical catch-and-release fishing and the bigger rainbows. There are guides in town if you'd rather have one, but you can always just talk to locals and grab a rod and go.",
     photos: [
-      { src: flyfishAnimas, alt: "Fly fishing the Animas" },
-      { src: flyfishDolores, alt: "Fly fishing the Dolores River" },
-      { src: brownTrout, alt: "A brown trout catch" },
+      thingPhoto("flyfish-animas", "Fly fishing the Animas"),
+      thingPhoto("flyfish-dolores", "Fly fishing the Dolores River"),
+      thingPhoto("browntrout", "A brown trout catch"),
     ],
   },
   {
@@ -94,7 +74,7 @@ const activities: Activity[] = [
       "Sandy lake shores with swimming, paddleboards, and the San Juans in the background.",
     details:
       "When it's hot, people head up to Vallecito, Haviland Lake, or Lemon Reservoir instead of the river. All three have sandy spots for swimming, paddleboards, boats you can rent, and the San Juans right there in the background.",
-    photos: [{ src: lakeNighthorse, alt: "Lake Nighthorse" }],
+    photos: [thingPhoto("lakenighthorse", "Lake Nighthorse")],
   },
   {
     title: "Whitewater Rafting",
@@ -102,7 +82,7 @@ const activities: Activity[] = [
       "The Animas runs straight through downtown, from easy floats to real whitewater.",
     details:
       "The Animas runs straight through downtown, from easy scenic floats to the whitewater through Smelter Rapid, so it's an easy way to cool off and see the valley from the water. There are outfitters in town if you want a guided trip, kid-friendly ones included. Tip: Ask us or the family about rafting if interested and we can help you figure something out.",
-    photos: [{ src: animasRafting, alt: "Rafting the Animas River" }],
+    photos: [thingPhoto("animas-rafting", "Rafting the Animas River")],
   },
   {
     title: "Downtown Durango",
@@ -110,7 +90,7 @@ const activities: Activity[] = [
       "Main Street breweries, shops, and restaurants, good for wandering with no real plan.",
     details:
       "Main Street's got the breweries, shops, galleries, and restaurants. Good for wandering, a coffee, or a pint, no real plan needed. The old Train Depot has a small museum if you want the history behind the railroad while you're down there.",
-    photos: [{ src: dgoDowntown, alt: "Downtown Durango's Main Street" }],
+    photos: [thingPhoto("dgo-downtown", "Downtown Durango's Main Street")],
   },
   {
     title: "Mesa Verde National Park",
@@ -119,9 +99,9 @@ const activities: Activity[] = [
     details:
       "About an hour southwest, and one of the best-preserved cliff dwelling sites in the country. The ranger-led tours let you actually climb down into the dwellings, which is worth doing at least once. Tip: Give it a half day at minimum, and book tickets ahead if you're going during peak season as they do sell out.",
     photos: [
-      { src: mesaVerde, alt: "Mesa Verde National Park." },
-      { src: mesaVerdeClose, alt: "Mesa Verde dwellings." },
-      { src: mesaVerdeDwelling, alt: "Ground view of Mesa Verde dwellings." },
+      thingPhoto("mesaverde-dwellings", "Mesa Verde National Park."),
+      thingPhoto("mesaverde-closeup", "Mesa Verde dwellings."),
+      thingPhoto("dweellingmesaverde", "Ground view of Mesa Verde dwellings."),
     ],
   },
   {
@@ -130,7 +110,7 @@ const activities: Activity[] = [
       "Natural soaks ranging from an easy stop in town to a hike-in reward up the Piedra.",
     details:
       "Trimble is just north of town and the easy option if you want to soak after a day out. Pinkerton and Rainbow, up along the Piedra, take more of a drive and a bit of a walk to reach, but they're more natural and worth it if you're up for it.",
-    photos: [{ src: hotSprings, alt: "Hot Springs Resort" }],
+    photos: [thingPhoto("hotsprings", "Hot Springs Resort")],
   },
   {
     title: "Rock Climbing",
@@ -139,9 +119,9 @@ const activities: Activity[] = [
     details:
       "It's dry and sunny enough here that people climb pretty much year-round. Turtle Lake and the East Animas are the local crags, with everything from easy sport routes to harder trad and bouldering. If you need gear or don't know the routes, just ask around at the wedding. Odds are someone can get you out there.",
     photos: [
-      { src: eastAnimasClimb, alt: "Climbing at the East Animas crags" },
-      { src: rockClimbDgo, alt: "Rock climbing near Durango" },
-      { src: boulderTurtleLake, alt: "Bouldering at Turtle Lake" },
+      thingPhoto("east-animas-climb", "Climbing at the East Animas crags"),
+      thingPhoto("rockclimbdgo", "Rock climbing near Durango"),
+      thingPhoto("boulderturtlelake", "Bouldering at Turtle Lake"),
     ],
   },
   {
@@ -151,9 +131,9 @@ const activities: Activity[] = [
     details:
       "This town takes biking seriously, including mountain biking. Mountain biking's world championships trace back here, and it shows in how many people ride. Horse Gulch and Test Tracks are minutes from downtown and good for a normal ride. Purgatory runs lift access in summer if you want the bigger downhill runs without the climb.",
     photos: [
-      { src: purgMtb, alt: "Mountain biking at Purgatory" },
-      { src: horseGulch, alt: "Horse Gulch trails" },
-      { src: twinButtesMtb, alt: "Mountain biking at Twin Buttes" },
+      thingPhoto("purg-mtb", "Mountain biking at Purgatory"),
+      thingPhoto("horsegulch", "Horse Gulch trails"),
+      thingPhoto("twinbuttesmtb", "Mountain biking at Twin Buttes"),
     ],
   },
 ];
@@ -161,6 +141,9 @@ const activities: Activity[] = [
 function ThingsToDo() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const openActivity = openIndex !== null ? activities[openIndex] : null;
+  // Columns as drawn right now (matching the grid classes below), so the
+  // first row and the left-to-right ripple follow the real layout.
+  const columns = useGridColumns({ base: 1, sm: 2, lg: 3 });
 
   return (
     <Section className="text-center">
@@ -174,13 +157,23 @@ function ThingsToDo() {
             tall rows on a wide screen. */}
         <div className="grid w-full grid-cols-1 gap-6 text-left sm:grid-cols-2 lg:grid-cols-3">
           {activities.map((activity, index) => (
-            <ActivityCard
+            // Staggered by column, so each row ripples in left to right
+            // (on a phone, one column, each card simply fades in).
+            <Reveal
               key={activity.title}
-              title={activity.title}
-              summary={activity.summary}
-              photo={activity.photos?.[0]}
-              onOpen={() => setOpenIndex(index)}
-            />
+              delay={(index % columns) * STAGGER}
+              y={16}
+              className="h-full"
+            >
+              <ActivityCard
+                title={activity.title}
+                summary={activity.summary}
+                photo={activity.photos?.[0]}
+                // The first row is on screen when the page opens.
+                eager={index < columns}
+                onOpen={() => setOpenIndex(index)}
+              />
+            </Reveal>
           ))}
         </div>
       </Container>

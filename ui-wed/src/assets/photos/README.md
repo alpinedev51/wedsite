@@ -17,12 +17,18 @@ To add photos:
    ```
 
    For each photo this writes `<slug>-<width>w.avif` in up to 3 sizes,
-   a `<slug>.webp` fallback, and an entry in `manifest.json`. The slug is
+   a `<slug>.webp` fallback, and an entry in `manifest.json` (its size and
+   a ThumbHash: a ~25-byte blurred preview the page shows while the photo
+   loads). The slug is
    the lowercased filename (`IMG_2861.HEIC` -> `img-2861`). Encoding takes
    a while: roughly 15 seconds per full-size camera photo.
 
 3. Add `{ slug, alt }` for each photo to a section in
    `src/config/photos.ts`.
+
+If a manifest entry is ever missing its ThumbHash (e.g. it predates them),
+`uv run scripts/process-photos.py --hashes-only` adds one from the WebP
+already in this folder.
 
 The script applies the camera's rotation, keeps the colour profile (iPhone
 photos are Display P3), strips EXIF/GPS, and never upscales. Settings

@@ -1,4 +1,5 @@
 import { Floral, type FloralName } from "../decor/Floral";
+import SmartImage from "./SmartImage";
 
 /** A floral spray tucked against the portrait's frame. */
 export interface Spray {
@@ -39,15 +40,11 @@ function PersonCard({
           aria-hidden="true"
           className="absolute -inset-2.5 rounded-full border border-ochre/60"
         />
-        <div className="relative h-40 w-40 overflow-hidden rounded-full border-4 border-linen shadow-md ring-1 ring-walnut/15 sm:h-48 sm:w-48">
+        {/* The frame fixes the size, so nothing shifts as the photo loads;
+            the soft tint shows until it fades in. */}
+        <div className="relative h-40 w-40 overflow-hidden rounded-full border-4 border-linen bg-sage/15 shadow-md ring-1 ring-walnut/15 sm:h-48 sm:w-48">
           {photoSrc ? (
-            <img
-              src={photoSrc}
-              alt={name}
-              // The frame fixes the size, so nothing shifts as it loads.
-              decoding="async"
-              className="h-full w-full object-cover"
-            />
+            <SmartImage src={photoSrc} alt={name} loading="eager" />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-sage/25 via-clay/20 to-walnut/25 font-display text-4xl text-walnut/50">
               {name.charAt(0)}

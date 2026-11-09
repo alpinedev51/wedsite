@@ -48,7 +48,11 @@ function Nav() {
     // text-ink (11.7:1), which made the page you were on the hardest one to
     // read.
     `relative inline-block pb-0.5 font-utility text-sm uppercase tracking-wider transition-colors ${
-      isActive ? "text-walnut" : "text-ink hover:text-walnut"
+      isActive
+        ? "text-walnut"
+        : // A hairline that grows out from the centre on hover. The active
+          // link has the leafy vine instead.
+          "text-ink hover:text-walnut after:absolute after:inset-x-0 after:bottom-0 after:h-px after:origin-center after:scale-x-0 after:bg-walnut/60 after:transition-transform after:duration-300 after:ease-out after:content-[''] hover:after:scale-x-100 focus-visible:after:scale-x-100"
     }`;
 
   return (
@@ -66,7 +70,7 @@ function Nav() {
               <li key={link.to}>
                 <NavLink
                   to={link.to}
-                  className="inline-flex items-center rounded-full bg-walnut px-5 py-2 font-utility text-sm uppercase tracking-wider text-linen transition-colors hover:bg-clay"
+                  className="inline-flex items-center rounded-full bg-walnut px-5 py-2 font-utility text-sm uppercase tracking-wider text-linen transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-clay hover:shadow-md hover:shadow-walnut/20 active:translate-y-0 active:shadow-none"
                 >
                   {link.label}
                 </NavLink>

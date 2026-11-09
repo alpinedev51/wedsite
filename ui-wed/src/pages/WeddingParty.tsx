@@ -5,6 +5,8 @@ import PageHeading from "../components/ui/PageHeading";
 import PersonCard, { type Spray } from "../components/ui/PersonCard";
 import { Floral } from "../components/decor/Floral";
 import { weddingParty, type PartyMember } from "../config/weddingParty";
+import { Reveal } from "../components/motion/Reveal";
+import { STAGGER } from "../lib/motion";
 
 // Same edge sprays as Our Story: wide screens only, where there's room
 // beside the cards.
@@ -53,15 +55,16 @@ function WeddingParty() {
         {/* Only the people whose names are set (config/weddingParty.ts). */}
         {weddingParty.length > 0 && (
           <div className="flex flex-wrap justify-center gap-x-24 gap-y-16 sm:gap-x-32">
-            {weddingParty.map((person) => (
-              <PersonCard
-                key={person.id}
-                name={person.name}
-                role={person.role}
-                photoSrc={person.photoSrc}
-                spray={sprays[person.id]}
-                className="w-52"
-              />
+            {weddingParty.map((person, i) => (
+              <Reveal key={person.id} delay={i * STAGGER * 2} y={16}>
+                <PersonCard
+                  name={person.name}
+                  role={person.role}
+                  photoSrc={person.photoSrc}
+                  spray={sprays[person.id]}
+                  className="w-52"
+                />
+              </Reveal>
             ))}
           </div>
         )}

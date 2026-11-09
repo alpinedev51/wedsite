@@ -16,9 +16,12 @@ src/assets/photos/):
     <slug>.webp            one fallback, up to 1600px, for the few
                            browsers without AVIF.
 
-and records each photo's size in manifest.json, which src/config/photos.ts
-reads. Re-running replaces a photo's files and manifest entry; other
-entries are kept. The slug is the lowercased filename ("IMG_2861.HEIC" ->
+and records each photo's size and ThumbHash (a ~25-byte blurred preview the
+page shows while the photo loads) in manifest.json, which src/config/photos.ts
+reads.
+
+Re-running replaces a photo's files and manifest entry; other entries are
+kept. The slug is the lowercased filename ("IMG_2861.HEIC" ->
 "img-2861", "DSC03359_Original.JPG" -> "dsc03359").
 
 Quality choices (measured with SSIM against the resized original):
@@ -32,6 +35,14 @@ Quality choices (measured with SSIM against the resized original):
 
 Keep the originals somewhere outside the repo; only the web copies are
 committed.
+
+    uv run scripts/process-photos.py --hashes-only [--out <folder>]
+
+only fills in a missing ThumbHash for manifest entries that don't have one
+(e.g. made before ThumbHashes were added), from the <slug>.webp already in
+the folder -- no originals needed. It doesn't process any photos, and it
+leaves existing hashes alone: after replacing a photo, run the full command
+above on its original instead.
 """
 
 import argparse
@@ -41,6 +52,8 @@ import re
 
 import pillow_heif
 from PIL import Image, ImageOps
+
+from thumbhash_encode import thumbhash_b64
 
 pillow_heif.register_heif_opener()
 
@@ -68,7 +81,9 @@ def resized(im: Image.Image, long_edge: int) -> Image.Image:
     return im.resize(size, Image.Resampling.LANCZOS)
 
 
-def process(src: pathlib.Path, out: pathlib.Path) -> tuple[str, dict]:
+def process(
+    src: pathlib.Path, out: pathlib.Path, thumb_quality: int
+) -> tuple[str, dict]:
     slug = slug_for(src)
     with Image.open(src) as opened:
         icc = opened.info.get("icc_profile")
@@ -90,7 +105,8 @@ def process(src: pathlib.Path, out: pathlib.Path) -> tuple[str, dict]:
     widths = []
     for i, long_edge in enumerate(targets):
         variant = resized(im, long_edge)
-        opts = AVIF_THUMB_OPTS if i == 0 and len(targets) > 1 else AVIF_OPTS
+        is_thumb = i == 0 and len(targets) > 1
+        opts = {**AVIF_THUMB_OPTS, "quality": thumb_quality} if is_thumb else AVIF_OPTS
         variant.save(
             out / f"{slug}-{variant.width}w.avif", "AVIF", **opts, **save_extra
         )
@@ -99,27 +115,72 @@ def process(src: pathlib.Path, out: pathlib.Path) -> tuple[str, dict]:
     fallback = resized(im, FALLBACK_LONG_EDGE)
     fallback.save(out / f"{slug}.webp", "WEBP", **WEBP_OPTS, **save_extra)
 
-    return slug, {"width": im.width, "height": im.height, "widths": widths}
+    return slug, {
+        "width": im.width,
+        "height": im.height,
+        "widths": widths,
+        "thumbhash": thumbhash_b64(im),
+    }
+
+
+def add_missing_hashes(out: pathlib.Path, manifest: dict) -> int:
+    added = 0
+    for slug, entry in manifest.items():
+        if "thumbhash" in entry:
+            continue
+        with Image.open(out / f"{slug}.webp") as im:
+            entry["thumbhash"] = thumbhash_b64(im)
+        added += 1
+        print(f"{slug:18s} thumbhash {entry['thumbhash']}")
+    return added
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument(
-        "source", type=pathlib.Path, help="folder of originals (or one file)"
+        "source",
+        type=pathlib.Path,
+        nargs="?",
+        help="folder of originals (or one file)",
     )
     parser.add_argument("--out", type=pathlib.Path, default=DEFAULT_OUT)
+    parser.add_argument(
+        "--thumb-quality",
+        type=int,
+        default=AVIF_THUMB_OPTS["quality"],
+        help="AVIF quality of the smallest size (default %(default)s). The "
+        "Things to Do cards use 50: their sources were already-compressed "
+        "JPEGs, and at card size 50 looked the same as 75 at half the bytes.",
+    )
+    parser.add_argument(
+        "--hashes-only",
+        action="store_true",
+        help="only add missing ThumbHashes to the existing manifest",
+    )
     args = parser.parse_args()
+    if not args.hashes_only and args.source is None:
+        parser.error("give a source folder or file, or --hashes-only")
+
+    manifest_path = args.out / "manifest.json"
+    manifest = json.loads(manifest_path.read_text()) if manifest_path.exists() else {}
+
+    if args.hashes_only:
+        added = add_missing_hashes(args.out, manifest)
+        manifest_path.write_text(
+            json.dumps(dict(sorted(manifest.items())), indent=2) + "\n"
+        )
+        print(f"Added {added} ThumbHash(es); manifest has {len(manifest)}.")
+        return
 
     sources = (
         [args.source]
         if args.source.is_file()
         else sorted(p for p in args.source.iterdir() if p.suffix.lower() in SOURCE_EXTS)
     )
-    manifest_path = args.out / "manifest.json"
-    manifest = json.loads(manifest_path.read_text()) if manifest_path.exists() else {}
+    args.out.mkdir(parents=True, exist_ok=True)
 
     for src in sources:
-        slug, entry = process(src, args.out)
+        slug, entry = process(src, args.out, args.thumb_quality)
         manifest[slug] = entry
         print(
             f"{src.name:28s} -> {slug:18s} {entry['width']}x{entry['height']}  widths {entry['widths']}"
