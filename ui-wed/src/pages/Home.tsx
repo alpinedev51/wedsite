@@ -41,7 +41,9 @@ function Home() {
         // visit, so a preview would show on every load -- even when the
         // photo is cached -- and read as the page struggling. It fades in
         // from the page background instead.
-        overlay={<HeroTagline />}
+        // Its letter sweep waits for the photo, so on a phone (where the
+        // line is on screen from the start) it plays once you can see it.
+        overlay={(ready) => <HeroTagline play={ready} />}
         overlayTopPct={80}
         maskFadeTopPct={10}
         maskFadeBottomPct={14}

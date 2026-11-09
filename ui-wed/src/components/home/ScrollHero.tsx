@@ -64,7 +64,11 @@ function ScrollHero({
 }: {
   src: string;
   alt: string;
-  overlay?: ReactNode;
+  /** Text over the photo. Pass a function to get the intro hero's `ready`
+   * (true once the photo has arrived) and run your own entrance from it --
+   * the hero then skips its usual fade for the overlay. Only the "intro"
+   * hero tracks its photo: any other hero passes `true` straight away. */
+  overlay?: ReactNode | ((ready: boolean) => ReactNode);
   overlayAlign?: "center" | "bottom";
   /** Where the overlay's middle sits, as a % of the hero's height from the
    * top (75 = three-quarters down). Overrides overlayAlign when set. */
@@ -133,18 +137,22 @@ function ScrollHero({
       </>
     );
 
-  // The overlay text fades in just after the photo, on the intro hero only.
-  const overlayContent = intro ? (
-    <m.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: ready ? 1 : 0 }}
-      transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
-    >
-      {overlay}
-    </m.div>
-  ) : (
-    overlay
-  );
+  // The overlay text fades in just after the photo, on the intro hero only
+  // -- unless it brings its own entrance (a function overlay).
+  const overlayContent =
+    typeof overlay === "function" ? (
+      overlay(intro ? ready : true)
+    ) : intro ? (
+      <m.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: ready ? 1 : 0 }}
+        transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
+      >
+        {overlay}
+      </m.div>
+    ) : (
+      overlay
+    );
 
   const overlayLayer =
     overlay && overlayTopPct !== undefined ? (
