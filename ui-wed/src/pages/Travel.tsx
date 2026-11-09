@@ -8,6 +8,8 @@ import QuietErrorBoundary from "../components/ui/QuietErrorBoundary";
 import { useWeddingConfig } from "../config/useWeddingConfig";
 import { Floral } from "../components/decor/Floral";
 import { formatLongDate, getWeddingDateParts } from "../lib/date";
+import { Reveal } from "../components/motion/Reveal";
+import { STAGGER } from "../lib/motion";
 
 // Lazy so the map outline (~15KB) only downloads on this page. The rest of
 // the page renders straight away and the map fills in once it arrives.
@@ -34,43 +36,58 @@ function Travel() {
     <Section className="text-center">
       <Container className="flex flex-col items-center gap-10">
         <div className="flex flex-col items-center gap-3">
-          <Eyebrow>Travel</Eyebrow>
-          <PageHeading>Getting To {wedding.location.city}</PageHeading>
-          <p className="max-w-md font-body text-lg text-ink/75">
-            The wedding will be held at{" "}
-            <strong className="font-semibold text-walnut">
-              {wedding.location.venue}
-            </strong>{" "}
-            in{" "}
-            <strong className="font-semibold text-walnut">
-              {wedding.location.city}
-            </strong>{" "}
-            on{" "}
-            <strong className="font-semibold text-walnut">
-              {formatLongDate(wedding.date)}
-            </strong>
-            .
-          </p>
-          <p className="max-w-md font-body text-xl text-ink/65 italic">
-            More details on hotels and directions coming soon.
-          </p>
+          <Reveal>
+            <Eyebrow>Travel</Eyebrow>
+          </Reveal>
+          <Reveal delay={STAGGER}>
+            <PageHeading>Getting To {wedding.location.city}</PageHeading>
+          </Reveal>
+          <Reveal delay={STAGGER * 2}>
+            <p className="max-w-md font-body text-lg text-ink/75">
+              The wedding will be held at{" "}
+              <strong className="font-semibold text-walnut">
+                {wedding.location.venue}
+              </strong>{" "}
+              in{" "}
+              <strong className="font-semibold text-walnut">
+                {wedding.location.city}
+              </strong>{" "}
+              on{" "}
+              <strong className="font-semibold text-walnut">
+                {formatLongDate(wedding.date)}
+              </strong>
+              .
+            </p>
+          </Reveal>
+          <Reveal delay={STAGGER * 3}>
+            <p className="max-w-md font-body text-xl text-ink/65 italic">
+              More details on hotels and directions coming soon.
+            </p>
+          </Reveal>
         </div>
 
+        {/* Reveal is the full-width row; the card inside keeps its own
+            max width, so it stays centred. */}
         {parts && (
-          <MiniCalendar
-            year={parts.year}
-            month={parts.month}
-            highlightDay={parts.day}
-            highlightLabel={formatLongDate(wedding.date)}
-          />
+          <Reveal delay={STAGGER * 4} className="flex w-full justify-center">
+            <MiniCalendar
+              year={parts.year}
+              month={parts.month}
+              highlightDay={parts.day}
+              highlightLabel={formatLongDate(wedding.date)}
+            />
+          </Reveal>
         )}
 
-        <Floral
-          name="divider-04"
-          className="mt-2 w-56 text-ochre-deep/65 sm:w-72"
-        />
+        <Reveal y={0}>
+          <Floral
+            name="divider-04"
+            className="mt-2 w-56 text-ochre-deep/65 sm:w-72"
+          />
+        </Reveal>
 
-        {/* Only when there are venue coordinates (see
+        {/* The map plays its own entrance once it's loaded and on screen
+            (see UsMap). Only when there are venue coordinates (see
             WeddingConfigProvider for where they come from). If the map's
             code fails to download, the map is left out rather than the
             whole page showing an error. */}

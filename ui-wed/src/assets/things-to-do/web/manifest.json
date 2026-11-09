@@ -1,0 +1,140 @@
+{
+  "animas-rafting": {
+    "width": 1200,
+    "height": 800,
+    "widths": [960, 1200],
+    "thumbhash": "2TgKHYZYiIdpd4dweUh4mkt/ywRG"
+  },
+  "boulderturtlelake": {
+    "width": 1067,
+    "height": 1600,
+    "widths": [640, 1067],
+    "thumbhash": "EQkGDQJreP+Jpqu3iqq3uStQAUV7"
+  },
+  "browntrout": {
+    "width": 770,
+    "height": 600,
+    "widths": [770],
+    "thumbhash": "X/gRHYSAeYdpl3d1iIh4iHtgogg2"
+  },
+  "chicagobasin": {
+    "width": 1600,
+    "height": 1200,
+    "widths": [853, 1600],
+    "thumbhash": "WscJNYRZVoifeIeIeDh3ZYiAlQk4"
+  },
+  "dgo-downtown": {
+    "width": 1600,
+    "height": 1067,
+    "widths": [960, 1600],
+    "thumbhash": "3vcNHYROd3afl3iIhliGmrZQKQ2V"
+  },
+  "dgo-train": {
+    "width": 1600,
+    "height": 1068,
+    "widths": [959, 1600],
+    "thumbhash": "VwgKDYJriHmvu4mMimdZhQERBiJy"
+  },
+  "dgo-train-fall": {
+    "width": 1044,
+    "height": 694,
+    "widths": [963, 1044],
+    "thumbhash": "GxkGNYgnfZiPgpmvlcaYjMZwVAtH"
+  },
+  "dweellingmesaverde": {
+    "width": 1280,
+    "height": 960,
+    "widths": [853, 1280],
+    "thumbhash": "YfgFHYTASmqpjLr7fXtozlBjB1SH"
+  },
+  "east-animas-climb": {
+    "width": 1440,
+    "height": 810,
+    "widths": [1138, 1440],
+    "thumbhash": "3fcJDIJ8Z4nvVpibeKlgJQuGmA=="
+  },
+  "engineersummit": {
+    "width": 1600,
+    "height": 1205,
+    "widths": [850, 1600],
+    "thumbhash": "YPcNJYSZh3iPd4eJhneHh2dweAWH"
+  },
+  "flyfish-animas": {
+    "width": 1020,
+    "height": 729,
+    "widths": [895, 1020],
+    "thumbhash": "V/gFFYICX5dtqIdcqNdUZ7/K8Iqd"
+  },
+  "flyfish-dolores": {
+    "width": 640,
+    "height": 360,
+    "widths": [640],
+    "thumbhash": "JBkKRIhpeZWfd4eql76QmgOJOQ=="
+  },
+  "horsegulch": {
+    "width": 960,
+    "height": 451,
+    "widths": [960],
+    "thumbhash": "GggKG4RYZolfhah4eZCCBzg="
+  },
+  "hotsprings": {
+    "width": 1600,
+    "height": 800,
+    "widths": [1280, 1600],
+    "thumbhash": "WggODIIuZ3WKhoevhp2GgIcLaA=="
+  },
+  "icelakes": {
+    "width": 1600,
+    "height": 1120,
+    "widths": [914, 1600],
+    "thumbhash": "nqcFNYyWWJloiodreJd5j6pTr2n2"
+  },
+  "lakenighthorse": {
+    "width": 1200,
+    "height": 628,
+    "widths": [1200],
+    "thumbhash": "HYYFPIZbl2c/qnjUV+WHkGgIiQ=="
+  },
+  "mesaverde-closeup": {
+    "width": 1800,
+    "height": 1200,
+    "widths": [960, 1600, 1800],
+    "thumbhash": "5TkGDYI7Wpopl4elefd2aHpv7PdV"
+  },
+  "mesaverde-dwellings": {
+    "width": 1500,
+    "height": 998,
+    "widths": [962, 1500],
+    "thumbhash": "1hgKDYR4p2dfhXhHmaeYRRdn0JUI"
+  },
+  "purg-mtb": {
+    "width": 1600,
+    "height": 900,
+    "widths": [1138, 1600],
+    "thumbhash": "GwgKJIRLiWdvdod+h4h4cJYHlg=="
+  },
+  "rockclimbdgo": {
+    "width": 1200,
+    "height": 640,
+    "widths": [1200],
+    "thumbhash": "GyoKLIZAnIhKhndqiHeawPdqeQ=="
+  },
+  "sanjuans-wide": {
+    "width": 905,
+    "height": 316,
+    "widths": [905],
+    "thumbhash": "WEkKKoiYeHiPeIiHe8i/5/o="
+  },
+  "sanjuanspretty": {
+    "width": 1600,
+    "height": 900,
+    "widths": [1138, 1600],
+    "thumbhash": "VjkOJIR4d3ePd4eLiIlXgMCglw=="
+  },
+  "twinbuttesmtb": {
+    "width": 1200,
+    "height": 800,
+    "widths": [960, 1200],
+    "thumbhash": "nRgKPYqMZXqJeHh5l1iGkIhwhAhH"
+  }
+}

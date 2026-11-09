@@ -1,5 +1,6 @@
 import type { GalleryImage } from "../components/ui/Gallery";
 import manifest from "../assets/photos/manifest.json";
+import { photoLibrary } from "../lib/photoLibrary";
 
 // The Photos page, section by section. Each photo is named by its slug: the
 // file prefix in src/assets/photos/ (e.g. "dsc03359" for
@@ -177,31 +178,24 @@ const sections: PhotoSection[] = [
 
 // Every processed file in the folder, as built URLs. `eager` + `?url` makes
 // Vite bundle each file and hand back its hashed URL.
-const urls = import.meta.glob<string>("../assets/photos/*.{avif,webp}", {
-  eager: true,
-  query: "?url",
-  import: "default",
-});
-const url = (file: string) => {
-  const found = urls[`../assets/photos/${file}`];
-  if (!found) throw new Error(`Missing photo file: ${file}`);
-  return found;
-};
+const toGalleryImage = photoLibrary(
+  import.meta.glob<string>("../assets/photos/*.{avif,webp}", {
+    eager: true,
+    query: "?url",
+    import: "default",
+  }),
+  manifest,
+);
 
-type ManifestEntry = { width: number; height: number; widths: number[] };
-
-function toGalleryImage(slug: string, alt: string): GalleryImage {
-  const entry = (manifest as Record<string, ManifestEntry>)[slug];
-  if (!entry) throw new Error(`Photo "${slug}" isn't in manifest.json`);
-  return {
-    src: url(`${slug}.webp`),
-    avifSrcSet: entry.widths
-      .map((w) => `${url(`${slug}-${w}w.avif`)} ${w}w`)
-      .join(", "),
-    width: entry.width,
-    height: entry.height,
-    alt,
-  };
+/** One photo from the sections above, by slug, for use outside the Photos
+ * page (e.g. the framed photo on Home). Same files, sizes and alt text as the
+ * gallery, so the alt text only ever lives in one place. */
+export function getPhoto(slug: string): GalleryImage {
+  const photo = sections
+    .flatMap((section) => section.photos)
+    .find((p) => p.slug === slug);
+  if (!photo) throw new Error(`Photo "${slug}" isn't listed in photos.ts`);
+  return toGalleryImage(photo.slug, photo.alt);
 }
 
 export const photoSections = sections.map((section) => ({

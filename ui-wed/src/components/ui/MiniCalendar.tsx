@@ -1,3 +1,6 @@
+import { m, useReducedMotion } from "motion/react";
+import { easeOutSoft, revealViewport } from "@/lib/motion";
+
 const WEEKDAYS = ["S", "M", "T", "W", "T", "F", "S"];
 
 function MiniCalendar({
@@ -23,6 +26,26 @@ function MiniCalendar({
   });
 
   const spokenDate = highlightLabel ?? monthLabel;
+
+  // The rings around the date draw themselves in like a pen stroke once the
+  // calendar is on screen. pathLength isn't a movement, so the site-wide
+  // reduced-motion setting doesn't cover it: those guests get the finished
+  // rings straight away.
+  const reduce = useReducedMotion();
+  const draw = (opacity: number, delay: number) =>
+    reduce
+      ? {}
+      : {
+          initial: { pathLength: 0, opacity: 0 },
+          whileInView: { pathLength: 1, opacity },
+          viewport: revealViewport,
+          transition: {
+            pathLength: { duration: 1.1, ease: easeOutSoft, delay },
+            // A zero-length round-capped stroke is still a dot, so the ring
+            // is hidden until its line starts.
+            opacity: { duration: 0.15, delay },
+          },
+        };
 
   const cells: (number | null)[] = [
     ...Array<null>(firstWeekday).fill(null),
@@ -62,7 +85,8 @@ function MiniCalendar({
                   className="absolute inset-0 h-full w-full text-ochre-deep"
                   aria-hidden="true"
                 >
-                  <ellipse
+                  <m.ellipse
+                    {...draw(1, 0.5)}
                     cx="20"
                     cy="20"
                     rx="17"
@@ -73,7 +97,8 @@ function MiniCalendar({
                     strokeLinecap="round"
                     transform="rotate(-16 20 20)"
                   />
-                  <ellipse
+                  <m.ellipse
+                    {...draw(0.6, 0.85)}
                     cx="20"
                     cy="20"
                     rx="15"

@@ -1,20 +1,29 @@
 import type { GalleryImage } from "./Gallery";
+import SmartImage from "./SmartImage";
+import { coverSizes } from "@/lib/photoLibrary";
 
-// Each activity already carries a `photos` array (see ThingsToDo.tsx) -- this
-// surfaces the first one on the card itself instead of hiding every image
-// behind a click. The three activities without photos get a quiet gradient
-// band at the same aspect ratio so the grid keeps its rhythm rather than
-// showing some tall cards and some short ones.
+/** How wide a card photo is drawn: cards are one column on phones, two
+ * from `sm`, three from `lg` inside a max-w-5xl Container, in a 3:2 frame. */
+const cardSizes = (photo: GalleryImage) =>
+  coverSizes(photo, 1.5, [
+    { minWidth: 1024, px: 310 },
+    { minWidth: 640, vw: 50 },
+    { vw: 100 },
+  ]);
+
 function ActivityCard({
   title,
   summary,
   photo,
+  eager = false,
   onOpen,
   className = "",
 }: {
   title: string;
   summary: string;
   photo?: GalleryImage;
+  /** Load the photo straight away (cards on screen when the page opens). */
+  eager?: boolean;
   onOpen: () => void;
   className?: string;
 }) {
@@ -24,16 +33,18 @@ function ActivityCard({
       onClick={onOpen}
       className={`group flex h-full flex-col overflow-hidden rounded-2xl border border-walnut/12 bg-linen/60 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-walnut/25 hover:bg-linen hover:shadow-md ${className}`}
     >
-      <div className="aspect-3/2 w-full overflow-hidden bg-clay/10">
+      <div className="relative aspect-3/2 w-full overflow-hidden bg-clay/10">
         {photo ? (
-          <img
+          <SmartImage
             src={photo.src}
+            avifSrcSet={photo.avifSrcSet}
+            sizes={cardSizes(photo)}
+            thumbhash={photo.thumbhash}
             // Decorative here: inside the button the alt text would be read as
             // part of its name, and the title already says what this is.
             alt=""
-            loading="lazy"
-            decoding="async"
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+            loading={eager ? "eager" : "lazy"}
+            className="transition-transform duration-500 group-hover:scale-[1.04]"
           />
         ) : (
           <div
